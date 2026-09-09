@@ -69,9 +69,17 @@ test.describe('パレットの起動と終了', () => {
      */
     const worker = context.serviceWorkers()[0];
     if (worker === undefined) throw new Error('service worker が見つからない');
+    // Service Worker のコンテキストで動くので、拡張 API の型はここで宣言する
+    type ChromeTabs = {
+      tabs: {
+        query: (q: object) => Promise<{ id?: number }[]>;
+        sendMessage: (tabId: number, message: unknown) => Promise<unknown>;
+      };
+    };
     await worker.evaluate(async () => {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id !== undefined) await chrome.tabs.sendMessage(tab.id, { t: 'open-palette' });
+      const api = (globalThis as unknown as { chrome: ChromeTabs }).chrome;
+      const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id !== undefined) await api.tabs.sendMessage(tab.id, { t: 'open-palette' });
     });
 
     const frame = await palette();
