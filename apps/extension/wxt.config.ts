@@ -62,6 +62,10 @@ export default defineConfig({
         suggested_key: { default: 'Ctrl+K', mac: 'Command+K' },
         description: 'Backlog Palette を開く',
       },
+      'open-panel': {
+        suggested_key: { default: 'Ctrl+Shift+K', mac: 'Command+Shift+K' },
+        description: '検索パネルを開く',
+      },
     },
     web_accessible_resources: [
       {

@@ -8,7 +8,39 @@ import { defineBackground } from 'wxt/utils/define-background';
  * runtime.sendMessage 経由でしか呼べない（実装プラン §6.1）。
  */
 export default defineBackground(() => {
+  /*
+   * サイドパネルはツールバーのアイコンからも開けるようにする。
+   * sidePanel.open() はユーザー操作起点でしか呼べないため、
+   * 起点を 2 つ用意しておくと commands 経路が使えない環境でも到達できる。
+   */
+  if (browser.sidePanel !== undefined) {
+    browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {
+      // Firefox には sidePanel が無い。sidebar_action が同じ役割を担う
+    });
+  }
+
   browser.commands.onCommand.addListener(async (command) => {
+    if (command === 'open-panel') {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tab?.windowId === undefined) return;
+
+      /*
+       * 未決 #6 の検証点: commands のハンドラがユーザー操作起点として
+       * 認められるか。認められない場合 open() は
+       * 「`sidePanel.open()` may only be called in response to a user gesture」
+       * で reject する。
+       */
+      try {
+        await browser.sidePanel?.open({ windowId: tab.windowId });
+        if (import.meta.env.DEV) console.debug('[bp] commands から sidePanel を開けた');
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.debug('[bp] commands から sidePanel を開けなかった:', String(error));
+        }
+      }
+      return;
+    }
+
     if (command !== 'open-palette') return;
 
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
