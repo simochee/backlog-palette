@@ -20,6 +20,22 @@ test.describe('パレットの起動と終了', () => {
     await expect(frame.getByText('閉じる')).toBeVisible();
   });
 
+  test('⌘K の直後に打った文字がパレットの入力欄に入る', async ({ page, space, palette }) => {
+    await page.goto(space.url('/view/PROJ-123'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    /*
+     * toBeFocused は iframe 内の activeElement しか見ないので、トップレベルの
+     * フォーカスがページに残っていても通ってしまう。実際に打鍵が届くかを見る。
+     */
+    await page.keyboard.type('ぼーど');
+    await expect(frame.locator('input')).toHaveValue('ぼーど');
+    await expect(page.locator('#page-input')).toHaveValue('');
+  });
+
   test('パレットはビューポートを覆う大きさで表示される', async ({ page, space, palette }) => {
     await page.goto(space.url('/view/PROJ-123'));
     await page.keyboard.press('Meta+k');
@@ -35,6 +51,68 @@ test.describe('パレットの起動と終了', () => {
 
     expect(size.width).toBeGreaterThan(600);
     expect(size.height).toBeGreaterThan(300);
+  });
+
+  test('commands 経路で開いたときも打鍵がパレットに届く', async ({
+    page,
+    space,
+    palette,
+    context,
+  }) => {
+    await page.goto(space.url('/view/PROJ-123'));
+    await page.waitForTimeout(500);
+
+    /*
+     * ブラウザレベルのショートカットは Playwright から押せないので、
+     * Service Worker から content script へ同じメッセージを送って経路を再現する。
+     * 実際の ⌘K はこちらを通る（ページに keydown は届かない）。
+     */
+    const worker = context.serviceWorkers()[0];
+    if (worker === undefined) throw new Error('service worker が見つからない');
+    await worker.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id !== undefined) await chrome.tabs.sendMessage(tab.id, { t: 'open-palette' });
+    });
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('ぼーど');
+    await expect(frame.locator('input')).toHaveValue('ぼーど');
+  });
+
+  test('ページ側の入力欄にフォーカスがあっても、⌘K の後の打鍵はパレットに届く', async ({
+    page,
+    space,
+    palette,
+  }) => {
+    await page.goto(space.url('/view/PROJ-123'));
+    await page.locator('#page-input').click();
+    await expect(page.locator('#page-input')).toBeFocused();
+
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('ぼーど');
+    await expect(frame.locator('input')).toHaveValue('ぼーど');
+    await expect(page.locator('#page-input')).toHaveValue('');
+  });
+
+  test('閉じて開き直しても入力欄にフォーカスが戻る', async ({ page, space, palette }) => {
+    await page.goto(space.url('/view/PROJ-123'));
+
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+
+    await page.keyboard.press('Meta+k');
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('ぼーど');
+    await expect(frame.locator('input')).toHaveValue('ぼーど');
   });
 
   test('Esc でパレットが閉じ、ページの操作に戻れる', async ({ page, space, palette }) => {

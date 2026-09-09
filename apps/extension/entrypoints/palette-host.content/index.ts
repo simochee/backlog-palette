@@ -102,6 +102,12 @@ export default defineContentScript({
 
       wrapperEl.style.display = 'block';
       isOpen = true;
+      /*
+       * 親からも iframe 要素にフォーカスを移す。iframe の中で input.focus() を
+       * 呼ぶだけでは、ページ側にフォーカスされた要素が残っているときに
+       * トップレベルのフォーカスが移らないことがある。
+       */
+      iframeEl?.focus();
       // フォーカスは iframe 自身が受け取る。ページ側からは触らない（§9.4）
       send({ t: 'open', ctx: readPageContext() });
     };
@@ -112,6 +118,11 @@ export default defineContentScript({
       // 読み込み待ちの間に閉じられたら、読み込み完了後に開き直さない
       hasPendingOpen = false;
       isOpen = false;
+      /*
+       * 隠すだけでなく iframe にも閉じたことを伝える。伝えないと iframe は
+       * 開いたままの状態を保持し、次に開いたときに再マウントが起きない。
+       */
+      send({ t: 'close' });
     };
 
     const toggle = () => {

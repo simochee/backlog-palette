@@ -32,6 +32,8 @@ export function Palette({ channel }: PaletteProps) {
   const [ctx, setCtx] = useState<PageContext | undefined>(undefined);
   const [sections, setSections] = useState<readonly PaletteSection[]>([]);
   const [value, setValue] = useState('');
+  /** 開くたびに増える。マウント時の autoFocus だけでは 2 回目以降に効かない */
+  const [openSeq, setOpenSeq] = useState(0);
   const urls = useRef<Record<string, string>>({});
   /** 応答が入れ替わっても、最後に打った内容の結果だけを描く */
   const latest = useRef(0);
@@ -80,6 +82,7 @@ export function Palette({ channel }: PaletteProps) {
 
       setCtx(message.ctx);
       setValue('');
+      setOpenSeq((seq) => seq + 1);
       showEmptyState();
     });
 
@@ -97,6 +100,11 @@ export function Palette({ channel }: PaletteProps) {
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [channel, showEmptyState]);
+
+  useEffect(() => {
+    if (openSeq === 0) return;
+    document.querySelector('input')?.focus();
+  }, [openSeq]);
 
   if (ctx === undefined) return null;
 
