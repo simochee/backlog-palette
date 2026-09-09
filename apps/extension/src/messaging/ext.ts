@@ -1,5 +1,6 @@
 import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { RowView } from './rowView.ts';
+import type { PageContext } from './window.ts';
 
 /**
  * パレット UI と Service Worker の間の契約（実装プラン §6.4）。
@@ -38,8 +39,21 @@ export type VisitRecord = {
   kind: 'issue' | 'wiki' | 'document' | 'project';
 };
 
+export type LocalQuery = {
+  input: string;
+  ctx: PageContext;
+};
+
+export type LocalResult = {
+  sections: readonly PaletteSection[];
+  /** 行 id → 遷移先。URL を持たない行（コマンドなど）は含まない */
+  urls: Record<string, string>;
+};
+
 type ExtProtocol = {
   getBootstrap(surface: Surface): BootstrapState;
+  /** 打鍵ごとに呼ばれる。ローカル索引だけで応答し、API は叩かない（§7.2） */
+  localCandidates(query: LocalQuery): LocalResult;
   navigate(request: NavigateRequest): void;
   /** content script が閲覧を記録する。API は呼ばない（§9 の表示キャッシュ） */
   recordVisit(record: VisitRecord): void;

@@ -3,18 +3,15 @@ import { createIframeUi } from 'wxt/utils/content-script-ui/iframe';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { sendMessage } from '../../src/messaging/ext.ts';
 import { isFromIframe, type PageContext, type ToIframe } from '../../src/messaging/window.ts';
-import { readVisitedPage } from '../../src/services/pageContext.ts';
+import { readPageScope, readVisitedPage } from '../../src/services/pageContext.ts';
 
 function readPageContext(): PageContext {
-  const { origin, pathname } = window.location;
-  const space = /^https:\/\/([a-z0-9-]+)\./.exec(origin)?.[1];
-  const issue = /\/view\/([A-Z][A-Z0-9_]*-\d+)/.exec(pathname)?.[1];
-  const project = /\/(?:projects|find)\/([A-Z][A-Z0-9_]*)/.exec(pathname)?.[1];
+  const scope = readPageScope(window.location.href);
+  const issue = /\/view\/([A-Z][A-Z0-9_]*-\d+)/.exec(window.location.pathname)?.[1];
 
   return {
-    origin,
-    ...(space === undefined ? {} : { spaceKey: space }),
-    ...(project === undefined ? {} : { projectKey: project }),
+    origin: window.location.origin,
+    ...scope,
     ...(issue === undefined ? {} : { issueKey: issue }),
   };
 }

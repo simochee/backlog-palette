@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readVisitedPage } from './pageContext.ts';
+import { readPageScope, readVisitedPage } from './pageContext.ts';
 
 const SPACE = 'https://nulab.backlog.jp';
 
@@ -52,5 +52,25 @@ describe('閲覧したページの読み取り', () => {
 
   it('URL として解釈できない入力でも例外を投げない', () => {
     expect(readVisitedPage('not a url', 'x')).toBeUndefined();
+  });
+});
+
+describe('現在のスペースとプロジェクト', () => {
+  it('プロジェクト配下のページからプロジェクトキーを読む', () => {
+    for (const path of ['/board/PROJ', '/gantt/PROJ', '/wiki/PROJ', '/add/PROJ', '/find/PROJ']) {
+      expect(readPageScope(`${SPACE}${path}`).projectKey).toBe('PROJ');
+    }
+  });
+
+  it('スペース直下のページではプロジェクトが決まらない', () => {
+    expect(readPageScope(`${SPACE}/dashboard`).projectKey).toBeUndefined();
+  });
+
+  it('スペースキーはどのページでも読める', () => {
+    expect(readPageScope(`${SPACE}/dashboard`).spaceKey).toBe('nulab');
+  });
+
+  it('URL として解釈できない入力でも例外を投げない', () => {
+    expect(readPageScope('not a url')).toEqual({});
   });
 });

@@ -16,7 +16,33 @@ export type VisitedPage = {
 const SPACE = /^https:\/\/([a-z0-9-]+)\.(?:backlog\.(?:jp|com)|backlogtool\.com)$/;
 const ISSUE_PATH = /^\/view\/([A-Z][A-Z0-9_]*-\d+)/;
 const WIKI_PATH = /^\/wiki\/([A-Z][A-Z0-9_]*)\/(.+)$/;
-const PROJECT_PATH = /^\/(?:projects|find|board|gantt|file|git)\/([A-Z][A-Z0-9_]*)/;
+/*
+ * プロジェクト配下のページ。core/nav のページ定義と対で維持する。
+ * 片方だけ増やすと「そのページからは現在プロジェクトが分からない」状態になり、
+ * プロジェクトのページ候補が黙って消える。
+ */
+const PROJECT_PATH =
+  /^\/(?:projects|find|add|board|gantt|wiki|document|file|git|subversion)\/([A-Z][A-Z0-9_]*)/;
+
+const SPACE_KEY = /^https:\/\/([a-z0-9-]+)\./;
+
+/** ページ URL から現在のスペースとプロジェクトを読む。認証の選択には使わない（§2.3） */
+export function readPageScope(href: string): { spaceKey?: string; projectKey?: string } {
+  let url: URL;
+  try {
+    url = new URL(href);
+  } catch {
+    return {};
+  }
+
+  const spaceKey = SPACE.exec(url.origin)?.[1] ?? SPACE_KEY.exec(url.origin)?.[1];
+  const projectKey = PROJECT_PATH.exec(url.pathname)?.[1];
+
+  return {
+    ...(spaceKey === undefined ? {} : { spaceKey }),
+    ...(projectKey === undefined ? {} : { projectKey }),
+  };
+}
 
 /**
  * `document.title` からプロジェクト名を切り出す。

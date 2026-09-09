@@ -126,3 +126,56 @@ test.describe('キーボード操作', () => {
     await expect(frame.locator('input')).toHaveAttribute('aria-activedescendant', /.+/);
   });
 });
+
+test.describe('ページ移動', () => {
+  test('ページ名を打つと候補が出て、Enter で移動できる', async ({ page, space, palette }) => {
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.type('がんと');
+
+    await expect(frame.getByText('ガントチャート')).toBeVisible();
+
+    await page.keyboard.press('Enter');
+    await page.waitForURL(space.url('/gantt/PROJ'), { timeout: 5_000 });
+  });
+
+  test('英字でもページを引ける', async ({ page, space, palette }) => {
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('wiki');
+    await expect(frame.getByText('Wiki', { exact: true })).toBeVisible();
+  });
+
+  test('課題キーを打つと直接ジャンプの行が先頭に出て、その課題へ移動する', async ({
+    page,
+    space,
+    palette,
+  }) => {
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('PROJ-123');
+    await expect(frame.locator('[role="option"]').first()).toContainText('この課題を直接開く');
+
+    await page.keyboard.press('Enter');
+    await page.waitForURL(space.url('/view/PROJ-123'), { timeout: 5_000 });
+  });
+
+  test('一致しなくてもサイドパネル検索への行は必ず残る', async ({ page, space, palette }) => {
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('そんなページはない');
+    await expect(frame.getByText('をサイドパネルで検索')).toBeVisible();
+  });
+});

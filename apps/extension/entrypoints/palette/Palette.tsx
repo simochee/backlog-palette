@@ -1,5 +1,5 @@
 import { type PaletteSection, PaletteSurface } from '@backlog-palette/ui';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { sendMessage } from '../../src/messaging/ext.ts';
 import type { HostChannel } from '../../src/messaging/hostChannel.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
@@ -25,36 +25,62 @@ const NOT_CONNECTED: readonly PaletteSection[] = [
 ];
 
 /**
- * 空状態は API 応答を待たずに描く（§14）。ここが待つのは
- * Service Worker が表示キャッシュを読む往復だけで、ネットワークには出ない。
+ * 空状態も打鍵中の候補も API 応答を待たない（§14）。待つのは Service Worker が
+ * ローカル索引を引く往復だけで、ネットワークには出ない。
  */
 export function Palette({ channel }: PaletteProps) {
   const [ctx, setCtx] = useState<PageContext | undefined>(undefined);
   const [sections, setSections] = useState<readonly PaletteSection[]>([]);
+  const [value, setValue] = useState('');
+  const urls = useRef<Record<string, string>>({});
+  /** 応答が入れ替わっても、最後に打った内容の結果だけを描く */
+  const latest = useRef(0);
+
+  const showEmptyState = useCallback(() => {
+    const seq = ++latest.current;
+    sendMessage('getBootstrap', 'modal')
+      .then((state) => {
+        if (seq !== latest.current) return;
+        urls.current = {};
+        setSections(state.sections.length > 0 ? state.sections : NOT_CONNECTED);
+      })
+      .catch(() => {
+        if (seq === latest.current) setSections(NOT_CONNECTED);
+      });
+  }, []);
+
+  const search = useCallback(
+    (input: string, pageContext: PageContext) => {
+      if (input.trim() === '') {
+        showEmptyState();
+        return;
+      }
+
+      const seq = ++latest.current;
+      sendMessage('localCandidates', { input, ctx: pageContext })
+        .then((result) => {
+          if (seq !== latest.current) return;
+          urls.current = result.urls;
+          setSections(result.sections);
+        })
+        .catch(() => {
+          if (seq === latest.current) setSections([]);
+        });
+    },
+    [showEmptyState],
+  );
 
   useEffect(() => {
     const unsubscribe = channel.subscribe((message) => {
       if (message.t === 'close') {
         setCtx(undefined);
+        setValue('');
         return;
       }
 
       setCtx(message.ctx);
-
-      sendMessage('getBootstrap', 'modal')
-        .then((state) => {
-          setSections(state.sections.length > 0 ? state.sections : NOT_CONNECTED);
-        })
-        .catch(() => {
-          setSections(NOT_CONNECTED);
-        });
-
-      /*
-       * フォーカスは開いた側ではなく自分で取る。以降のキー入力は iframe に
-       * 閉じるので、Backlog の単キーショートカット（j/k 等）が誤爆しない（§9.4）。
-       * 実際に当てるのは PaletteSurface の autoFocus。requestAnimationFrame で
-       * 後から当てると、タブが背面にある間はコールバックが走らず取りこぼす。
-       */
+      setValue('');
+      showEmptyState();
     });
 
     /*
@@ -66,13 +92,11 @@ export function Palette({ channel }: PaletteProps) {
     };
     window.addEventListener('keydown', onKeyDown);
 
-    if (import.meta.env.DEV) console.debug('[bp] palette iframe: 受信を開始した');
-
     return () => {
       unsubscribe();
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [channel]);
+  }, [channel, showEmptyState]);
 
   if (ctx === undefined) return null;
 
@@ -93,6 +117,19 @@ export function Palette({ channel }: PaletteProps) {
               : [{ label: ctx.projectKey, avatar: true } as const]),
           ]}
           sections={sections}
+          value={value}
+          onValueChange={(next) => {
+            setValue(next);
+            search(next, ctx);
+          }}
+          onAction={(id) => {
+            const url = urls.current[id];
+            if (url === undefined) return;
+
+            // 遷移は Service Worker が行う。ページ側の location には触らない（§2.3）
+            sendMessage('navigate', { url, target: 'currentTab' }).catch(() => {});
+            channel.send({ t: 'close' });
+          }}
           onEscape={() => channel.send({ t: 'close' })}
           autoFocus
         />

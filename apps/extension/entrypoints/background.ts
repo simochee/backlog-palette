@@ -3,6 +3,7 @@ import { defineBackground } from 'wxt/utils/define-background';
 import { onMessage } from '../src/messaging/ext.ts';
 import { isTrustedPageOrigin } from '../src/messaging/window.ts';
 import { buildBootstrap } from '../src/services/bootstrap.ts';
+import { localCandidates } from '../src/services/localIndex.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
 
 /**
@@ -13,6 +14,8 @@ import { rememberVisit } from '../src/storage/displayCache.ts';
  */
 export default defineBackground(() => {
   onMessage('getBootstrap', ({ data }) => buildBootstrap(data, Date.now()));
+
+  onMessage('localCandidates', ({ data }) => localCandidates(data.input, data.ctx, Date.now()));
 
   onMessage('recordVisit', ({ data }) => {
     const { spaceKey, id, ...entry } = data;
