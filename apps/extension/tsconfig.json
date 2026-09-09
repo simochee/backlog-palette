@@ -1,0 +1,11 @@
+{
+  "extends": ["./.wxt/tsconfig.json", "../../tsconfig.base.json"],
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    // packages/ui と同じ理由（third-party props / CSS Modules）。core は厳格のまま
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["entrypoints", "src", "wxt.config.ts", "vitest.config.ts", ".wxt/**/*"]
+}

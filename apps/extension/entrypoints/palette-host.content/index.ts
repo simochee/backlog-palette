@@ -1,0 +1,103 @@
+import { browser } from 'wxt/browser';
+import { createIframeUi } from 'wxt/utils/content-script-ui/iframe';
+import { defineContentScript } from 'wxt/utils/define-content-script';
+import { isFromIframe, type PageContext, type ToIframe } from '../../src/messaging/window.ts';
+
+function readPageContext(): PageContext {
+  const { origin, pathname } = window.location;
+  const space = /^https:\/\/([a-z0-9-]+)\./.exec(origin)?.[1];
+  const issue = /\/view\/([A-Z][A-Z0-9_]*-\d+)/.exec(pathname)?.[1];
+  const project = /\/(?:projects|find)\/([A-Z][A-Z0-9_]*)/.exec(pathname)?.[1];
+
+  return {
+    origin,
+    ...(space === undefined ? {} : { spaceKey: space }),
+    ...(project === undefined ? {} : { projectKey: project }),
+    ...(issue === undefined ? {} : { issueKey: issue }),
+  };
+}
+
+export default defineContentScript({
+  matches: ['https://*.backlog.jp/*', 'https://*.backlog.com/*'],
+
+  main(ctx) {
+    const extensionOrigin = new URL(browser.runtime.getURL('/')).origin;
+    let iframeEl: HTMLIFrameElement | undefined;
+    let wrapperEl: HTMLElement | undefined;
+    let isOpen = false;
+
+    const ui = createIframeUi(ctx, {
+      page: '/palette.html',
+      position: 'overlay',
+      anchor: 'body',
+      onMount(wrapper, iframe) {
+        wrapperEl = wrapper;
+        iframeEl = iframe;
+
+        /*
+         * 初回 ⌘K のロード待ちを消すため、非表示のまま先に注入する（§14）。
+         *
+         * iframe はビューポート全面にする。暗転・中央寄せ・外側クリックの判定を
+         * すべて拡張ページの内側で完結させられるので、ページのレイアウトに触らず、
+         * 高さ同期も要らなくなる。
+         */
+        wrapper.style.position = 'fixed';
+        wrapper.style.inset = '0';
+        wrapper.style.zIndex = '2147483647';
+        wrapper.style.display = 'none';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = '0';
+        iframe.style.colorScheme = 'normal';
+      },
+    });
+
+    ui.mount();
+
+    const send = (message: ToIframe) => {
+      iframeEl?.contentWindow?.postMessage(message, extensionOrigin);
+    };
+
+    const open = () => {
+      if (wrapperEl === undefined) return;
+      wrapperEl.style.display = 'block';
+      isOpen = true;
+      // フォーカスは iframe 自身が受け取る。ページ側からは触らない（§9.4）
+      send({ t: 'open', ctx: readPageContext() });
+    };
+
+    const close = () => {
+      if (wrapperEl === undefined) return;
+      wrapperEl.style.display = 'none';
+      isOpen = false;
+    };
+
+    ctx.addEventListener(window, 'keydown', (event) => {
+      const isPaletteKey = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+      if (!isPaletteKey) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (isOpen) {
+        close();
+      } else {
+        open();
+      }
+    });
+
+    ctx.addEventListener(window, 'message', (event) => {
+      // 送信元が自分の iframe であることと、拡張オリジンであることの両方を確認する
+      if (event.source !== iframeEl?.contentWindow) return;
+      if (event.origin !== extensionOrigin) return;
+      if (!isFromIframe(event.data)) return;
+
+      close();
+    });
+
+    browser.runtime.onMessage.addListener((message: unknown) => {
+      if (typeof message === 'object' && message !== null) {
+        if ((message as { t?: unknown }).t === 'open-palette') open();
+      }
+    });
+  },
+});

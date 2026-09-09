@@ -1,0 +1,23 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+}
+
+#root {
+  height: 100%;
+}
+
+.backdrop {
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+  background: var(--bp-surface-overlay);
+}
+
+.slot {
+  width: min(640px, calc(100vw - 32px));
+}
