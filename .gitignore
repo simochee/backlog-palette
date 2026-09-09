@@ -14,3 +14,5 @@ playwright-report/
 
 # wxt dev が使う Chrome の専用プロファイル
 .chrome-profile/
+
+test-results/

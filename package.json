@@ -20,10 +20,11 @@
     "dev": "pnpm --filter @backlog-palette/extension dev",
     "dev:ui": "pnpm --filter @backlog-palette/ui dev",
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --filter='!@backlog-palette/e2e' test",
     "typecheck": "pnpm -r typecheck",
     "check": "biome check .",
-    "fix": "biome check --write ."
+    "fix": "biome check --write .",
+    "test:e2e": "pnpm --filter @backlog-palette/extension build && pnpm --filter @backlog-palette/e2e test"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
