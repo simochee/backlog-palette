@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./candidates": "./src/candidates/index.ts",
     "./match": "./src/match/index.ts",
     "./query": "./src/query/index.ts",
     "./rank": "./src/rank/index.ts",
