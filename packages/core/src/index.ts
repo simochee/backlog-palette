@@ -1,3 +1,4 @@
+export * from './match/index.ts';
 export * from './query/index.ts';
 export * from './rank/index.ts';
 export * from './share/index.ts';
