@@ -445,6 +445,13 @@ export default defineConfig({
 - iframe サーフェスの土台: `createIframeUi(ctx, { page: '/palette.html', position: 'overlay', anchor: 'body' })` が非交渉制約「拡張ページを iframe で表示」をそのまま実現する
 - 開発時の content script HMR、`wxt build -b firefox`、`wxt zip` / `wxt submit`
 
+**`wxt dev` でブラウザを自動起動するための前提**（踏んだので記録）
+
+- `web-ext` は WXT の **optional peer dependency**。入れていないと `wxt dev` はビルドだけして「Load ... as an unpacked extension manually」と出て終わる。エラーではないので気づきにくい
+- `webExt.chromiumProfile` のディレクトリは**事前に存在していないと起動に失敗する**（`chrome-launcher` が `userDataDir` 内の `chrome-out.log` を開くため ENOENT）。`dev` スクリプトで `mkdirSync` してから `wxt` を呼ぶ
+- プロファイルは使い捨てにせず `keepProfileChanges: true` で残す。接続済みスペース・表示キャッシュ・Backlog のログインセッションが再起動ごとに消えると、認証と個人化の確認に毎回 OAuth からやり直すことになる
+- 起動時に開く URL は `BP_DEV_START_URL`（`.env`）で渡す。スペース名はリポジトリに書かない
+
 **WXT を使っても自分でやる作業**（＝油断できない箇所）
 
 - `use_dynamic_url: true` と CSP の厳格化は手書き（上記）
@@ -462,6 +469,7 @@ export default defineConfig({
 | lint / format | Biome 2 | パッケージ境界（§6.2）を `noRestrictedImports` で機械的に守る |
 | テスト | Vitest 5 / Playwright（E2E） | `packages/core` はブラウザ不要 |
 | UI 開発 | Storybook 10（Vite builder） | `packages/ui` を単体開発する（§8.2） |
+| ブラウザ自動起動 | `web-ext` 10 | WXT の optional peer dependency。§6.3 の前提を満たさないと起動しない |
 
 **品質ゲートは CI に置き、ローカルで二重化しない。** pre-commit フックは入れない。ローカルの検査は「今書いたコードの答え合わせ」として範囲を絞って使う。CI が呼ぶのは `pnpm check` / `pnpm -r typecheck` / `pnpm -r test` / `pnpm -r build` の 4 つで、ルートの script はこの形を保つ。
 

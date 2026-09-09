@@ -11,3 +11,6 @@ coverage/
 !.env.example
 test-results/
 playwright-report/
+
+# wxt dev が使う Chrome の専用プロファイル
+.chrome-profile/
