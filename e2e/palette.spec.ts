@@ -265,3 +265,37 @@ test.describe('ページ移動', () => {
     await expect(frame.getByText('をサイドパネルで検索')).toBeVisible();
   });
 });
+
+test.describe('コピーコマンド', () => {
+  test('課題ページでコピーコマンドが出て、押すと何をコピーしたか分かる', async ({
+    page,
+    space,
+    palette,
+  }) => {
+    await page.goto(space.url('/view/PROJ-123'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.type('こぴー');
+
+    await expect(frame.getByText('課題キーをコピー')).toBeVisible();
+
+    // 「こぴー」は語中の一致なので先頭はサイドパネル検索。↓ で目的の行へ移る
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+
+    await expect(frame.getByText('PROJ-123 をコピーしました')).toBeVisible();
+  });
+
+  test('課題ページ以外ではコピーコマンドを出さない', async ({ page, space, palette }) => {
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.type('こぴー');
+
+    await expect(frame.getByText('課題キーをコピー')).toBeHidden();
+  });
+});
