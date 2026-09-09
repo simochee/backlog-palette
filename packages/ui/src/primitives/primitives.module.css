@@ -1,0 +1,90 @@
+.kbd {
+  display: inline-flex;
+  gap: var(--bp-space-1);
+  flex: none;
+}
+
+.kbdDim {
+  opacity: 0.45;
+}
+
+.kbdKey {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--bp-space-2);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-control);
+  background: var(--bp-surface-floating);
+  color: var(--bp-text-subtle);
+  font: 500 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+}
+
+.marker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex: none;
+  height: 16px;
+  padding: 0 var(--bp-space-3);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-marker-bg);
+  color: var(--bp-text-default);
+  font: 600 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+.marker:not([data-dot]) {
+  border-radius: var(--bp-radius-control);
+}
+
+.marker[data-tone="neutral"] {
+  --bp-marker-bg: var(--bp-marker-neutral-bg);
+  --bp-marker-dot: var(--bp-marker-neutral-dot);
+}
+.marker[data-tone="info"] {
+  --bp-marker-bg: var(--bp-marker-info-bg);
+  --bp-marker-dot: var(--bp-marker-info-dot);
+}
+.marker[data-tone="success"] {
+  --bp-marker-bg: var(--bp-marker-success-bg);
+  --bp-marker-dot: var(--bp-marker-success-dot);
+}
+.marker[data-tone="done"] {
+  --bp-marker-bg: var(--bp-marker-done-bg);
+  --bp-marker-dot: var(--bp-marker-done-dot);
+}
+.marker[data-tone="warning"] {
+  --bp-marker-bg: var(--bp-marker-warning-bg);
+  --bp-marker-dot: var(--bp-marker-warning-dot);
+}
+.marker[data-tone="danger"] {
+  --bp-marker-bg: var(--bp-marker-danger-bg);
+  --bp-marker-dot: var(--bp-marker-danger-dot);
+}
+
+.markerDot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-marker-dot);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 3px;
+  background: hsl(var(--bp-avatar-hue) 42% 88%);
+  color: hsl(var(--bp-avatar-hue) 48% 28%);
+  font: 700 9px / 1 var(--bp-font-body);
+  text-transform: uppercase;
+}
+
+[data-bp-scheme="dark"] .avatar {
+  background: hsl(var(--bp-avatar-hue) 28% 30%);
+  color: hsl(var(--bp-avatar-hue) 48% 82%);
+}

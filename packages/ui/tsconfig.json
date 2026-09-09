@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    // CSS Modules の型はインデックスシグネチャなので、noUncheckedIndexedAccess を
+    // 有効にすると styles.foo が string | undefined になり、className を受け取る
+    // すべての箇所で非 null 断定が必要になる。クラス名の型付けを生成する仕組みを
+    // 入れるまでは、この 1 パッケージだけ規則を緩める。packages/core は厳格のまま。
+    "noUncheckedIndexedAccess": false,
+    // React Aria の props は `prop?: T`（`| undefined` を含まない）と宣言されている。
+    // exactOptionalPropertyTypes を有効にすると、任意 props を素通しするだけの
+    // ラッパーが条件付きスプレッドの羅列になる。データ形状が意味を持つ
+    // packages/core は厳格のまま。
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["src", ".storybook"]
+}

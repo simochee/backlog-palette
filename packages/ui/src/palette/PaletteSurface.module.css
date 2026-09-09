@@ -1,0 +1,161 @@
+.surface {
+  display: flex;
+  flex-direction: column;
+  background: var(--bp-surface-floating);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-surface);
+  box-shadow: var(--bp-shadow-surface);
+  overflow: hidden;
+  font-family: var(--bp-font-body);
+  color: var(--bp-text-default);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  height: 54px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--bp-border-subtle);
+}
+
+.field {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-lg) / 24px var(--bp-font-body);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--bp-text-disabled);
+}
+
+/* 入力の後ろに続く補完候補。入力欄と同じ字送りで重ねる */
+.ghost {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  pointer-events: none;
+  font: 400 var(--bp-size-text-lg) / 24px var(--bp-font-body);
+  white-space: pre;
+}
+
+.ghostTyped {
+  visibility: hidden;
+}
+
+.ghostRest {
+  color: var(--bp-text-disabled);
+}
+
+.ghostChip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--bp-border-subtle);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-surface-sunken);
+  color: var(--bp-text-subtle);
+  font: 600 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+}
+
+.armedNotice {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 19px;
+  padding: 0 7px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-marker-warning-bg);
+  color: var(--bp-text-default);
+  font: 600 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+}
+
+.escHint,
+.footerHint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex: none;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-3);
+  overflow-y: auto;
+  outline: none;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: var(--bp-space-2);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--bp-space-4) 10px var(--bp-space-2);
+}
+
+.sectionLabel {
+  color: var(--bp-text-subtle);
+  font: 700 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+  letter-spacing: 0.08em;
+}
+
+.sectionMeta {
+  color: var(--bp-text-disabled);
+  font: 400 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+}
+
+.item {
+  outline: none;
+  cursor: default;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 38px;
+  padding: 0 var(--bp-space-5);
+  background: var(--bp-surface-sunken);
+  border-top: 1px solid var(--bp-border-subtle);
+}
+
+.footerSpacer {
+  flex: 1;
+}
+
+.footerNote {
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}

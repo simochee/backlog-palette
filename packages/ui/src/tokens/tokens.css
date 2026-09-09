@@ -1,0 +1,108 @@
+/*
+ * トークン層 — 見た目を差し替えるときに書き換えるのはこのファイルだけ。
+ *
+ * 名前は「役割」で付ける。--bp-marker-info が青である必要はなく、
+ * 将来のデザインシステムが「処理中」に別の色を割り当てても
+ * コンポーネントは無変更で追従する（docs/implementation-plan.md §8.1）。
+ *
+ * 現在の値は暫定。本番の配色は M2 のドッグフーディング後に調整する。
+ */
+
+[data-bp-theme] {
+  color-scheme: light;
+
+  --bp-surface-floating: #ffffff;
+  --bp-surface-sunken: #f7f7f9;
+  --bp-surface-overlay: rgb(23 22 29 / 32%);
+  --bp-row-selected: #f0f0f3;
+  --bp-row-accent-surface: #eaf6ee;
+
+  --bp-accent: #48af5d;
+  --bp-accent-text: #1c6b30;
+
+  --bp-border-default: #dededf;
+  --bp-border-subtle: #ebebed;
+  --bp-border-strong: #c4c4c8;
+
+  --bp-text-default: #17161d;
+  --bp-text-subtle: #58586a;
+  --bp-text-disabled: #9c9ca8;
+  --bp-text-inverted: #ffffff;
+
+  --bp-marker-neutral-bg: #ececed;
+  --bp-marker-neutral-dot: #8b8b96;
+  --bp-marker-info-bg: #e4f0fb;
+  --bp-marker-info-dot: #3f8fd4;
+  --bp-marker-success-bg: #e6f4e9;
+  --bp-marker-success-dot: #48af5d;
+  --bp-marker-done-bg: #eeeaf7;
+  --bp-marker-done-dot: #8065c4;
+  --bp-marker-warning-bg: #fdf0dd;
+  --bp-marker-warning-dot: #d98a1a;
+  --bp-marker-danger-bg: #fce9e6;
+  --bp-marker-danger-dot: #d9503c;
+
+  --bp-highlight-bg: #fff2a8;
+
+  --bp-radius-control: 4px;
+  --bp-radius-surface: 8px;
+  --bp-radius-pill: 999px;
+
+  --bp-space-1: 2px;
+  --bp-space-2: 4px;
+  --bp-space-3: 6px;
+  --bp-space-4: 8px;
+  --bp-space-5: 12px;
+  --bp-space-6: 16px;
+  --bp-space-7: 24px;
+  --bp-space-8: 32px;
+
+  --bp-font-body: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --bp-font-code: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --bp-size-text-xs: 10.5px;
+  --bp-size-text-sm: 11.5px;
+  --bp-size-text-md: 13.5px;
+  --bp-size-text-lg: 16px;
+
+  --bp-shadow-surface: 0 12px 32px rgb(23 22 29 / 18%), 0 2px 6px rgb(23 22 29 / 10%);
+}
+
+[data-bp-theme][data-bp-scheme="dark"] {
+  color-scheme: dark;
+
+  --bp-surface-floating: #282630;
+  --bp-surface-sunken: #17161d;
+  --bp-surface-overlay: rgb(7 7 9 / 56%);
+  --bp-row-selected: #383744;
+  --bp-row-accent-surface: #26382b;
+
+  --bp-accent: #6cc47f;
+  --bp-accent-text: #a8dfb5;
+
+  --bp-border-default: #484757;
+  --bp-border-subtle: #383744;
+  --bp-border-strong: #58586a;
+
+  --bp-text-default: #f4f4f6;
+  --bp-text-subtle: #b6b6c0;
+  --bp-text-disabled: #7c7c8a;
+  --bp-text-inverted: #17161d;
+
+  --bp-marker-neutral-bg: #3c3b49;
+  --bp-marker-neutral-dot: #9c9ca8;
+  --bp-marker-info-bg: #24384c;
+  --bp-marker-info-dot: #5aa6e0;
+  --bp-marker-success-bg: #223b2a;
+  --bp-marker-success-dot: #6cc47f;
+  --bp-marker-done-bg: #322c48;
+  --bp-marker-done-dot: #a08ddb;
+  --bp-marker-warning-bg: #40331f;
+  --bp-marker-warning-dot: #e0a23f;
+  --bp-marker-danger-bg: #422823;
+  --bp-marker-danger-dot: #e56b56;
+
+  --bp-highlight-bg: #6b5a12;
+
+  --bp-shadow-surface: 0 12px 32px rgb(0 0 0 / 48%), 0 2px 6px rgb(0 0 0 / 32%);
+}
