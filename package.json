@@ -1,0 +1,32 @@
+{
+  "name": "backlog-palette",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24.21.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.25.0",
+      "onFail": "error"
+    }
+  },
+  "scripts": {
+    "dev": "pnpm --filter @backlog-palette/extension dev",
+    "dev:ui": "pnpm --filter @backlog-palette/ui dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "check": "biome check .",
+    "fix": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
+    "typescript": "^7.0.2"
+  }
+}
