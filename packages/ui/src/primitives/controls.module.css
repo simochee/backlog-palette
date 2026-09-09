@@ -1,0 +1,108 @@
+.focusable:focus-visible,
+.focusable[data-focus-visible] {
+  outline: 2px solid var(--bp-focus-ring);
+  outline-offset: 2px;
+}
+
+.switch {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  border-radius: var(--bp-radius-pill);
+}
+
+.switchTrack {
+  display: inline-flex;
+  align-items: center;
+  width: 34px;
+  height: 20px;
+  padding: 2px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-control-track);
+  transition: background 120ms ease;
+}
+
+.switch[data-selected] .switchTrack {
+  background: var(--bp-control-track-selected);
+}
+
+.switch[data-disabled] .switchTrack {
+  background: var(--bp-border-subtle);
+}
+
+.switchKnob {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-control-knob);
+  transition: translate 120ms ease;
+}
+
+.switch[data-selected] .switchKnob {
+  translate: 14px 0;
+}
+
+.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 var(--bp-space-5);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-control);
+  background: var(--bp-surface-floating);
+  color: var(--bp-text-default);
+  font: 600 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button[data-hovered] {
+  background: var(--bp-row-selected);
+}
+
+.button[data-pressed] {
+  border-color: var(--bp-border-strong);
+}
+
+.button[data-tone="danger"] {
+  color: var(--bp-text-danger);
+}
+
+.button[data-disabled] {
+  border-color: var(--bp-border-subtle);
+  color: var(--bp-text-disabled);
+  cursor: default;
+}
+
+.choiceGroup {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--bp-border-subtle);
+  border-radius: var(--bp-radius-control);
+  background: var(--bp-surface-sunken);
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 var(--bp-space-5);
+  border-radius: 3px;
+  color: var(--bp-text-subtle);
+  font: 600 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.choice[data-selected] {
+  background: var(--bp-surface-floating);
+  border: 1px solid var(--bp-border-default);
+  /* 選択時だけ罫が増えると隣の選択肢がずれるので、増えた分を padding から引く */
+  padding: 0 11px;
+  color: var(--bp-text-default);
+}

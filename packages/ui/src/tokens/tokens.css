@@ -28,6 +28,12 @@
   --bp-text-subtle: #58586a;
   --bp-text-disabled: #9c9ca8;
   --bp-text-inverted: #ffffff;
+  --bp-text-danger: #a83a28;
+
+  --bp-control-track: #c4c4c8;
+  --bp-control-track-selected: #48af5d;
+  --bp-control-knob: #ffffff;
+  --bp-focus-ring: #2f6fd0;
 
   --bp-marker-neutral-bg: #ececed;
   --bp-marker-neutral-dot: #8b8b96;
@@ -64,6 +70,7 @@
   --bp-size-text-sm: 11.5px;
   --bp-size-text-md: 13.5px;
   --bp-size-text-lg: 16px;
+  --bp-size-text-xl: 19px;
 
   --bp-shadow-surface: 0 12px 32px rgb(23 22 29 / 18%), 0 2px 6px rgb(23 22 29 / 10%);
 }
@@ -88,6 +95,12 @@
   --bp-text-subtle: #b6b6c0;
   --bp-text-disabled: #7c7c8a;
   --bp-text-inverted: #17161d;
+  --bp-text-danger: #e56b56;
+
+  --bp-control-track: #58586a;
+  --bp-control-track-selected: #6cc47f;
+  --bp-control-knob: #ffffff;
+  --bp-focus-ring: #8fbdf0;
 
   --bp-marker-neutral-bg: #3c3b49;
   --bp-marker-neutral-dot: #9c9ca8;

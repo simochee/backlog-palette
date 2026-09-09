@@ -1,0 +1,46 @@
+html,
+body {
+  margin: 0;
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--bp-surface-sunken);
+  font-family: var(--bp-font-body);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-7);
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: var(--bp-space-8) var(--bp-space-6);
+  box-sizing: border-box;
+}
+
+.pageTitle {
+  margin: 0 0 var(--bp-space-2);
+  color: var(--bp-text-default);
+  font: 700 var(--bp-size-text-xl) / 26px var(--bp-font-body);
+}
+
+.pageLead {
+  margin: 0;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-md) / 20px var(--bp-font-body);
+}
+
+.notice {
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 18px var(--bp-font-body);
+}
+
+/* 消去の結果を伝えるライブリージョンは常設する。空のときだけ場所を取らせない */
+.notice:empty {
+  display: none;
+}
+
+.noticeDanger {
+  color: var(--bp-text-danger);
+}
