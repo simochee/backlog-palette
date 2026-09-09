@@ -678,6 +678,7 @@ WXT の `storage.defineItem` でスキーマとマイグレーションを型で
 | `local:queryDict` | クエリ → 選択結果の辞書 | 上限つき LRU |
 | `local:searchHistory` | 検索クエリ履歴 | 直近 50 |
 | `local:settings` | 学習オンオフ・既定サーフェス・テーマ・課題キー優先 | — |
+| `local:oauthApp` | OAuth アプリのクライアント ID（配布物の設定。ユーザーデータではない） | — |
 
 **記録しないもの**: ページ本文、コメント、検索結果の中身。件名・プロジェクト名は表示キャッシュ側に持ち、行動ログとは分ける。
 
@@ -863,6 +864,9 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | ~~2~~ | OAuth のリダイレクト URI を複数登録できるか | OAuth を既定にできるか | **解決**。OAuth アプリは登録できる |
 | ~~3~~ | 複数スペースに属するときの認証情報 | 認証モデル | **解決**。API キーも OAuth もスペースごとに別なので、スペース単位の「接続」という設計のままでよい |
 | 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認。**`commands` に割り当てがある間はブラウザがキーを消費し、ページに `keydown` が届かない**ことは M0 で確認済み。content script 側の捕捉はショートカット解除時の保険 |
+| 21 | OAuth の認可・トークンエンドポイントの実際のパス | OAuth 接続 | `/OAuth2AccessRequest.action` と `/api/v2/oauth2/token` で実装したが、`docs/backlog-facts.md` に事実として裏が無い。実機で確認して台帳に追記する |
+| 22 | OAuth で PKCE が使えるか | クライアントシークレットを配布物に含めるか | 現状は client_secret 前提。拡張機能はシークレットを隠せないので、PKCE が使えるならそちらに寄せる |
+| 23 | OAuth アプリのクライアント ID の受け取り方 | OAuth 接続の有効化 | 実装は `setOAuthApp()` で注入する形。ビルド時の env に寄せるか、配布物に埋めるかを決める |
 | 16 | Firefox 提出の追加要件 | M7 のみ | `data_collection_permissions`（2025-11-03 以降の新規拡張に必須）と `browser_specific_settings.gecko.id` が要る。`sidePanel` は Firefox が知らない権限なので、AMO の lint 対策として M6 でビルドごとに出し分ける |
 | ~~5~~ | API レートリミットの実値 | 並列数、既定スコープ | **解決**。`GET /api/v2/rateLimit` が実値を返す（実測: read 600 / search 150 / update 150）。検索は search 枠を消費する。接続時に取得してトークンバケットを初期化する |
 | 6 | `commands` からの `sidePanel.open()` がユーザー操作起点として通るか、表示ラグ | サイドパネルの起動経路 | スパイク（M0） |
