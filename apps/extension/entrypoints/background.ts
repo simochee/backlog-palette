@@ -14,9 +14,34 @@ export default defineBackground(() => {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     if (tab?.id === undefined) return;
 
-    // 遷移も開閉もタブ側の DOM を経由せず、拡張から指示する
-    await browser.tabs.sendMessage(tab.id, { t: 'open-palette' }).catch(() => {
-      // Backlog 以外のタブには content script がいない。将来はポップアップで開く
-    });
+    /*
+     * 遷移も開閉もタブ側の DOM を経由せず、拡張から指示する。
+     *
+     * Backlog のスペース以外には content script がいないので送信は失敗する。
+     * 握り潰すと「⌘K を押しても何も起きない」ように見えて原因に辿れないため、
+     * 開発時は理由をログに残す。ユーザー向けの導線（Backlog 外から開く）は Phase 2。
+     */
+    try {
+      await browser.tabs.sendMessage(tab.id, { t: 'open-palette' });
+    } catch {
+      if (import.meta.env.DEV) {
+        console.debug(
+          '[bp] このタブにはパレットがいない（Backlog のスペースではない）:',
+          tab.url ?? '(url 不明)',
+        );
+      }
+    }
   });
+
+  if (import.meta.env.DEV) {
+    browser.commands.getAll().then((commands) => {
+      const palette = commands.find((c) => c.name === 'open-palette');
+      console.debug(
+        '[bp] ショートカットの割り当て:',
+        palette?.shortcut === '' || palette?.shortcut === undefined
+          ? '未割り当て（chrome://extensions/shortcuts で確認。他の拡張と衝突している可能性）'
+          : palette.shortcut,
+      );
+    });
+  }
 });

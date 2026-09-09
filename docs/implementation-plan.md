@@ -448,9 +448,10 @@ export default defineConfig({
 **`wxt dev` でブラウザを自動起動するための前提**（踏んだので記録）
 
 - `web-ext` は WXT の **optional peer dependency**。入れていないと `wxt dev` はビルドだけして「Load ... as an unpacked extension manually」と出て終わる。エラーではないので気づきにくい
-- `webExt.chromiumProfile` のディレクトリは**事前に存在していないと起動に失敗する**（`chrome-launcher` が `userDataDir` 内の `chrome-out.log` を開くため ENOENT）。`dev` スクリプトで `mkdirSync` してから `wxt` を呼ぶ
+- `webExt.chromiumProfile` のディレクトリは**事前に存在していないと起動に失敗する**（`chrome-launcher` が `userDataDir` 内の `chrome-out.log` を開くため ENOENT）。`server:created` フック（dev のときだけ走る）で作る
 - プロファイルは使い捨てにせず `keepProfileChanges: true` で残す。接続済みスペース・表示キャッシュ・Backlog のログインセッションが再起動ごとに消えると、認証と個人化の確認に毎回 OAuth からやり直すことになる
-- 起動時に開く URL は `BP_DEV_START_URL`（`.env`）で渡す。スペース名はリポジトリに書かない
+- 起動時に開く URL は `BP_DEV_START_URL`（`.env`）で渡す。スペース名はリポジトリに書かない。**パレットはスペース上でしか動かない**ので、これを設定していないと新規タブで `⌘K` を押して「何も起きない」と誤解する
+- Chrome 137 以降、branded な Chrome は `--load-extension` を無視する。ただし **web-ext 10 は CDP の `Extensions.loadUnpacked`（`--enable-unsafe-extension-debugging` 付き）を使う**ので branded Chrome でも読み込める。フォールバックが起きる環境向けに `BP_DEV_CHROME_BINARY` で Chrome for Testing を指せるようにしてある
 
 **WXT を使っても自分でやる作業**（＝油断できない箇所）
 
@@ -458,6 +459,7 @@ export default defineConfig({
 - `createIframeUi` は「常時注入・非表示・`open` で表示」という開閉制御を持たないので、`onMount` で `display: none` にして自前で制御する
 - Enterprise カスタムドメインは静的 `matches` で拾えない。`optional_host_permissions` + `browser.scripting.registerContentScripts` で、ユーザーがスペースを登録したときに動的登録する
 - **エントリポイント名の衝突は無言で落ちる**。`entrypoints/palette/index.html` と `entrypoints/palette.content/index.ts` は内部名がどちらも `palette` になり、content script が警告なしにビルドから消える。実際に踏んだので content script は `palette-host.content` に置いた。**ビルド後に `manifest.json` を目で確認する**のを手順に含める
+- **`matches` の `*.backlog.com` は apex ドメインと `www` にもマッチする**。ヌーラボのマーケティングサイトはスペースではないので `excludeMatches` で除く。コード側の `isTrustedPageOrigin` と対で維持しないと、「content script は注入されるがパレットがメッセージを拒否し、透明なオーバーレイだけがページを覆う」という最悪の壊れ方をする（実際に踏んだ）
 
 ### 6.3.1 ツールチェーン
 
@@ -795,6 +797,10 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | E2E | Playwright（persistent context で `.output/chrome-mv3` を読み込む） | キーバインド・IME・iframe 分離 | 「変換中の Enter では遷移しない」「Backlog ページのスクリプトからパレットの DOM に到達できない」「⌘K からモーダル表示までが 100ms 以内」 |
 | 手動 | 実機 | ブラウザ差分・ダークテーマ・OAuth | チェックリストを `docs/qa-checklist.md` に置く |
 
+**E2E はスペースを偽装して閉じた環境で回す。** 本物のスペースに繋ぐと認証と実データに依存して壊れる。ローカルの HTTPS サーバを立て、`--host-resolver-rules=MAP demo.backlog.jp 127.0.0.1:<port>` と `--ignore-certificate-errors` で `https://demo.backlog.jp` として見せると、content script の `matches` を満たしたまま完全にオフラインで検証できる。M0 の #7・#14 はこの方法で確認した。
+
+**Playwright で拡張を読み込むときの注意**: 既定引数に `--disable-extensions` が入るので `ignoreDefaultArgs: ['--disable-extensions']` が必要。また branded Chrome（`channel: 'chrome'`）は 137 以降 `--load-extension` を無視するため、Playwright が入れる Chrome for Testing を使う。
+
 **IME の E2E は CDP の `Input.imeSetComposition` で駆動する**（`keyboard.type` では `isComposing` が再現できない）。ここは回帰が怖い箇所なので最初に作る。
 
 ---
@@ -849,7 +855,7 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 
 ## 18. 未決事項（実装前に確認が必要）
 
-`#1` `#6` `#7` が最優先。実装方針そのものを変える。
+`#1` `#6` が最優先。実装方針そのものを変える。#7・#14 は M0 で解決済み。
 
 | # | 項目 | ブロックする範囲 | 確認方法 |
 |---|---|---|---|
@@ -859,12 +865,12 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認 |
 | 5 | API レートリミットの実値 | 並列数、既定スコープ、B4 の件数予告の可否 | ドキュメント + 実測（M1） |
 | 6 | `commands` からの `sidePanel.open()` がユーザー操作起点として通るか、表示ラグ | サイドパネルの起動経路 | スパイク（M0） |
-| 7 | クロスオリジン iframe へのフォーカス移譲（`open` 後の `input.focus()`） | **パレットが機能するかの前提** | スパイク（M0） |
+| ~~7~~ | クロスオリジン iframe へのフォーカス移譲（`open` 後の `input.focus()`） | パレットが機能するかの前提 | **解決（M0）**。Chrome で `document.activeElement` が iframe 内の `input` になり、↑↓ でもフォーカスは `input` に留まったまま `aria-activedescendant` が動くことを実機で確認 |
 | 8 | 各ページの `document.title` 形式、SPA 遷移時の更新タイミング | 表示キャッシュの精度 | 実機確認 |
 | 9 | 非表示 iframe 常時注入のメモリ・初期化コスト | 注入戦略（常時 / 遅延） | タブ多数環境で計測 |
 | 10 | 本番の見た目（配色・密度・タイポグラフィ）の確定 | 見た目のみ。構造とロジックはブロックしない | `packages/ui` の Storybook 上で後から調整する（§8）。M2 のドッグフーディング後に着手 |
 | 11 | モック B4 の「広げれば N 件」を実装するか | 投機的リクエストによるレート消費 | #5 の結果次第。落とす場合は件数を伏せる |
-| **14** | `use_dynamic_url: true` と `createIframeUi` が両立するか | パレットが表示されるかの前提。`runtime.getURL()` が返す静的 URL で iframe が読めない場合、動的 URL の取得方法を変える | M0 で実機確認（#7 と同時に潰せる） |
+| ~~14~~ | `use_dynamic_url: true` と `createIframeUi` が両立するか | パレットが表示されるかの前提 | **解決（M0）**。`runtime.getURL('/palette.html')` は毎回異なる GUID ホストの URL を返し、iframe はそれで読める。読み込まれた文書の `location.origin` は**静的な拡張オリジン**になるので、postMessage の origin 検証は `getURL('/')` 由来の値で一致する。ページの子リソース（チャンク・CSS）も静的オリジンに解決されるため WAR への追加宣言は不要 |
 | 15 | TypeScript 7・Vitest 5・Storybook 10 の組み合わせで想定外の非互換がないか | ビルドとテストの土台 | M0 で全ゲートを通して確認済み。以後はバージョン更新時に見る |
 | 12 | Enterprise カスタムドメインの動的 content script 登録 | オンプレ環境での動作 | `optional_host_permissions` + `registerContentScripts` の実機確認 |
 | 13 | D4 の属性語検出をどこまでやるか | モーダルの入力解釈の範囲 | **プロダクト判断が必要**（本文書 §20） |

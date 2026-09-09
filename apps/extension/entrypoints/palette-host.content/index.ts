@@ -19,12 +19,21 @@ function readPageContext(): PageContext {
 
 export default defineContentScript({
   matches: ['https://*.backlog.jp/*', 'https://*.backlog.com/*'],
+  // apex と www はスペースではない（wxt.config.ts の NOT_A_SPACE と同じ理由）
+  excludeMatches: [
+    'https://backlog.jp/*',
+    'https://www.backlog.jp/*',
+    'https://backlog.com/*',
+    'https://www.backlog.com/*',
+  ],
 
   main(ctx) {
     const extensionOrigin = new URL(browser.runtime.getURL('/')).origin;
     let iframeEl: HTMLIFrameElement | undefined;
     let wrapperEl: HTMLElement | undefined;
     let isOpen = false;
+    let isLoaded = false;
+    let hasPendingOpen = false;
 
     const ui = createIframeUi(ctx, {
       page: '/palette.html',
@@ -49,6 +58,19 @@ export default defineContentScript({
         iframe.style.height = '100%';
         iframe.style.border = '0';
         iframe.style.colorScheme = 'normal';
+
+        /*
+         * 先読み注入なので、初回 ⌘K が load より先に来ることがある。
+         * その場合は open を保留し、読み込み完了後に開く。
+         */
+        iframe.addEventListener('load', () => {
+          isLoaded = true;
+          if (import.meta.env.DEV) console.debug('[bp] palette iframe を読み込んだ');
+          if (hasPendingOpen) {
+            hasPendingOpen = false;
+            open();
+          }
+        });
       },
     });
 
@@ -60,6 +82,13 @@ export default defineContentScript({
 
     const open = () => {
       if (wrapperEl === undefined) return;
+
+      if (!isLoaded) {
+        hasPendingOpen = true;
+        if (import.meta.env.DEV) console.debug('[bp] iframe の読み込み待ち。open を保留した');
+        return;
+      }
+
       wrapperEl.style.display = 'block';
       isOpen = true;
       // フォーカスは iframe 自身が受け取る。ページ側からは触らない（§9.4）
@@ -75,6 +104,8 @@ export default defineContentScript({
     ctx.addEventListener(window, 'keydown', (event) => {
       const isPaletteKey = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
       if (!isPaletteKey) return;
+
+      if (import.meta.env.DEV) console.debug('[bp] keydown 経路で ⌘K を受けた');
 
       event.preventDefault();
       event.stopPropagation();
@@ -95,9 +126,15 @@ export default defineContentScript({
     });
 
     browser.runtime.onMessage.addListener((message: unknown) => {
-      if (typeof message === 'object' && message !== null) {
-        if ((message as { t?: unknown }).t === 'open-palette') open();
-      }
+      if (typeof message !== 'object' || message === null) return;
+      if ((message as { t?: unknown }).t !== 'open-palette') return;
+
+      if (import.meta.env.DEV) console.debug('[bp] commands 経路で ⌘K を受けた');
+      open();
     });
+
+    if (import.meta.env.DEV) {
+      console.debug('[bp] content script を注入した', window.location.origin);
+    }
   },
 });

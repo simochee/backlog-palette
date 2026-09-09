@@ -1,60 +1,49 @@
 import { PaletteSurface } from '@backlog-palette/ui';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  type FromIframe,
-  isToIframe,
-  isTrustedPageOrigin,
-  type PageContext,
-} from '../../src/messaging/window.ts';
+import { useEffect, useRef, useState } from 'react';
+import type { HostChannel } from '../../src/messaging/hostChannel.ts';
+import type { PageContext } from '../../src/messaging/window.ts';
 import { emptyStateSections } from './placeholderData.ts';
+
+export type PaletteProps = {
+  channel: HostChannel;
+};
 
 /**
  * M0 スパイクの検証対象（実装プラン §18-7）:
  * クロスオリジン iframe が open を受けて自分で input にフォーカスを移せるか。
  */
-export function Palette() {
+export function Palette({ channel }: PaletteProps) {
   const [ctx, setCtx] = useState<PageContext | undefined>(undefined);
   const surfaceRef = useRef<HTMLDivElement>(null);
-  const pageOrigin = useRef<string | undefined>(undefined);
-
-  /** targetOrigin に '*' を使わない。開いてきたページのオリジンにだけ返す（§2.3） */
-  const send = useCallback((message: FromIframe) => {
-    const target = pageOrigin.current;
-    if (target === undefined) return;
-    window.parent.postMessage(message, target);
-  }, []);
 
   useEffect(() => {
-    const onMessage = (event: MessageEvent<unknown>) => {
-      if (!isTrustedPageOrigin(event.origin)) return;
-      if (!isToIframe(event.data)) return;
-
-      if (event.data.t === 'close') {
+    const unsubscribe = channel.subscribe((message) => {
+      if (message.t === 'close') {
         setCtx(undefined);
         return;
       }
 
-      pageOrigin.current = event.origin;
-      setCtx(event.data.ctx);
+      setCtx(message.ctx);
 
       // フォーカスは開いた側ではなく自分で取る。以降のキー入力は iframe に閉じ、
       // Backlog の単キーショートカット（j/k 等）が誤爆しない（§9.4）
       requestAnimationFrame(() => {
         surfaceRef.current?.querySelector('input')?.focus();
       });
-    };
+    });
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !event.isComposing) send({ t: 'close' });
+      if (event.key === 'Escape' && !event.isComposing) channel.send({ t: 'close' });
     };
-
-    window.addEventListener('message', onMessage);
     window.addEventListener('keydown', onKeyDown);
+
+    if (import.meta.env.DEV) console.debug('[bp] palette iframe: 受信を開始した');
+
     return () => {
-      window.removeEventListener('message', onMessage);
+      unsubscribe();
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [send]);
+  }, [channel]);
 
   if (ctx === undefined) return null;
 
@@ -63,7 +52,7 @@ export function Palette() {
       className="backdrop"
       data-bp-theme=""
       onPointerDown={(event) => {
-        if (event.target === event.currentTarget) send({ t: 'close' });
+        if (event.target === event.currentTarget) channel.send({ t: 'close' });
       }}
     >
       <div className="slot" ref={surfaceRef}>
