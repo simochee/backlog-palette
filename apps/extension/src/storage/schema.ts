@@ -41,7 +41,12 @@ export const DEFAULT_SETTINGS: Settings = {
   issueKeyFirst: true,
   defaultSurface: 'modal',
   colorScheme: 'system',
-  keywordTarget: 'subjectAndBody',
+  /*
+   * 既定は最も保守的な 'subject'。keyword が本文にも一致するかは未確認
+   * （実装プラン §18-1）で、確認できていない範囲を既定にすると
+   * 「検索したのに出てこない」を既定の体験にしてしまう。
+   */
+  keywordTarget: 'subject',
 };
 
 export const spacesItem = storage.defineItem<SpaceConnection[]>('local:spaces', {
