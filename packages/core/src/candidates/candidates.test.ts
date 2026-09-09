@@ -172,19 +172,35 @@ describe('自由テキストを打ったとき', () => {
 
   it('かなで打ってもカタカナの索引に一致する', () => {
     expect(rowIds(build('ぼーど', board))).toEqual([
-      'searchInPanel',
       'page-board',
       'issue-board',
       'command-board',
+      'searchInPanel',
     ]);
+  });
+
+  it('強く一致するページがあれば、それが先頭でサイドパネル検索は後ろに回る', () => {
+    // ⌘K → 語 → Enter で目的のページに着けること（打鍵数の予算）を優先する
+    const sections = build('ぼーど', board);
+
+    expect(sectionIds(sections)).toEqual(['pages', 'commands', 'pinned']);
+    expect(sections[0]?.rows[0]?.id).toBe('page-board');
+    expect(sections[0]?.rows[0]?.selected).toBe(true);
+  });
+
+  it('弱い一致しかなければサイドパネル検索が先頭に残る', () => {
+    // 探しものを打ったのに知らないページへ飛ぶ事故を防ぐ
+    const sections = build('ぼど', board);
+
+    expect(sectionIds(sections)[0]).toBe('pinned');
+    expect(rowIds(sections)[0]).toBe('searchInPanel');
   });
 
   it('ページとコマンドは別のセクションに分かれ、コマンドが後に来る', () => {
     const sections = build('ぼーど', board);
 
-    expect(sectionIds(sections)).toEqual(['pinned', 'pages', 'commands']);
-    expect(sections[1]?.label).toBe('ページ');
-    expect(sections[2]?.label).toBe('コマンド');
+    expect(sections[0]?.label).toBe('ページ');
+    expect(sections[1]?.label).toBe('コマンド');
   });
 
   it('一致が 0 件ならサイドパネルで検索だけが残る', () => {
@@ -204,19 +220,19 @@ describe('プレフィックスを付けたとき', () => {
   ];
 
   it('> はコマンドだけに絞る', () => {
-    expect(rowIds(build('>ステータス', index))).toEqual(['searchInPanel', 'command-status']);
+    expect(rowIds(build('>ステータス', index))).toEqual(['command-status', 'searchInPanel']);
   });
 
   it('@ はユーザーだけに絞る', () => {
-    expect(rowIds(build('@田中', index))).toEqual(['searchInPanel', 'user-tanaka']);
+    expect(rowIds(build('@田中', index))).toEqual(['user-tanaka', 'searchInPanel']);
   });
 
   it('# はプロジェクトだけに絞る。プロジェクトキーの別名でも一致する', () => {
-    expect(rowIds(build('#WEB', index))).toEqual(['searchInPanel', 'project-web']);
+    expect(rowIds(build('#WEB', index))).toEqual(['project-web', 'searchInPanel']);
   });
 
   it('全角のプレフィックスも同じように効く', () => {
-    expect(rowIds(build('＞ステータス', index))).toEqual(['searchInPanel', 'command-status']);
+    expect(rowIds(build('＞ステータス', index))).toEqual(['command-status', 'searchInPanel']);
   });
 
   it('絞った結果が 0 件でもサイドパネルで検索は残る', () => {
@@ -232,12 +248,12 @@ describe('並びの不変条件', () => {
   it('セクションの順序は固定で、よく使うコマンドでも上のセクションを追い越さない', () => {
     const sections = build('ぼーど', board, { frecencyOf: frecency({ 'command-board': 1000 }) });
 
-    expect(sectionIds(sections)).toEqual(['pinned', 'pages', 'commands']);
+    expect(sectionIds(sections)).toEqual(['pages', 'commands', 'pinned']);
     expect(rowIds(sections)).toEqual([
-      'searchInPanel',
       'page-board',
       'issue-board',
       'command-board',
+      'searchInPanel',
     ]);
   });
 
@@ -248,9 +264,9 @@ describe('並びの不変条件', () => {
     ];
 
     expect(rowIds(build('ぼーど', index, { frecencyOf: frecency({ 'board-b': 10 }) }))).toEqual([
-      'searchInPanel',
       'board-b',
       'board-a',
+      'searchInPanel',
     ]);
   });
 
@@ -268,7 +284,7 @@ describe('行数の上限', () => {
 
   it('既定では 1 セクション 5 行までで、打ち切った最後の行が続きの入口になる', () => {
     const sections = build('ページ', many);
-    const rows = sections[1]?.rows ?? [];
+    const rows = sections[0]?.rows ?? [];
 
     expect(rows).toHaveLength(5);
     expect(rows[4]?.hint).toBe('more');
@@ -282,9 +298,9 @@ describe('行数の上限', () => {
     ];
     const sections = build('ページ', withCommand, { limits: { perSection: 2, total: 3 } });
 
-    expect(sectionIds(sections)).toEqual(['pinned', 'pages']);
-    expect(rowIds(sections)).toEqual(['searchInPanel', 'page-1', 'page-2']);
-    expect(sections[1]?.rows[1]?.hint).toBe('more');
+    expect(sectionIds(sections)).toEqual(['pages', 'commands']);
+    expect(rowIds(sections)).toEqual(['page-1', 'page-2', 'command-page']);
+    expect(sections[1]?.rows[0]?.hint).toBe('more');
   });
 
   it('すべて収まるときは続きの入口を出さない', () => {
@@ -307,9 +323,9 @@ describe('行の見た目', () => {
   it('全スペース表示のときだけ出自バッジを付ける', () => {
     const index = [entry({ id: 'page-board', kind: 'page', text: 'ボード', spaceKey: 'acme' })];
 
-    expect(build('ぼーど', index, { showSpaceBadges: true })[1]?.rows[0]?.avatar).toEqual({
+    expect(build('ぼーど', index, { showSpaceBadges: true })[0]?.rows[0]?.avatar).toEqual({
       label: 'acme',
     });
-    expect(build('ぼーど', index)[1]?.rows[0]?.avatar).toBeUndefined();
+    expect(build('ぼーど', index)[0]?.rows[0]?.avatar).toBeUndefined();
   });
 });

@@ -140,6 +140,16 @@ function issueKeySections(
   return [pinned, ...prefixed];
 }
 
+/**
+ * ローカル一致がこの強さ以上なら、サイドパネル検索より前に出す。
+ *
+ * 前方一致（match.ts の帯で 800）を境にする。`ぼーど` と打ってボードへ
+ * 行けないと「⌘K + 語 + Enter」で完結しなくなる（§7 の打鍵数の予算）。
+ * 逆にこれより弱い一致で先頭を奪うと、探しものを打ったのに知らない
+ * ページへ飛ぶ事故が起きる。
+ */
+const STRONG_LOCAL_MATCH = 0.8;
+
 function freeTextSections(
   term: string,
   entries: readonly IndexEntry[],
@@ -147,21 +157,25 @@ function freeTextSections(
 ): CandidateSection[] {
   if (term === '') return [];
 
-  const pinned: CandidateSection = {
-    id: SECTION_PINNED,
-    rows: [
-      {
-        id: 'searchInPanel',
-        kind: 'filter',
-        title: options.labels.searchInPanel(term),
-        sub: options.labels.searchInPanelSub,
-        tone: 'accent',
-        hint: 'enter',
-      },
-    ],
-  };
+  const searchRow = {
+    id: 'searchInPanel',
+    kind: 'filter',
+    title: options.labels.searchInPanel(term),
+    sub: options.labels.searchInPanelSub,
+    tone: 'accent',
+    hint: 'enter',
+  } as const;
 
-  return [pinned, ...localSections(scoreByText(term, entries, options), options)];
+  const scored = scoreByText(term, entries, options);
+  const strongest = scored.reduce((max, { candidate }) => Math.max(max, candidate.matchScore), 0);
+
+  // 強い一致があるときは、その行を先頭に残したまま検索行を下へ回す
+  if (strongest >= STRONG_LOCAL_MATCH) {
+    const local = localSections(scored, options);
+    return [...local, { id: SECTION_PINNED, rows: [searchRow] }];
+  }
+
+  return [{ id: SECTION_PINNED, rows: [searchRow] }, ...localSections(scored, options)];
 }
 
 function scopedSections(kind: RowKind, term: string, options: BuildOptions): CandidateSection[] {
