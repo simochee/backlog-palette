@@ -39,7 +39,13 @@ export default defineContentScript({
 
     const ui = createIframeUi(ctx, {
       page: '/palette.html',
-      position: 'overlay',
+      /*
+       * 'overlay' ではなく 'modal'。overlay は wrapper に width:0 / height:0 を
+       * 付けたうえで iframe を position:absolute にするため、iframe が 0×0 に潰れる。
+       * modal は iframe 自体を position:fixed の全面にしてくれる。
+       */
+      position: 'modal',
+      zIndex: 2_147_483_647,
       anchor: 'body',
       onMount(wrapper, iframe) {
         wrapperEl = wrapper;
@@ -52,10 +58,11 @@ export default defineContentScript({
          * すべて拡張ページの内側で完結させられるので、ページのレイアウトに触らず、
          * 高さ同期も要らなくなる。
          */
-        wrapper.style.position = 'fixed';
-        wrapper.style.inset = '0';
-        wrapper.style.zIndex = '2147483647';
         wrapper.style.display = 'none';
+        /*
+         * iframe には既定サイズ（300x150）が効くため、position:fixed に
+         * inset:0 が付いていても引き伸ばされない。幅高さを明示する。
+         */
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = '0';
