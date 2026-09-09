@@ -862,7 +862,8 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | 1 | `keyword` が件名のみか本文・コメントにも一致するか（課題 / Wiki / ドキュメント） | **サイドパネル検索の方針全体**。件名のみなら `plain` 取得 + クライアント側照合という重い代替が必要。D5 の「キーワード対象」セレクタが退避先 | 社内 API チーム、または検証スペースで実測（M1） |
 | 2 | OAuth のリダイレクト URI を**ブラウザごとに複数登録**できるか（`chromiumapp.org` / Firefox の getRedirectURL） | OAuth を既定にできるか、Firefox 対応の可否 | OAuth アプリ登録画面で確認 |
 | 3 | Backlog Enterprise での OAuth 可用性 | API キーフォールバックの必要範囲 | 製品仕様の確認 |
-| 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認 |
+| 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認。**`commands` に割り当てがある間はブラウザがキーを消費し、ページに `keydown` が届かない**ことは M0 で確認済み。content script 側の捕捉はショートカット解除時の保険 |
+| 16 | Firefox 提出の追加要件 | M7 のみ | `data_collection_permissions`（2025-11-03 以降の新規拡張に必須）と `browser_specific_settings.gecko.id` が要る。`sidePanel` は Firefox が知らない権限なので、AMO の lint 対策として M6 でビルドごとに出し分ける |
 | 5 | API レートリミットの実値 | 並列数、既定スコープ、B4 の件数予告の可否 | ドキュメント + 実測（M1） |
 | 6 | `commands` からの `sidePanel.open()` がユーザー操作起点として通るか、表示ラグ | サイドパネルの起動経路 | スパイク（M0） |
 | ~~7~~ | クロスオリジン iframe へのフォーカス移譲（`open` 後の `input.focus()`） | パレットが機能するかの前提 | **解決（M0）**。Chrome で `document.activeElement` が iframe 内の `input` になり、↑↓ でもフォーカスは `input` に留まったまま `aria-activedescendant` が動くことを実機で確認 |

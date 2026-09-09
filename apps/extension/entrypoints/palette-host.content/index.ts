@@ -85,6 +85,7 @@ export default defineContentScript({
 
       if (!isLoaded) {
         hasPendingOpen = true;
+        isOpen = true;
         if (import.meta.env.DEV) console.debug('[bp] iframe の読み込み待ち。open を保留した');
         return;
       }
@@ -98,9 +99,24 @@ export default defineContentScript({
     const close = () => {
       if (wrapperEl === undefined) return;
       wrapperEl.style.display = 'none';
+      // 読み込み待ちの間に閉じられたら、読み込み完了後に開き直さない
+      hasPendingOpen = false;
       isOpen = false;
     };
 
+    const toggle = () => {
+      if (isOpen) {
+        close();
+      } else {
+        open();
+      }
+    };
+
+    /*
+     * commands にショートカットが割り当たっていれば、キーはブラウザが消費し、
+     * ページに keydown は届かない（通常はこちらが本線）。
+     * これは chrome://extensions/shortcuts で解除された場合の保険。
+     */
     ctx.addEventListener(window, 'keydown', (event) => {
       const isPaletteKey = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
       if (!isPaletteKey) return;
@@ -109,11 +125,7 @@ export default defineContentScript({
 
       event.preventDefault();
       event.stopPropagation();
-      if (isOpen) {
-        close();
-      } else {
-        open();
-      }
+      toggle();
     });
 
     ctx.addEventListener(window, 'message', (event) => {
@@ -130,7 +142,7 @@ export default defineContentScript({
       if ((message as { t?: unknown }).t !== 'open-palette') return;
 
       if (import.meta.env.DEV) console.debug('[bp] commands 経路で ⌘K を受けた');
-      open();
+      toggle();
     });
 
     if (import.meta.env.DEV) {

@@ -20,7 +20,6 @@ const CHROME_PROFILE = resolve(import.meta.dirname, '.chrome-profile');
 const DEV_CHROME = process.env.BP_DEV_CHROME_BINARY;
 
 export default defineConfig({
-  srcDir: '.',
   modules: ['@wxt-dev/module-react'],
   // 自動 import を使わない。どのモジュールから来た関数かを読める状態を保つ
   imports: false,
@@ -52,10 +51,10 @@ export default defineConfig({
     startUrls: process.env.BP_DEV_START_URL === undefined ? [] : [process.env.BP_DEV_START_URL],
   },
 
-  manifest: ({ browser }) => ({
+  manifest: {
     name: 'Backlog Palette',
     description: 'Cmd+K で Backlog のどこへでも。',
-    permissions: ['storage', 'tabs', ...(browser === 'chrome' ? ['sidePanel'] : [])],
+    permissions: ['storage', 'tabs', 'sidePanel'],
     optional_permissions: ['history'],
     host_permissions: BACKLOG_MATCHES,
     commands: {
@@ -72,5 +71,5 @@ export default defineConfig({
         use_dynamic_url: true,
       },
     ],
-  }),
+  },
 });
