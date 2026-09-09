@@ -1,3 +1,4 @@
+import type { IndexEntry } from '@backlog-palette/core';
 import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { RowView } from './rowView.ts';
 import type { PageContext } from './window.ts';
@@ -20,6 +21,16 @@ export type PaletteSection = {
 export type BootstrapState = {
   /** 空状態のセクション。API 応答を待たずに描ける内容だけを含む（§5.3） */
   sections: readonly PaletteSection[];
+  /**
+   * 打鍵ごとの一致に使う索引。開いた時点で丸ごと渡す。
+   *
+   * 打鍵ごとに Service Worker と往復すると、応答より先に Enter を押せてしまい
+   * 1 打鍵前の候補で遷移する。往復を無くせばこの競合自体が消え、
+   * 1 打鍵 16ms の予算（§14）も守りやすい。
+   */
+  index: readonly IndexEntry[];
+  /** 行 id → 起きること */
+  actions: Record<string, RowAction>;
   connectedSpaces: readonly { spaceKey: string; displayName: string }[];
   /** 学習がオフなら並びに frecency を使わない */
   learningEnabled: boolean;
@@ -39,22 +50,22 @@ export type VisitRecord = {
   kind: 'issue' | 'wiki' | 'document' | 'project';
 };
 
-export type LocalQuery = {
-  input: string;
-  ctx: PageContext;
-};
-
-export type LocalResult = {
-  sections: readonly PaletteSection[];
-  /** 行 id → 遷移先。URL を持たない行（コマンドなど）は含まない */
-  urls: Record<string, string>;
-};
+/**
+ * 行を選んだときに起きること。
+ *
+ * UI は「何が起きるか」を知らずに id を返すだけ。実際の遷移とコピーは
+ * Service Worker が行う（§2.3）。
+ */
+export type RowAction =
+  | { kind: 'navigate'; url: string; target?: 'currentTab' | 'newTab' }
+  | { kind: 'copy'; text: string; toast: string };
 
 type ExtProtocol = {
-  getBootstrap(surface: Surface): BootstrapState;
-  /** 打鍵ごとに呼ばれる。ローカル索引だけで応答し、API は叩かない（§7.2） */
-  localCandidates(query: LocalQuery): LocalResult;
+  /** パレットを開いたときに 1 回だけ。空状態と索引をまとめて渡す */
+  getBootstrap(request: { surface: Surface; ctx: PageContext }): BootstrapState;
   navigate(request: NavigateRequest): void;
+  /** 行を選んだときの実行。UI は何が起きるかを知らずに渡す */
+  runRowAction(action: RowAction): void;
   /** content script が閲覧を記録する。API は呼ばない（§9 の表示キャッシュ） */
   recordVisit(record: VisitRecord): void;
 };

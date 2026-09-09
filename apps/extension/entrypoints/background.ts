@@ -3,7 +3,6 @@ import { defineBackground } from 'wxt/utils/define-background';
 import { onMessage } from '../src/messaging/ext.ts';
 import { isTrustedPageOrigin } from '../src/messaging/window.ts';
 import { buildBootstrap } from '../src/services/bootstrap.ts';
-import { localCandidates } from '../src/services/localIndex.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
 
 /**
@@ -12,10 +11,32 @@ import { rememberVisit } from '../src/storage/displayCache.ts';
  * 本実装では認証・検索・遷移をここに置く。パレット UI からは
  * runtime.sendMessage 経由でしか呼べない（実装プラン §6.1）。
  */
-export default defineBackground(() => {
-  onMessage('getBootstrap', ({ data }) => buildBootstrap(data, Date.now()));
+async function navigateTo(href: string, target: 'currentTab' | 'newTab'): Promise<void> {
+  const url = new URL(href);
+  if (!isTrustedPageOrigin(url.origin)) return;
 
-  onMessage('localCandidates', ({ data }) => localCandidates(data.input, data.ctx, Date.now()));
+  if (target === 'newTab') {
+    await browser.tabs.create({ url: url.href });
+    return;
+  }
+
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id !== undefined) await browser.tabs.update(tab.id, { url: url.href });
+}
+
+export default defineBackground(() => {
+  onMessage('getBootstrap', ({ data }) => buildBootstrap(data.surface, data.ctx, Date.now()));
+
+  /*
+   * 行の実行。遷移は SW が行うが、クリップボードは Service Worker から
+   * 書けない（navigator.clipboard が無く、DOM も持たない）。コピーだけは
+   * 呼び出した拡張ページに返して、そちらで書き込ませる。
+   */
+  onMessage('runRowAction', async ({ data }) => {
+    if (data.kind === 'navigate') {
+      await navigateTo(data.url, data.target ?? 'currentTab');
+    }
+  });
 
   onMessage('recordVisit', ({ data }) => {
     const { spaceKey, id, ...entry } = data;
@@ -27,18 +48,7 @@ export default defineBackground(() => {
    * 受け取るのは URL だけなので、拡張が組み立てたもの以外が来ないよう
    * オリジンを確認してから開く。
    */
-  onMessage('navigate', async ({ data }) => {
-    const url = new URL(data.url);
-    if (!isTrustedPageOrigin(url.origin)) return;
-
-    if (data.target === 'newTab') {
-      await browser.tabs.create({ url: url.href });
-      return;
-    }
-
-    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id !== undefined) await browser.tabs.update(tab.id, { url: url.href });
-  });
+  onMessage('navigate', ({ data }) => navigateTo(data.url, data.target));
 
   /*
    * サイドパネルはツールバーのアイコンからも開けるようにする。

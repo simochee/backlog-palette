@@ -67,6 +67,11 @@ export default defineContentScript({
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = '0';
+        /*
+         * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
+         * Permissions Policy で許可する必要がある。コピーコマンドの前提。
+         */
+        iframe.allow = 'clipboard-write';
         iframe.style.colorScheme = 'normal';
 
         /*

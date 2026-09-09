@@ -59,7 +59,7 @@ export default defineConfig({
   manifest: {
     name: 'Backlog Palette',
     description: 'Cmd+K で Backlog のどこへでも。',
-    permissions: ['storage', 'tabs', 'sidePanel'],
+    permissions: ['storage', 'tabs', 'sidePanel', 'clipboardWrite', 'identity'],
     optional_permissions: ['history'],
     host_permissions: BACKLOG_MATCHES,
     commands: {

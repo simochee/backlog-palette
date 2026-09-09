@@ -1,7 +1,9 @@
 import type { BootstrapState, PaletteSection, Surface } from '../messaging/ext.ts';
 import type { RowView } from '../messaging/rowView.ts';
+import type { PageContext } from '../messaging/window.ts';
 import { recentVisits } from '../storage/displayCache.ts';
 import { type DisplayCacheEntry, settingsItem, spacesItem } from '../storage/schema.ts';
+import { buildLocalIndex } from './localIndex.ts';
 
 const KIND_TO_ROW: Record<DisplayCacheEntry['kind'], RowView['kind']> = {
   issue: 'issue',
@@ -33,11 +35,16 @@ function toRow(entry: DisplayCacheEntry, index: number): RowView & { id: string 
  * 後から追記する経路（M3 以降）に分ける。未接続・認証前・オフラインでも
  * 同じ内容が出ることが、この分離の目的。
  */
-export async function buildBootstrap(surface: Surface, now: number): Promise<BootstrapState> {
-  const [visits, spaces, settings] = await Promise.all([
+export async function buildBootstrap(
+  surface: Surface,
+  ctx: PageContext,
+  now: number,
+): Promise<BootstrapState> {
+  const [visits, spaces, settings, local] = await Promise.all([
     recentVisits(now, surface === 'modal' ? 8 : 12),
     spacesItem.getValue(),
     settingsItem.getValue(),
+    buildLocalIndex(ctx, now),
   ]);
 
   const sections: PaletteSection[] = [];
@@ -52,6 +59,8 @@ export async function buildBootstrap(surface: Surface, now: number): Promise<Boo
 
   return {
     sections,
+    index: local.entries,
+    actions: local.actions,
     connectedSpaces: spaces.map((space) => ({
       spaceKey: space.spaceKey,
       displayName: space.displayName,
