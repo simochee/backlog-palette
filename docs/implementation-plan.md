@@ -855,16 +855,16 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 
 ## 18. 未決事項（実装前に確認が必要）
 
-`#1` `#6` が最優先。実装方針そのものを変える。#7・#14 は M0 で解決済み。
+実装方針を変えうる未決は解消した。#1・#2・#3・#5・#7・#13・#14・#17・#19 は解決済み。
 
 | # | 項目 | ブロックする範囲 | 確認方法 |
 |---|---|---|---|
-| **1** | `keyword` が件名のみか本文・コメントにも一致するか（課題 / Wiki / ドキュメント） | **サイドパネル検索の方針全体** | 公式ドキュメントに記述が無いことを確認済み（`docs/backlog-facts.md`）。`scripts/verify-backlog-api.mjs` を用意したので、**API キーを持つ人が実行する**しかない |
+| ~~1~~ | `keyword` の一致範囲 | サイドパネル検索の方針全体 | **解決**。課題は本文とコメントに、Wiki は本文に一致する（実測、`docs/backlog-facts.md` §6.1）。クライアント側で照合する重い代替は不要になった |
 | ~~2~~ | OAuth のリダイレクト URI を複数登録できるか | OAuth を既定にできるか | **解決**。OAuth アプリは登録できる |
 | ~~3~~ | 複数スペースに属するときの認証情報 | 認証モデル | **解決**。API キーも OAuth もスペースごとに別なので、スペース単位の「接続」という設計のままでよい |
 | 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認。**`commands` に割り当てがある間はブラウザがキーを消費し、ページに `keydown` が届かない**ことは M0 で確認済み。content script 側の捕捉はショートカット解除時の保険 |
 | 16 | Firefox 提出の追加要件 | M7 のみ | `data_collection_permissions`（2025-11-03 以降の新規拡張に必須）と `browser_specific_settings.gecko.id` が要る。`sidePanel` は Firefox が知らない権限なので、AMO の lint 対策として M6 でビルドごとに出し分ける |
-| ~~5~~ | API レートリミットの実値 | 並列数、既定スコープ | **実質解決**。プラン別の実値は非公開だが `GET /api/v2/rateLimit` で実行時に取得できる。トークンバケットの容量をハードコードせず実測値で初期化する。課題・Wiki の一覧は最も厳しい Search 枠 |
+| ~~5~~ | API レートリミットの実値 | 並列数、既定スコープ | **解決**。`GET /api/v2/rateLimit` が実値を返す（実測: read 600 / search 150 / update 150）。検索は search 枠を消費する。接続時に取得してトークンバケットを初期化する |
 | 6 | `commands` からの `sidePanel.open()` がユーザー操作起点として通るか、表示ラグ | サイドパネルの起動経路 | スパイク（M0） |
 | ~~7~~ | クロスオリジン iframe へのフォーカス移譲（`open` 後の `input.focus()`） | パレットが機能するかの前提 | **解決（M0）**。Chrome で `document.activeElement` が iframe 内の `input` になり、↑↓ でもフォーカスは `input` に留まったまま `aria-activedescendant` が動くことを実機で確認 |
 | 8 | 各ページの `document.title` 形式、SPA 遷移時の更新タイミング | 表示キャッシュの精度 | 実機確認。現状は ` | ` 区切りを仮定し、見つからなければプロジェクト名を推測しない実装にしてある |
@@ -874,7 +874,7 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | ~~14~~ | `use_dynamic_url: true` と `createIframeUi` が両立するか | パレットが表示されるかの前提 | **解決（M0）**。`runtime.getURL('/palette.html')` は毎回異なる GUID ホストの URL を返し、iframe はそれで読める。読み込まれた文書の `location.origin` は**静的な拡張オリジン**になるので、postMessage の origin 検証は `getURL('/')` 由来の値で一致する。ページの子リソース（チャンク・CSS）も静的オリジンに解決されるため WAR への追加宣言は不要 |
 | ~~17~~ | Phase 1 のページ移動の URL | `core/nav` | **解決**。`packages/core/src/nav/pages.ts` に反映済み。お知らせ（サイドパネル）と担当している課題（ダッシュボードの一部）は独立した URL を持たないため、ページとして定義せずダッシュボードの別名にした |
 | 18 | 課題キーの厳密な文法（プロジェクトキーの先頭文字・最短長・最大長） | 課題キー判定の正規表現 | 公式資料で確定できず、Nulab の公開 OSS 内でも表記が割れている。当面は `^[A-Z][A-Z0-9_]*-\d+$` で運用し、実在キーとの突き合わせで確定させる |
-| ~~19~~ | Wiki を横断検索の対象に含めるか | サイドパネル検索の範囲 | **含める**（決定）。`GET /api/v2/wikis` は `projectIdOrKey` 必須なので参加プロジェクト数の並列になり、本文が返らずスニペットも作れない。コストを承知で対象に残す |
+| ~~19~~ | Wiki を横断検索の対象に含めるか | サイドパネル検索の範囲 | **含める**（決定）。`projectIdOrKey` 必須なので参加プロジェクト数の並列になる。ただし一覧に本文 `content` が含まれるためスニペットは作れる（当初の調査は誤り）。`count` が効かず全件返るので、**キーワード無しの一覧取得はしない** |
 | 20 | 一般ユーザーでの `GET /api/v2/users` の可否 | `@ユーザー` の先読み | 管理者ロールが必要。`/api/v2/projects/:key/users` の積み上げが現実解 |
 | 15 | TypeScript 7・Vitest 5・Storybook 10 の組み合わせで想定外の非互換がないか | ビルドとテストの土台 | M0 で全ゲートを通して確認済み。以後はバージョン更新時に見る |
 | 12 | Enterprise カスタムドメインの動的 content script 登録 | オンプレ環境での動作 | `optional_host_permissions` + `registerContentScripts` の実機確認 |
@@ -908,4 +908,6 @@ Backlog の API は **`backlog-js`（Nulab 公式の API v2 クライアント�
 
 ただし `packages/core` からは触らない。API は `apps/extension/src/services/backlog/` に閉じ、`core` は素の値だけを受け取る（§6.2）。レート制御・リトライ・スペースごとのトークン差し替えはこのラッパーの責務で、`GET /api/v2/rateLimit` から得た実値でトークンバケットを初期化する。
 
-**残る未確認は `keyword` の一致範囲だけ**（§18-1）。`scripts/verify-backlog-api.mjs` を API キー付きで実行すれば判定できる。結果が「件名のみ」だった場合の退避先はサイドパネルの「キーワード対象」セレクタ（§3 D5）で、設計は既にその形になっている。
+手元での素早い確認には公式 CLI の `bee`（`bee api <endpoint>`）を使う。認証済みのスペースにそのまま投げられるので、挙動を確かめるのにキーの受け渡しが要らない。**依存としては入れない**。実装は `backlog-js` に寄せる。
+
+未決 #1（`keyword` の一致範囲）はこの方法で解決した（`docs/backlog-facts.md` §6.1）。課題は本文とコメントに、Wiki は本文に一致する。
