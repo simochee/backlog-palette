@@ -91,6 +91,32 @@ export function PaletteSurface({
     }
 
     /*
+     * Enter の宛先は自分で決める。
+     *
+     * React Aria は候補が入れ替わっても仮想フォーカスを持ち越すため、
+     * aria-activedescendant が消えた行を指したまま残ることがある
+     * （`PROJ-12` まで打った時点の行を、`PROJ-123` の候補が出た後も指す）。
+     * その状態で Enter を押すと宛先が存在せず、何も起きない。行は selected の
+     * 見た目なので、いちばん分かりにくい壊れ方になる。
+     *
+     * 実在するフォーカス行、無ければ先頭行、という規則にすれば
+     * 「見えている選択と Enter の宛先は必ず一致する」を保証できる。
+     */
+    if (event.key === 'Enter' && onAction) {
+      const list = event.currentTarget.querySelector('[role="listbox"]');
+      const focused = list?.querySelector('[role="option"][data-focused]');
+      const target = focused ?? list?.querySelector('[role="option"]');
+      const key = target?.getAttribute('data-key');
+
+      if (key !== null && key !== undefined) {
+        event.preventDefault();
+        event.stopPropagation();
+        onAction(key);
+        return;
+      }
+    }
+
+    /*
      * Esc は React Aria が入力欄のクリアに使うため、先に奪う。
      * 「Esc で 1 階層戻る / 閉じる」は覚えるキーを増やさないための規則
      * （§3 D3）で、入力欄のクリアに消費されると階層から出られなくなる。
