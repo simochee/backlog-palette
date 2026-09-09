@@ -5,8 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./stack": "./src/stack/index.ts",
     "./query": "./src/query/index.ts",
+    "./rank": "./src/rank/index.ts",
+    "./share": "./src/share/index.ts",
+    "./stack": "./src/stack/index.ts",
     "./view": "./src/view/index.ts"
   },
   "scripts": {
