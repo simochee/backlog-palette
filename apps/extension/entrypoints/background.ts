@@ -1,5 +1,8 @@
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
+import { onMessage } from '../src/messaging/ext.ts';
+import { buildBootstrap } from '../src/services/bootstrap.ts';
+import { rememberVisit } from '../src/storage/displayCache.ts';
 
 /**
  * M0 スパイク: ⌘K からパレットを開くまでの経路を通す。
@@ -8,6 +11,31 @@ import { defineBackground } from 'wxt/utils/define-background';
  * runtime.sendMessage 経由でしか呼べない（実装プラン §6.1）。
  */
 export default defineBackground(() => {
+  onMessage('getBootstrap', ({ data }) => buildBootstrap(data, Date.now()));
+
+  onMessage('recordVisit', ({ data }) => {
+    const { spaceKey, id, ...entry } = data;
+    return rememberVisit(spaceKey, id, entry, Date.now());
+  });
+
+  /*
+   * 遷移は SW が行う。ページ側のスクリプトに location を触らせない（§2.3）。
+   * 受け取るのは URL だけなので、拡張が組み立てたもの以外が来ないよう
+   * オリジンを確認してから開く。
+   */
+  onMessage('navigate', async ({ data }) => {
+    const url = new URL(data.url);
+    if (!/^https:\/\/[a-z0-9-]+\.backlog\.(jp|com)$/.test(url.origin)) return;
+
+    if (data.target === 'newTab') {
+      await browser.tabs.create({ url: url.href });
+      return;
+    }
+
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id !== undefined) await browser.tabs.update(tab.id, { url: url.href });
+  });
+
   /*
    * サイドパネルはツールバーのアイコンからも開けるようにする。
    * sidePanel.open() はユーザー操作起点でしか呼べないため、

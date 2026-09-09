@@ -1,20 +1,36 @@
-import { PaletteSurface } from '@backlog-palette/ui';
-import { useEffect, useRef, useState } from 'react';
+import { type PaletteSection, PaletteSurface } from '@backlog-palette/ui';
+import { useEffect, useState } from 'react';
+import { sendMessage } from '../../src/messaging/ext.ts';
 import type { HostChannel } from '../../src/messaging/hostChannel.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
-import { emptyStateSections } from './placeholderData.ts';
 
 export type PaletteProps = {
   channel: HostChannel;
 };
 
+const NOT_CONNECTED: readonly PaletteSection[] = [
+  {
+    id: 'onboarding',
+    rows: [
+      {
+        id: 'connect',
+        kind: 'connect',
+        title: 'このスペースを接続',
+        sub: '接続すると最近見た課題と検索が使えます',
+        tone: 'accent',
+        hint: 'enter',
+      },
+    ],
+  },
+];
+
 /**
- * M0 スパイクの検証対象（実装プラン §18-7）:
- * クロスオリジン iframe が open を受けて自分で input にフォーカスを移せるか。
+ * 空状態は API 応答を待たずに描く（§14）。ここが待つのは
+ * Service Worker が表示キャッシュを読む往復だけで、ネットワークには出ない。
  */
 export function Palette({ channel }: PaletteProps) {
   const [ctx, setCtx] = useState<PageContext | undefined>(undefined);
-  const surfaceRef = useRef<HTMLDivElement>(null);
+  const [sections, setSections] = useState<readonly PaletteSection[]>([]);
 
   useEffect(() => {
     const unsubscribe = channel.subscribe((message) => {
@@ -25,10 +41,18 @@ export function Palette({ channel }: PaletteProps) {
 
       setCtx(message.ctx);
 
+      sendMessage('getBootstrap', 'modal')
+        .then((state) => {
+          setSections(state.sections.length > 0 ? state.sections : NOT_CONNECTED);
+        })
+        .catch(() => {
+          setSections(NOT_CONNECTED);
+        });
+
       // フォーカスは開いた側ではなく自分で取る。以降のキー入力は iframe に閉じ、
       // Backlog の単キーショートカット（j/k 等）が誤爆しない（§9.4）
       requestAnimationFrame(() => {
-        surfaceRef.current?.querySelector('input')?.focus();
+        document.querySelector('input')?.focus();
       });
     });
 
@@ -55,7 +79,7 @@ export function Palette({ channel }: PaletteProps) {
         if (event.target === event.currentTarget) channel.send({ t: 'close' });
       }}
     >
-      <div className="slot" ref={surfaceRef}>
+      <div className="slot">
         <PaletteSurface
           path={[
             { label: ctx.spaceKey ?? '全スペース', avatar: ctx.spaceKey !== undefined },
@@ -63,7 +87,7 @@ export function Palette({ channel }: PaletteProps) {
               ? []
               : [{ label: ctx.projectKey, avatar: true } as const]),
           ]}
-          sections={emptyStateSections}
+          sections={sections}
         />
       </div>
     </div>

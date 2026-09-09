@@ -1,7 +1,9 @@
 import { browser } from 'wxt/browser';
 import { createIframeUi } from 'wxt/utils/content-script-ui/iframe';
 import { defineContentScript } from 'wxt/utils/define-content-script';
+import { sendMessage } from '../../src/messaging/ext.ts';
 import { isFromIframe, type PageContext, type ToIframe } from '../../src/messaging/window.ts';
+import { readVisitedPage } from '../../src/services/pageContext.ts';
 
 function readPageContext(): PageContext {
   const { origin, pathname } = window.location;
@@ -144,6 +146,18 @@ export default defineContentScript({
       if (import.meta.env.DEV) console.debug('[bp] commands 経路で ⌘K を受けた');
       toggle();
     });
+
+    /*
+     * 閲覧を記録する。API は呼ばず、URL と document.title だけを見る（§9）。
+     * SPA 遷移でタイトルの更新が遅れる形式があるため（未決 #8）、
+     * 記録は SW に投げっぱなしにし、失敗しても閲覧の邪魔をしない。
+     */
+    const visited = readVisitedPage(window.location.href, document.title);
+    if (visited !== undefined) {
+      sendMessage('recordVisit', visited).catch(() => {
+        // SW が起動していない瞬間に当たりうる。次の閲覧で記録されればよい
+      });
+    }
 
     if (import.meta.env.DEV) {
       console.debug('[bp] content script を注入した', window.location.origin);

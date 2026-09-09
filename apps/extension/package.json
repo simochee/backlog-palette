@@ -16,6 +16,7 @@
   "dependencies": {
     "@backlog-palette/core": "workspace:*",
     "@backlog-palette/ui": "workspace:*",
+    "@webext-core/messaging": "^4.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
