@@ -49,13 +49,18 @@ export function Palette({ channel }: PaletteProps) {
           setSections(NOT_CONNECTED);
         });
 
-      // フォーカスは開いた側ではなく自分で取る。以降のキー入力は iframe に閉じ、
-      // Backlog の単キーショートカット（j/k 等）が誤爆しない（§9.4）
-      requestAnimationFrame(() => {
-        document.querySelector('input')?.focus();
-      });
+      /*
+       * フォーカスは開いた側ではなく自分で取る。以降のキー入力は iframe に
+       * 閉じるので、Backlog の単キーショートカット（j/k 等）が誤爆しない（§9.4）。
+       * 実際に当てるのは PaletteSurface の autoFocus。requestAnimationFrame で
+       * 後から当てると、タブが背面にある間はコールバックが走らず取りこぼす。
+       */
     });
 
+    /*
+     * 背景の暗転部分にフォーカスがあるときの保険。入力欄にフォーカスが
+     * あるときは PaletteSurface の onEscape が先に処理する。
+     */
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !event.isComposing) channel.send({ t: 'close' });
     };
@@ -88,6 +93,8 @@ export function Palette({ channel }: PaletteProps) {
               : [{ label: ctx.projectKey, avatar: true } as const]),
           ]}
           sections={sections}
+          onEscape={() => channel.send({ t: 'close' })}
+          autoFocus
         />
       </div>
     </div>

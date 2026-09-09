@@ -43,6 +43,10 @@ export type PaletteSurfaceProps = {
   onAction?: (id: string) => void;
   /** キャレットが先頭にあるときの ⌫。スタックの armed / pop に使う */
   onStackBackspace?: () => void;
+  /** Esc。1 階層戻すか閉じるかは呼び出し側が決める */
+  onEscape?: () => void;
+  /** 表示と同時に入力欄へフォーカスする */
+  autoFocus?: boolean;
 };
 
 const DEFAULT_FOOTER: readonly FooterHint[] = [
@@ -67,6 +71,8 @@ export function PaletteSurface({
   onValueChange,
   onAction,
   onStackBackspace,
+  onEscape,
+  autoFocus = false,
 }: PaletteSurfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const shown = value ?? defaultValue ?? '';
@@ -81,6 +87,18 @@ export function PaletteSurface({
   const guardComposition = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.nativeEvent.isComposing) {
       event.stopPropagation();
+      return;
+    }
+
+    /*
+     * Esc は React Aria が入力欄のクリアに使うため、先に奪う。
+     * 「Esc で 1 階層戻る / 閉じる」は覚えるキーを増やさないための規則
+     * （§3 D3）で、入力欄のクリアに消費されると階層から出られなくなる。
+     */
+    if (event.key === 'Escape' && onEscape) {
+      event.preventDefault();
+      event.stopPropagation();
+      onEscape();
       return;
     }
 
@@ -112,7 +130,12 @@ export function PaletteSurface({
 
           <TextField aria-label="パレットの入力" className={styles.field}>
             <div className={styles.inputWrap}>
-              <Input ref={inputRef} className={styles.input} placeholder={placeholder} />
+              <Input
+                ref={inputRef}
+                className={styles.input}
+                placeholder={placeholder}
+                autoFocus={autoFocus}
+              />
               {completion ? (
                 <span className={styles.ghost} aria-hidden>
                   <span className={styles.ghostTyped}>{shown}</span>
