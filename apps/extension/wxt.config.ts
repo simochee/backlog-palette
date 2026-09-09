@@ -2,7 +2,12 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'wxt';
 
-const BACKLOG_MATCHES = ['https://*.backlog.jp/*', 'https://*.backlog.com/*'];
+/** backlogtool.com は旧ドメインだが現役（docs/backlog-facts.md） */
+const BACKLOG_MATCHES = [
+  'https://*.backlog.jp/*',
+  'https://*.backlog.com/*',
+  'https://*.backlogtool.com/*',
+];
 
 /** wxt dev が起動する Chrome の専用プロファイル。cwd に依存させない */
 const CHROME_PROFILE = resolve(import.meta.dirname, '.chrome-profile');

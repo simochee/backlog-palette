@@ -7,6 +7,12 @@ describe('パレットに open を送れるオリジン', () => {
     expect(isTrustedPageOrigin('https://acme.backlog.com')).toBe(true);
   });
 
+  it('旧ドメインのスペースも信頼する', () => {
+    expect(isTrustedPageOrigin('https://nulab.backlogtool.com')).toBe(true);
+    expect(isTrustedPageOrigin('https://www.backlogtool.com')).toBe(false);
+    expect(isTrustedPageOrigin('https://backlogtool.com')).toBe(false);
+  });
+
   it('登録済みのカスタムドメインは信頼する', () => {
     expect(isTrustedPageOrigin('https://backlog.example.co.jp', ['backlog.example.co.jp'])).toBe(
       true,
@@ -15,6 +21,16 @@ describe('パレットに open を送れるオリジン', () => {
 
   it('未登録のドメインは信頼しない', () => {
     expect(isTrustedPageOrigin('https://backlog.example.co.jp')).toBe(false);
+  });
+
+  it('スペースではないホストを信頼しない', () => {
+    // Chrome の match pattern `*.backlog.com` は apex にもマッチするので、
+    // manifest だけでなくここでも弾かないと防御が 1 枚になる
+    expect(isTrustedPageOrigin('https://backlog.com')).toBe(false);
+    expect(isTrustedPageOrigin('https://backlog.jp')).toBe(false);
+    expect(isTrustedPageOrigin('https://www.backlog.com')).toBe(false);
+    expect(isTrustedPageOrigin('https://www.backlog.jp')).toBe(false);
+    expect(isTrustedPageOrigin('https://support-ja.backlog.com')).toBe(false);
   });
 
   it('Backlog に見せかけたドメインを信頼しない', () => {

@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
 import { onMessage } from '../src/messaging/ext.ts';
+import { isTrustedPageOrigin } from '../src/messaging/window.ts';
 import { buildBootstrap } from '../src/services/bootstrap.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
 
@@ -25,7 +26,7 @@ export default defineBackground(() => {
    */
   onMessage('navigate', async ({ data }) => {
     const url = new URL(data.url);
-    if (!/^https:\/\/[a-z0-9-]+\.backlog\.(jp|com)$/.test(url.origin)) return;
+    if (!isTrustedPageOrigin(url.origin)) return;
 
     if (data.target === 'newTab') {
       await browser.tabs.create({ url: url.href });

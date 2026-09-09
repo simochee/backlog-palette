@@ -20,13 +20,17 @@ function readPageContext(): PageContext {
 }
 
 export default defineContentScript({
-  matches: ['https://*.backlog.jp/*', 'https://*.backlog.com/*'],
+  matches: ['https://*.backlog.jp/*', 'https://*.backlog.com/*', 'https://*.backlogtool.com/*'],
   // apex と www はスペースではない（wxt.config.ts の NOT_A_SPACE と同じ理由）
   excludeMatches: [
     'https://backlog.jp/*',
     'https://www.backlog.jp/*',
     'https://backlog.com/*',
     'https://www.backlog.com/*',
+    'https://backlogtool.com/*',
+    'https://www.backlogtool.com/*',
+    'https://support-ja.backlog.com/*',
+    'https://support-en.backlog.com/*',
   ],
 
   main(ctx) {

@@ -20,7 +20,19 @@ export type ToIframe = { t: 'open'; ctx: PageContext } | { t: 'close' };
 
 export type FromIframe = { t: 'close' };
 
-const BACKLOG_HOST = /^https:\/\/[a-z0-9-]+\.backlog\.(jp|com)$/;
+/**
+ * Backlog のスペースは必ずサブドメインを持つ。
+ *
+ * ヌーラボのマーケティングサイト（backlog.com / www.backlog.jp など）は
+ * スペースではないので除く。Chrome の match pattern `*.backlog.com` は
+ * apex ドメインにもマッチするため、manifest の excludeMatches と対で
+ * 意味を保たないと「注入はされるがメッセージは拒否される」ずれが生まれる。
+ *
+ * backlogtool.com は旧ドメインだが現役（docs/backlog-facts.md）。
+ * 含めないと旧ドメインのスペースでパレットが黙って動かない。
+ */
+const BACKLOG_SPACE =
+  /^https:\/\/(?!www\.|support-(?:ja|en)\.)[a-z0-9-]+\.(?:backlog\.(?:jp|com)|backlogtool\.com)$/;
 
 /**
  * 登録済みスペースのオリジンかどうか。
@@ -30,7 +42,7 @@ const BACKLOG_HOST = /^https:\/\/[a-z0-9-]+\.backlog\.(jp|com)$/;
  * パレットへ open を送れるようになる。
  */
 export function isTrustedPageOrigin(origin: string, customHosts: readonly string[] = []): boolean {
-  if (BACKLOG_HOST.test(origin)) return true;
+  if (BACKLOG_SPACE.test(origin)) return true;
   return customHosts.some((host) => origin === `https://${host}`);
 }
 

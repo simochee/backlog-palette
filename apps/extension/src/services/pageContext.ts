@@ -13,7 +13,7 @@ export type VisitedPage = {
   kind: 'issue' | 'wiki' | 'document' | 'project';
 };
 
-const SPACE = /^https:\/\/([a-z0-9-]+)\.backlog\.(?:jp|com)$/;
+const SPACE = /^https:\/\/([a-z0-9-]+)\.(?:backlog\.(?:jp|com)|backlogtool\.com)$/;
 const ISSUE_PATH = /^\/view\/([A-Z][A-Z0-9_]*-\d+)/;
 const WIKI_PATH = /^\/wiki\/([A-Z][A-Z0-9_]*)\/(.+)$/;
 const PROJECT_PATH = /^\/(?:projects|find|board|gantt|file|git)\/([A-Z][A-Z0-9_]*)/;
