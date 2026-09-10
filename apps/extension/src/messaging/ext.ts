@@ -1,4 +1,4 @@
-import type { IndexEntry } from '@backlog-palette/core';
+import type { IndexEntry, SearchState } from '@backlog-palette/core';
 import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { RowView } from './rowView.ts';
 import type { PageContext } from './window.ts';
@@ -81,8 +81,46 @@ type ExtProtocol = {
   /** スペースを接続する。認証情報は Service Worker から出さない */
   connectSpace(request: ConnectRequest): ConnectOutcome;
   disconnectSpace(spaceKey: string): void;
+  /** 検索を始める。結果は searchChunk で流れてくる */
+  startSearch(request: { requestId: string; state: SearchState }): void;
+  /** 打鍵し直したときに前の検索を止める */
+  cancelSearch(requestId: string): void;
   /** content script が閲覧を記録する。API は呼ばない（§9 の表示キャッシュ） */
   recordVisit(record: VisitRecord): void;
 };
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<ExtProtocol>();
+
+/**
+ * Service Worker から拡張ページへ流す通知。
+ *
+ * 検索は要求 / 応答にしない。スペースごとに返ってきた順に描くのが
+ * サイドパネルの前提（実装プラン §7.4）で、全部揃うのを待つと
+ * 「1 スペースが遅いと何も出ない」になる。
+ */
+type ExtEvents = {
+  searchChunk(chunk: { requestId: string } & SearchChunkPayload): void;
+  connectionChanged(change: { spaceKey: string; state: 'connected' | 'needsReconnect' }): void;
+};
+
+/** services/search の SearchChunk と構造を合わせる（型は extension 内で閉じる） */
+export type SearchChunkPayload =
+  | { spaceKey: string; state: 'loading' }
+  | { spaceKey: string; state: 'done'; rows: readonly SearchResultRow[]; total: number }
+  | {
+      spaceKey: string;
+      state: 'error';
+      error: { kind: 'unauthorized' | 'rateLimited' | 'offline' | 'unknown'; retryAt?: number };
+    };
+
+export type SearchResultRow = RowView & {
+  id: string;
+  url: string;
+  updatedAt: number;
+  spaceKey: string;
+  kind: 'issue' | 'wiki' | 'document';
+  body?: string;
+};
+
+export const { sendMessage: sendEvent, onMessage: onEvent } =
+  defineExtensionMessaging<ExtEvents>();
