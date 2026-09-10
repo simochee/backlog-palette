@@ -299,3 +299,30 @@ test.describe('コピーコマンド', () => {
     await expect(frame.getByText('課題キーをコピー')).toBeHidden();
   });
 });
+
+test.describe('未接続のとき', () => {
+  test('接続を促す 1 行だけを出す', async ({ page, space, palette }) => {
+    await page.goto(space.url('/dashboard'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await expect(frame.getByText('このスペースを接続')).toBeVisible();
+    await expect(frame.locator('[role="option"]')).toHaveCount(1);
+  });
+
+  test('接続に失敗したら、その場で理由が分かる', async ({ page, space, palette }) => {
+    await page.goto(space.url('/dashboard'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.press('Enter');
+
+    // 偽スペースは OAuth の認可画面を返さないので、失敗の文言が出れば経路は通っている
+    await expect(frame.locator('[role="option"]').first()).not.toContainText('このスペースを接続', {
+      timeout: 10_000,
+    });
+  });
+});

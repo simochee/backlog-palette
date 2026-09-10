@@ -7,5 +7,5 @@
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["entrypoints", "src", "wxt.config.ts", "vitest.config.ts", ".wxt/**/*"]
+  "include": ["entrypoints", "src", "wxt.config.ts", "vitest.config.ts", "env.d.ts", ".wxt/**/*"]
 }

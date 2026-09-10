@@ -10,21 +10,27 @@ export type PaletteProps = {
   channel: HostChannel;
 };
 
-const NOT_CONNECTED: readonly PaletteSection[] = [
-  {
-    id: 'onboarding',
-    rows: [
-      {
-        id: 'connect',
-        kind: 'connect',
-        title: 'このスペースを接続',
-        sub: '接続すると最近見た課題と検索が使えます',
-        tone: 'accent',
-        hint: 'enter',
-      },
-    ],
-  },
-];
+/**
+ * 未接続のときは 1 行だけ出す（実装プラン §5.4 の C1）。
+ * 説明を読ませずに接続まで運ぶのが目的なので、選択肢を増やさない。
+ */
+function onboardingSections(status: string | undefined): readonly PaletteSection[] {
+  return [
+    {
+      id: 'onboarding',
+      rows: [
+        {
+          id: 'connect',
+          kind: 'connect',
+          title: status ?? 'このスペースを接続',
+          sub: '接続すると最近見た課題と検索が使えます',
+          tone: 'accent',
+          hint: 'enter',
+        },
+      ],
+    },
+  ];
+}
 
 const EMPTY: BootstrapState = {
   sections: [],
@@ -46,10 +52,11 @@ export function Palette({ channel }: PaletteProps) {
   const [value, setValue] = useState('');
   const [openSeq, setOpenSeq] = useState(0);
   const [toast, setToast] = useState<string | undefined>(undefined);
+  const [connectStatus, setConnectStatus] = useState<string | undefined>(undefined);
 
   const sections = useMemo(() => {
     if (value.trim() === '') {
-      return bootstrap.sections.length > 0 ? bootstrap.sections : NOT_CONNECTED;
+      return bootstrap.sections.length > 0 ? bootstrap.sections : onboardingSections(connectStatus);
     }
 
     return buildCandidates({
@@ -60,7 +67,7 @@ export function Palette({ channel }: PaletteProps) {
       labels: CANDIDATE_LABELS,
       showSpaceBadges: false,
     });
-  }, [value, bootstrap]);
+  }, [value, bootstrap, connectStatus]);
 
   const actions = useMemo(() => {
     const map: Record<string, RowAction> = { ...bootstrap.actions };
@@ -85,6 +92,7 @@ export function Palette({ channel }: PaletteProps) {
       setCtx(message.ctx);
       setValue('');
       setToast(undefined);
+      setConnectStatus(undefined);
       setOpenSeq((seq) => seq + 1);
 
       sendMessage('getBootstrap', { surface: 'modal', ctx: message.ctx })
@@ -135,6 +143,23 @@ export function Palette({ channel }: PaletteProps) {
           footerNote={toast}
           onValueChange={setValue}
           onAction={(id) => {
+            if (id === 'connect') {
+              setConnectStatus('接続しています…');
+              sendMessage('connectSpace', { method: 'oauth', host: new URL(ctx.origin).host })
+                .then((outcome) => {
+                  if (outcome.ok) {
+                    setConnectStatus(`${outcome.displayName} に接続しました`);
+                    return sendMessage('getBootstrap', { surface: 'modal', ctx }).then(
+                      setBootstrap,
+                    );
+                  }
+                  setConnectStatus(outcome.message);
+                  return undefined;
+                })
+                .catch(() => setConnectStatus('接続できませんでした'));
+              return;
+            }
+
             const action = actions[id];
             if (action === undefined) return;
 

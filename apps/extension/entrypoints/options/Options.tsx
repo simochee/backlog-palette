@@ -1,5 +1,6 @@
 import { Button, ChoiceGroup, Marker, Section, SettingRow, Switch } from '@backlog-palette/ui';
 import { useEffect, useState } from 'react';
+import { sendMessage } from '../../src/messaging/ext.ts';
 import {
   currentHistoryImport,
   type HistoryImportOutcome,
@@ -44,7 +45,13 @@ function usePrefersDark(): boolean {
   return prefersDark;
 }
 
-function SpaceRows({ spaces }: { spaces: readonly SpaceSummary[] }) {
+function SpaceRows({
+  spaces,
+  onDisconnect,
+}: {
+  spaces: readonly SpaceSummary[];
+  onDisconnect: (spaceKey: string) => void;
+}) {
   if (spaces.length === 0) {
     return (
       <SettingRow
@@ -65,7 +72,9 @@ function SpaceRows({ spaces }: { spaces: readonly SpaceSummary[] }) {
             <>
               <Marker {...STATE_MARKER[space.state]} dot />
               {space.state === 'needsReconnect' ? <Button isDisabled>再接続</Button> : null}
-              <Button isDisabled>削除</Button>
+              <Button tone="danger" onPress={() => onDisconnect(space.spaceKey)}>
+                削除
+              </Button>
             </>
           }
         />
@@ -114,9 +123,17 @@ export function Options() {
 
         <Section
           title="接続済みスペース"
-          description="スペースの接続・再接続・削除は、まだこの画面からは行えません。次のバージョンで使えるようになります。API キーで接続したスペースは、キーが端末内に平文で保存されています。"
+          description="接続は Backlog のページで ⌘K を押すと行えます。再接続は次のバージョンで使えるようになります。API キーで接続したスペースは、キーが端末内に平文で保存されています。"
         >
-          <SpaceRows spaces={spaces} />
+          <SpaceRows
+            spaces={spaces}
+            onDisconnect={(spaceKey) => {
+              sendMessage('disconnectSpace', spaceKey)
+                .then(() => loadSpaceSummaries(Date.now()))
+                .then(setSpaces)
+                .catch(() => undefined);
+            }}
+          />
         </Section>
 
         <Section

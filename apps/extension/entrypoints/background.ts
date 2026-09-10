@@ -2,7 +2,10 @@ import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
 import { onMessage } from '../src/messaging/ext.ts';
 import { isTrustedPageOrigin } from '../src/messaging/window.ts';
+import { disconnect } from '../src/services/auth/connect.ts';
+import { setOAuthApp } from '../src/services/auth/oauth.ts';
 import { buildBootstrap } from '../src/services/bootstrap.ts';
+import { connectSpace } from '../src/services/connectSpace.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
 
 /**
@@ -24,7 +27,31 @@ async function navigateTo(href: string, target: 'currentTab' | 'newTab'): Promis
   if (tab?.id !== undefined) await browser.tabs.update(tab.id, { url: url.href });
 }
 
+/**
+ * OAuth アプリの設定をビルド時の env から入れる。
+ *
+ * Backlog は PKCE に対応せず client_secret を必須にするため、拡張にシークレットを
+ * 同梱するしかない（実装プラン §10.1 の案 A）。取り出せることを前提に、
+ * リダイレクト URI の一致で悪用の幅を狭める設計にしている。
+ */
+async function configureOAuth(): Promise<void> {
+  const clientId = import.meta.env.WXT_OAUTH_CLIENT_ID;
+  const clientSecret = import.meta.env.WXT_OAUTH_CLIENT_SECRET;
+
+  if (typeof clientId !== 'string' || clientId === '') return;
+  if (typeof clientSecret !== 'string' || clientSecret === '') return;
+
+  await setOAuthApp({ clientId, clientSecret });
+}
+
 export default defineBackground(() => {
+  configureOAuth().catch(() => {
+    // 設定できなければ OAuth は notConfigured のまま。API キー接続は使える
+  });
+
+  onMessage('connectSpace', ({ data }) => connectSpace(data, Date.now()));
+  onMessage('disconnectSpace', ({ data }) => disconnect(data));
+
   onMessage('getBootstrap', ({ data }) => buildBootstrap(data.surface, data.ctx, Date.now()));
 
   /*
