@@ -4,6 +4,7 @@ import type { PageContext } from '../messaging/window.ts';
 import { recentVisits } from '../storage/displayCache.ts';
 import { type DisplayCacheEntry, settingsItem, spacesItem } from '../storage/schema.ts';
 import { buildLocalIndex } from './localIndex.ts';
+import { loadAssignedIssues } from './masters/index.ts';
 
 const KIND_TO_ROW: Record<DisplayCacheEntry['kind'], RowView['kind']> = {
   issue: 'issue',
@@ -23,8 +24,6 @@ function toRow(entry: DisplayCacheEntry, index: number): RowView & { id: string 
     title: entry.title,
     ...(code === undefined ? {} : { code }),
     ...(entry.projectName === undefined ? {} : { sub: entry.projectName }),
-    hint: index === 0 ? 'enter' : 'none',
-    selected: index === 0,
   };
 }
 
@@ -48,6 +47,7 @@ export async function buildBootstrap(
   ]);
 
   const sections: PaletteSection[] = [];
+
   if (visits.length > 0) {
     sections.push({
       id: 'recent',
@@ -57,8 +57,37 @@ export async function buildBootstrap(
     });
   }
 
+  /*
+   * 現在プロジェクトのページ（モック A1）。索引から拾うだけで API を呼ばない。
+   * 担当課題のように API が要るものは後から追記する経路に分ける（§5.3・§14）。
+   */
+  if (ctx.projectKey !== undefined) {
+    const pages = local.entries
+      .filter((entry) => entry.kind === 'page' && entry.context === 'currentProject')
+      .slice(0, 6)
+      .map((entry) => ({
+        id: entry.id,
+        kind: 'page' as const,
+        title: entry.text,
+        ...(entry.sub === undefined ? {} : { sub: entry.sub }),
+      }));
+
+    if (pages.length > 0) {
+      sections.push({ id: 'pages', label: `${ctx.projectKey} のページ`, rows: pages });
+    }
+  }
+
+  const withSelection = sections.map((section, sectionIndex) => ({
+    ...section,
+    rows: section.rows.map((row, rowIndex) => ({
+      ...row,
+      selected: sectionIndex === 0 && rowIndex === 0,
+      hint: sectionIndex === 0 && rowIndex === 0 ? ('enter' as const) : ('none' as const),
+    })),
+  }));
+
   return {
-    sections,
+    sections: withSelection,
     index: local.entries,
     actions: local.actions,
     connectedSpaces: spaces.map((space) => ({
@@ -66,5 +95,33 @@ export async function buildBootstrap(
       displayName: space.displayName,
     })),
     learningEnabled: settings.learningEnabled,
+  };
+}
+
+/**
+ * 担当中の課題のセクション（モック A1）。
+ *
+ * 空状態の初回描画には含めない。API 応答を待つと「⌘K を押しても何も出ない」
+ * 時間ができる（§14）。届いた時点で追記する。
+ */
+export async function buildAssignedSection(
+  spaceKey: string,
+  now: number,
+): Promise<PaletteSection | undefined> {
+  const issues = await loadAssignedIssues(spaceKey, now);
+  if (issues.length === 0) return undefined;
+
+  return {
+    id: 'assigned',
+    label: '担当中の課題',
+    meta: `${issues.length} 件`,
+    rows: issues.map((issue) => ({
+      id: `assigned:${issue.issueKey}`,
+      kind: 'issue' as const,
+      code: issue.issueKey,
+      title: issue.summary,
+      ...(issue.projectName === undefined ? {} : { sub: issue.projectName }),
+      marker: { label: issue.statusName, tone: 'info' as const },
+    })),
   };
 }

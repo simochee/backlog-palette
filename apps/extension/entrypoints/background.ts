@@ -3,7 +3,7 @@ import { defineBackground } from 'wxt/utils/define-background';
 import { onMessage, sendEvent } from '../src/messaging/ext.ts';
 import { isTrustedPageOrigin } from '../src/messaging/window.ts';
 import { disconnect } from '../src/services/auth/connect.ts';
-import { buildBootstrap } from '../src/services/bootstrap.ts';
+import { buildAssignedSection, buildBootstrap } from '../src/services/bootstrap.ts';
 import { connectSpace } from '../src/services/connectSpace.ts';
 import { runSearch } from '../src/services/search/index.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
@@ -64,6 +64,7 @@ export default defineBackground(() => {
   onMessage('disconnectSpace', ({ data }) => disconnect(data));
 
   onMessage('getBootstrap', ({ data }) => buildBootstrap(data.surface, data.ctx, Date.now()));
+  onMessage('getAssignedIssues', ({ data }) => buildAssignedSection(data, Date.now()));
 
   /*
    * 行の実行。遷移は SW が行うが、クリップボードは Service Worker から

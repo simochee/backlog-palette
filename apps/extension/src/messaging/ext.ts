@@ -75,6 +75,11 @@ export type ConnectOutcome =
 type ExtProtocol = {
   /** パレットを開いたときに 1 回だけ。空状態と索引をまとめて渡す */
   getBootstrap(request: { surface: Surface; ctx: PageContext }): BootstrapState;
+  /**
+   * 担当中の課題。API が要るので初回描画から外し、届いた時点で追記する（§5.3）。
+   * 取れなければ空配列で、空状態そのものは壊れない。
+   */
+  getAssignedIssues(spaceKey: string): PaletteSection | undefined;
   navigate(request: NavigateRequest): void;
   /** 行を選んだときの実行。UI は何が起きるかを知らずに渡す */
   runRowAction(action: RowAction): void;

@@ -12,8 +12,30 @@ describe('空状態の組み立て', () => {
     fakeBrowser.reset();
   });
 
-  it('閲覧履歴が無ければセクションを出さない', async () => {
-    expect((await buildBootstrap('modal', CTX, NOW)).sections).toEqual([]);
+  it('閲覧履歴が無くても、現在プロジェクトのページは出す', async () => {
+    const { sections } = await buildBootstrap('modal', CTX, NOW);
+
+    expect(sections.map((section) => section.id)).toEqual(['pages']);
+    expect(sections[0]?.label).toBe('PROJ のページ');
+  });
+
+  it('プロジェクトも履歴も無ければセクションを出さない', async () => {
+    const { sections } = await buildBootstrap(
+      'modal',
+      { origin: 'https://nulab.backlog.jp', spaceKey: 'nulab' },
+      NOW,
+    );
+
+    expect(sections).toEqual([]);
+  });
+
+  it('最初の行だけが選択され、Enter のヒントが付く', async () => {
+    const { sections } = await buildBootstrap('modal', CTX, NOW);
+    const rows = sections.flatMap((section) => section.rows);
+
+    expect(rows[0]?.selected).toBe(true);
+    expect(rows[0]?.hint).toBe('enter');
+    expect(rows.slice(1).every((row) => row.selected === false)).toBe(true);
   });
 
   it('最近開いた項目が新しい順に並ぶ', async () => {

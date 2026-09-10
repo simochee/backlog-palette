@@ -10,11 +10,28 @@ export type PaletteProps = {
   channel: HostChannel;
 };
 
+/** 接続済みだが出せるものがまだ無いとき。行き止まりにしない */
+function emptyHint(): readonly PaletteSection[] {
+  return [
+    {
+      id: 'hint',
+      rows: [
+        {
+          id: 'hint-type',
+          kind: 'page',
+          title: 'ページ名や課題キーを入力してください',
+          sub: '見たページはここに並ぶようになります',
+        },
+      ],
+    },
+  ];
+}
+
 /**
  * 未接続のときは 1 行だけ出す（実装プラン §5.4 の C1）。
  * 説明を読ませずに接続まで運ぶのが目的なので、選択肢を増やさない。
  */
-function onboardingSections(status: string | undefined): readonly PaletteSection[] {
+function onboardingSections(status: string | undefined): PaletteSection[] {
   return [
     {
       id: 'onboarding',
@@ -56,7 +73,23 @@ export function Palette({ channel }: PaletteProps) {
 
   const sections = useMemo(() => {
     if (value.trim() === '') {
-      return bootstrap.sections.length > 0 ? bootstrap.sections : onboardingSections(connectStatus);
+      /*
+       * 接続を促すのは「まだ接続していないとき」だけ。空状態が空かどうかで
+       * 判断すると、接続済みでも履歴が無いだけで接続行が出てしまう。
+       */
+      const connected = bootstrap.connectedSpaces.some((space) => space.spaceKey === ctx?.spaceKey);
+      if (connected) {
+        return bootstrap.sections.length > 0 ? bootstrap.sections : emptyHint();
+      }
+
+      /*
+       * 未接続でも、表示キャッシュから出せるものがあるなら出す（§9）。接続は
+       * 末尾の 1 行で促す（モック A6）。何も出せないときだけ、説明を読ませずに
+       * 接続へ運ぶ C1 の形にする。
+       */
+      if (bootstrap.sections.length === 0) return onboardingSections(connectStatus);
+
+      return [...bootstrap.sections, ...onboardingSections(connectStatus)];
     }
 
     return buildCandidates({
@@ -67,7 +100,7 @@ export function Palette({ channel }: PaletteProps) {
       labels: CANDIDATE_LABELS,
       showSpaceBadges: false,
     });
-  }, [value, bootstrap, connectStatus]);
+  }, [value, bootstrap, connectStatus, ctx?.spaceKey]);
 
   const actions = useMemo(() => {
     const map: Record<string, RowAction> = { ...bootstrap.actions };
@@ -98,6 +131,24 @@ export function Palette({ channel }: PaletteProps) {
       sendMessage('getBootstrap', { surface: 'modal', ctx: message.ctx })
         .then(setBootstrap)
         .catch(() => setBootstrap(EMPTY));
+
+      /*
+       * 担当課題は別の鎖にする。同じ鎖に繋ぐと、こちらの失敗が
+       * 成功した空状態まで巻き戻してしまう（実際に踏んだ）。
+       * API が要るので初回描画には含めず、届いた時点で追記する（§14）。
+       */
+      const spaceKey = message.ctx.spaceKey;
+      if (spaceKey !== undefined) {
+        sendMessage('getAssignedIssues', spaceKey)
+          .then((section) => {
+            if (section === undefined) return;
+            setBootstrap((current) => ({
+              ...current,
+              sections: [...current.sections, section],
+            }));
+          })
+          .catch(() => undefined);
+      }
     });
 
     /*
@@ -149,7 +200,12 @@ export function Palette({ channel }: PaletteProps) {
               sendMessage('connectSpace', { method: 'oauth', host: new URL(ctx.origin).host })
                 .then((outcome) => {
                   if (outcome.ok) {
-                    setConnectStatus(`${outcome.displayName} に接続しました`);
+                    /*
+                     * 成功は行ではなくトーストで伝える。接続できた瞬間に
+                     * 接続行そのものが消えるので、行に出すと結果が見えない。
+                     */
+                    setConnectStatus(undefined);
+                    setToast(`${outcome.displayName} に接続しました`);
                     return sendMessage('getBootstrap', { surface: 'modal', ctx }).then(
                       setBootstrap,
                     );
