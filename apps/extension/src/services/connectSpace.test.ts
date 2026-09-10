@@ -8,9 +8,14 @@ describe('スペースの接続', () => {
   beforeEach(() => {
     fakeBrowser.reset();
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('OAuth の設定が入っていなければ、API キーへ誘導する', async () => {
+    // 配布物の設定は env から読むので、未設定の状態はここで作る
+    vi.stubEnv('WXT_OAUTH_CLIENT_ID', '');
+    vi.stubEnv('WXT_OAUTH_CLIENT_SECRET', '');
+
     const outcome = await connectSpace({ method: 'oauth', host: 'nulab.backlog.com' }, NOW);
 
     expect(outcome.ok).toBe(false);

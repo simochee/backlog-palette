@@ -56,9 +56,14 @@ describe('OAuth でのスペース接続', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('クライアント ID が未設定なら認可の窓を開かない', async () => {
+    // 配布物の設定は env から読むので、未設定の状態はここで作る
+    vi.stubEnv('WXT_OAUTH_CLIENT_ID', '');
+    vi.stubEnv('WXT_OAUTH_CLIENT_SECRET', '');
+
     const launch = vi.spyOn(fakeBrowser.identity, 'launchWebAuthFlow');
 
     expect(await connectWithOAuth(HOST, NOW)).toEqual({ ok: false, reason: 'notConfigured' });
@@ -218,9 +223,13 @@ describe('アクセストークンの更新', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('クライアント ID が未設定なら更新を試みない', async () => {
+    vi.stubEnv('WXT_OAUTH_CLIENT_ID', '');
+    vi.stubEnv('WXT_OAUTH_CLIENT_SECRET', '');
+
     expect(await refreshAccessToken('simochee', NOW)).toEqual({
       ok: false,
       reason: 'notConfigured',

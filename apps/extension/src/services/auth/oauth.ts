@@ -73,10 +73,21 @@ export async function setOAuthApp(app: OAuthApp | null): Promise<void> {
 }
 
 export async function loadOAuthApp(): Promise<OAuthApp | undefined> {
-  const app = await oauthAppItem.getValue();
-  if (app === null || app.clientId === '') return undefined;
+  /*
+   * ビルド時の env を先に見る。これは利用者のデータではなく配布物の設定なので、
+   * 本来ストレージに置く必要がない。置くと、拡張を更新して client_id が変わった
+   * ときに古い値が残り続ける。ストレージ側は Enterprise 向けの上書きと
+   * テスト用の差し替えのためだけに残す。
+   */
+  const clientId = import.meta.env.WXT_OAUTH_CLIENT_ID;
+  const clientSecret = import.meta.env.WXT_OAUTH_CLIENT_SECRET;
+  if (typeof clientId === 'string' && clientId !== '') {
+    if (typeof clientSecret === 'string' && clientSecret !== '') {
+      return { clientId, clientSecret };
+    }
+  }
 
-  return app;
+  return (await oauthAppItem.getValue()) ?? undefined;
 }
 
 export function createState(): string {
