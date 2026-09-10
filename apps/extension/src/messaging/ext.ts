@@ -122,5 +122,4 @@ export type SearchResultRow = RowView & {
   body?: string;
 };
 
-export const { sendMessage: sendEvent, onMessage: onEvent } =
-  defineExtensionMessaging<ExtEvents>();
+export const { sendMessage: sendEvent, onMessage: onEvent } = defineExtensionMessaging<ExtEvents>();
