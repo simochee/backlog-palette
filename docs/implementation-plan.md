@@ -720,6 +720,8 @@ Backlog の OAuth は **PKCE 非対応で `client_secret` が必須**（`docs/ba
 
 ### 10.2 接続の導線
 
+**スペースを増やす経路**: 1 つの OAuth アプリですべてのスペースを認可できる（#24）。2 つ目以降のスペースも、そのスペースのページで ⌘K を押して「接続」を選ぶだけで済み、アプリの登録も API キーの発行も要らない。スペース横断（§1 の差別化の中心）が OAuth のまま成立する。
+
 - 初回体験は C1: 未接続なら「このスペースを接続」の 1 行だけ
 - トークン失効はサイドパネルの**行内**に再接続導線（B3・C2）
 - API キーは `storage.local` に平文で入る旨を設定画面に明記し、いつでも削除できる
@@ -882,7 +884,7 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認。**`commands` に割り当てがある間はブラウザがキーを消費し、ページに `keydown` が届かない**ことは M0 で確認済み。content script 側の捕捉はショートカット解除時の保険 |
 | ~~21~~ | OAuth の認可・トークンエンドポイントのパス | OAuth 接続 | **解決**。`/OAuth2AccessRequest.action` と `/api/v2/oauth2/token`。実装と一致（`docs/backlog-facts.md` §6.4） |
 | **22** | **`client_secret` を配布物に含めることの是非** | OAuth を既定にできるか | **PKCE は非対応で `client_secret` が必須**と確定（§6.4）。拡張はシークレットを隠せないので、含めるか・交換用のサーバを置くか・OAuth を諦めるかの製品判断が要る（§10.1） |
-| **24** | **1 つの OAuth アプリで複数スペースを認可できるか** | **スペース横断の成立そのもの** | 認可エンドポイントはスペースごとのホスト。登録したスペース以外で同じ client_id が通らなければ、2 つ目以降は API キー接続に頼ることになる。アプリ発行後すぐ確かめる（`docs/oauth-app.md`） |
+| ~~24~~ | 1 つの OAuth アプリで複数スペースを認可できるか | スペース横断の成立そのもの | **解決。1 つの client_id ですべてのスペースを認可できる**（実機で確認）。スペースを増やすたびの登録は不要で、2 つ目以降も「接続」1 回で済む |
 | 23 | OAuth アプリのクライアント ID / シークレットの受け取り方 | OAuth 接続の有効化 | ビルド時の env（`BP_OAUTH_CLIENT_ID` / `BP_OAUTH_CLIENT_SECRET`）で注入する。#22 の結論次第で置き場所を変える |
 | 16 | Firefox 提出の追加要件 | M7 のみ | `data_collection_permissions`（2025-11-03 以降の新規拡張に必須）と `browser_specific_settings.gecko.id` が要る。`sidePanel` は Firefox が知らない権限なので、AMO の lint 対策として M6 でビルドごとに出し分ける |
 | ~~5~~ | API レートリミットの実値 | 並列数、既定スコープ | **解決**。`GET /api/v2/rateLimit` が実値を返す（実測: read 600 / search 150 / update 150）。検索は search 枠を消費する。接続時に取得してトークンバケットを初期化する |
