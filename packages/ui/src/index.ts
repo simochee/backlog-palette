@@ -7,6 +7,34 @@ export {
 } from './palette/PaletteSurface.tsx';
 export { type PathSegment, PathStack, type PathStackProps } from './palette/PathStack.tsx';
 export { Row, type RowProps } from './palette/Row.tsx';
+export {
+  FilterBar,
+  type FilterBarProps,
+  type FilterField,
+  type FilterOption,
+} from './panel/FilterBar.tsx';
+export {
+  type PanelEmptyState,
+  type PanelSuggestion,
+  type PanelSuggestionGroup,
+  PanelSurface,
+  type PanelSurfaceProps,
+  type PanelToast,
+} from './panel/PanelSurface.tsx';
+export {
+  Preview,
+  type PreviewMeta,
+  type PreviewProps,
+  type PreviewSegment,
+} from './panel/Preview.tsx';
+export {
+  type SpaceState,
+  type SpaceStatus,
+  StatusStrip,
+  type StatusStripProps,
+} from './panel/StatusStrip.tsx';
+export { type TypeTab, TypeTabs, type TypeTabsProps } from './panel/TypeTabs.tsx';
+export { layoutForWidth, type PanelLayout, usePanelLayout } from './panel/usePanelLayout.ts';
 export { Avatar, type AvatarProps } from './primitives/Avatar.tsx';
 export { Button, type ButtonProps, type ButtonTone } from './primitives/Button.tsx';
 export { type Choice, ChoiceGroup, type ChoiceGroupProps } from './primitives/ChoiceGroup.tsx';

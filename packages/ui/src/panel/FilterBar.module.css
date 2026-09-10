@@ -1,0 +1,163 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  padding: var(--bp-space-3) var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-border-subtle);
+  background: var(--bp-surface-floating);
+}
+
+.select {
+  display: inline-flex;
+  flex: none;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  height: 28px;
+  padding: 0 var(--bp-space-4);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-control);
+  background: var(--bp-surface-floating);
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.bar[data-compact] .trigger {
+  height: 24px;
+  padding: 0 var(--bp-space-3);
+  gap: var(--bp-space-2);
+  font-size: var(--bp-size-text-xs);
+}
+
+.trigger[data-hovered] {
+  background: var(--bp-row-selected);
+}
+
+.trigger:focus-visible,
+.trigger[data-focus-visible] {
+  outline: 2px solid var(--bp-focus-ring);
+  outline-offset: 1px;
+}
+
+/* 効いている条件だけ面と罫を変える。数が読めれば「条件をクリア」を探せる */
+.trigger[data-active] {
+  border-color: var(--bp-accent);
+  background: var(--bp-row-accent-surface);
+  color: var(--bp-accent-text);
+}
+
+.triggerLabel {
+  color: var(--bp-text-subtle);
+}
+
+.trigger[data-active] .triggerLabel {
+  color: var(--bp-accent-text);
+}
+
+.bar[data-compact] .triggerLabel {
+  display: none;
+}
+
+.triggerValue {
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1;
+  min-width: var(--bp-space-2);
+}
+
+.note {
+  flex: none;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+/*
+ * 器のフォーカスリングは出さない。ポップオーバー自身がフォーカスを受けるが、
+ * キーボードの現在地は選択肢側の data-focused が示している。二重に出ると
+ * どちらが現在地か読めなくなる。
+ */
+.popover {
+  outline: none;
+  min-width: var(--trigger-width);
+  max-width: 280px;
+  padding: var(--bp-space-2);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-surface);
+  background: var(--bp-surface-floating);
+  box-shadow: var(--bp-shadow-surface);
+}
+
+.popoverNote {
+  margin: 0;
+  padding: var(--bp-space-3) var(--bp-space-4) var(--bp-space-2);
+  color: var(--bp-text-subtle);
+  font: 700 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+  letter-spacing: 0.08em;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 320px;
+  overflow-y: auto;
+  outline: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-control);
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-sm) / 16px var(--bp-font-body);
+  outline: none;
+  cursor: default;
+}
+
+.option[data-focused],
+.option[data-hovered] {
+  background: var(--bp-row-selected);
+}
+
+/* 単一選択であることは丸い選択子で示す。四角だと複数選べると読まれる */
+.radio {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--bp-border-strong);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-surface-floating);
+}
+
+.radio[data-selected] {
+  border-color: var(--bp-accent);
+  border-width: 4px;
+}
+
+.optionLabel {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.optionSpacer {
+  flex: 1;
+}
+
+.optionCount {
+  flex: none;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-xs) / 1 var(--bp-font-code);
+}

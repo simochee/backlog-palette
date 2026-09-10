@@ -1,0 +1,74 @@
+.strip {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  padding: var(--bp-space-3) var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-border-subtle);
+  background: var(--bp-surface-sunken);
+}
+
+.strip[data-collapsed] {
+  padding: var(--bp-space-2) var(--bp-space-5);
+}
+
+.summary {
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-xs) / 16px var(--bp-font-body);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  height: 30px;
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-border-subtle);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-surface-floating);
+  font: 400 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+.chip[data-state="error"] {
+  border-color: var(--bp-marker-danger-dot);
+  background: var(--bp-marker-danger-bg);
+}
+
+.chipLabel {
+  color: var(--bp-text-default);
+  font-weight: 600;
+}
+
+.chipMeta {
+  color: var(--bp-text-subtle);
+}
+
+.chipMessage {
+  color: var(--bp-text-danger);
+}
+
+.warning {
+  color: var(--bp-marker-danger-dot);
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--bp-border-default);
+  border-top-color: var(--bp-accent);
+  border-radius: var(--bp-radius-pill);
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

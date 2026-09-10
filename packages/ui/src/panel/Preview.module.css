@@ -1,0 +1,118 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-5);
+  color: var(--bp-text-default);
+}
+
+.preview[data-variant="inline"] {
+  gap: var(--bp-space-2);
+  margin: var(--bp-space-2) 0 var(--bp-space-3);
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-control);
+  border-left: 2px solid var(--bp-accent);
+  background: var(--bp-surface-sunken);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--bp-text-subtle);
+}
+
+.code {
+  color: var(--bp-text-subtle);
+  font: 600 12.5px / 18px var(--bp-font-code);
+}
+
+.headSpacer {
+  flex: 1;
+}
+
+.title {
+  margin: 0;
+  font: 600 var(--bp-size-text-lg) / 24px var(--bp-font-body);
+}
+
+.subline {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  min-width: 0;
+}
+
+.sub {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 16px var(--bp-font-body);
+}
+
+.body {
+  margin: 0;
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-md) / 21px var(--bp-font-body);
+  white-space: pre-wrap;
+}
+
+.preview[data-variant="inline"] .body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font: 400 var(--bp-size-text-sm) / 18px var(--bp-font-body);
+}
+
+/*
+ * ハイライトはアクセントと別の色。アクセントは選択と第一候補が使っているので、
+ * 同じ色にすると「選ばれている場所」と「一致した語」が混ざって読めなくなる。
+ */
+.mark {
+  background: var(--bp-highlight-bg);
+  color: var(--bp-text-default);
+  border-radius: 2px;
+}
+
+.bodyless {
+  margin: 0;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 18px var(--bp-font-body);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  margin: var(--bp-space-2) 0 0;
+  padding-top: var(--bp-space-4);
+  border-top: 1px solid var(--bp-border-subtle);
+}
+
+.metaItem {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-4);
+}
+
+.metaLabel {
+  flex: none;
+  width: 72px;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-xs) / 16px var(--bp-font-body);
+}
+
+.metaValue {
+  margin: 0;
+  min-width: 0;
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-sm) / 16px var(--bp-font-body);
+}

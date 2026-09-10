@@ -1,0 +1,215 @@
+.surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bp-surface-floating);
+  color: var(--bp-text-default);
+  font-family: var(--bp-font-body);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  flex: none;
+  height: 46px;
+  padding: 0 var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-border-subtle);
+}
+
+.searchIcon {
+  flex: none;
+  color: var(--bp-text-subtle);
+}
+
+.field {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-md) / 22px var(--bp-font-body);
+  outline: none;
+}
+
+.surface[data-layout="wide"] .input {
+  font-size: var(--bp-size-text-lg);
+}
+
+.input::placeholder {
+  color: var(--bp-text-disabled);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane {
+  flex: none;
+  width: 300px;
+  overflow-y: auto;
+  border-left: 1px solid var(--bp-border-subtle);
+  background: var(--bp-surface-floating);
+}
+
+.surface[data-layout="wide"] .pane {
+  width: 400px;
+}
+
+.paneEmpty {
+  margin: 0;
+  padding: var(--bp-space-6) var(--bp-space-5);
+  color: var(--bp-text-disabled);
+  font: 400 var(--bp-size-text-sm) / 18px var(--bp-font-body);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  flex: 1;
+  min-height: 0;
+  padding: var(--bp-space-3);
+  overflow-y: auto;
+  outline: none;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: var(--bp-space-2);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--bp-space-4) 10px var(--bp-space-2);
+}
+
+.sectionLabel {
+  color: var(--bp-text-subtle);
+  font: 700 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+  letter-spacing: 0.08em;
+}
+
+.sectionMeta {
+  color: var(--bp-text-disabled);
+  font: 400 var(--bp-size-text-xs) / 1 var(--bp-font-body);
+}
+
+.item {
+  outline: none;
+  cursor: default;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.emptyTitle {
+  margin: 0;
+  padding: var(--bp-space-6) var(--bp-space-5) var(--bp-space-2);
+  font: 600 var(--bp-size-text-md) / 20px var(--bp-font-body);
+}
+
+.emptyDescription {
+  margin: 0;
+  padding: 0 var(--bp-space-5) var(--bp-space-2);
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 18px var(--bp-font-body);
+}
+
+.toast {
+  position: absolute;
+  left: var(--bp-space-5);
+  right: var(--bp-space-5);
+  bottom: 46px;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-surface);
+  background: var(--bp-surface-floating);
+  box-shadow: var(--bp-shadow-surface);
+}
+
+.toastIcon {
+  flex: none;
+  color: var(--bp-accent);
+}
+
+.toastMessage {
+  flex: none;
+  font: 600 var(--bp-size-text-sm) / 16px var(--bp-font-body);
+}
+
+.toastDetail {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-xs) / 16px var(--bp-font-code);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  height: 38px;
+  padding: 0 var(--bp-space-5);
+  overflow: hidden;
+  background: var(--bp-surface-sunken);
+  border-top: 1px solid var(--bp-border-subtle);
+}
+
+.footerHint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex: none;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+.footerSpacer {
+  flex: 1;
+}
+
+.footerNote {
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 1 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+.surface[data-layout="narrow"] .footerNote {
+  display: none;
+}
