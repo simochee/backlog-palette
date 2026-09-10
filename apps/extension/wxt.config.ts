@@ -58,6 +58,17 @@ export default defineConfig({
 
   manifest: {
     name: 'Backlog Palette',
+    /*
+     * 拡張 ID を固定する。OAuth のリダイレクト URI は
+     * `https://<拡張 ID>.chromiumapp.org/` で、ID が変わると登録し直しになる。
+     * 読み込むディレクトリやプロファイルが変わるたびに ID が変わると、
+     * 開発中に OAuth が通らなくなる。
+     *
+     * ここに入るのは公開鍵だけ。秘密鍵は配布物にも履歴にも含めない。
+     * Chrome ウェブストアに提出すると ID はストア側の値になるので、
+     * そのときにこの key は外す。
+     */
+    key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtrGHBdIEFb22eU56b8L9jQrQkULqEIroQYcswiFJME98pmIrQcajs1JbqiLOie0Wt1SbobOqlvbz9Msy3BSlMDhlv0LJrgQKf11GQvO3npjUHDhbstF5dq5Ea+8lGxSu8iiyny7po0ic43OgA2VMEQlP0VatNxl1ml0dAKQshFS+sDfghUKDUMnlQpv5aYDZ2IzK53nwoCLJEM+6uYGN+psqtazFPhJmPSvw26lPVYp8849cxPnWK6aD3uKiAaHqKNyki5FYvdnSreJyvPlHX8guEeolnP+IlydBz2x0nbs+tXEqoCDApIw+YtCJbNJSd/BKfPrAPt180psOJqRYPQIDAQAB',
     description: 'Cmd+K で Backlog のどこへでも。',
     permissions: ['storage', 'tabs', 'sidePanel', 'clipboardWrite', 'identity'],
     optional_permissions: ['history'],

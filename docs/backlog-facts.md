@@ -356,3 +356,18 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 | `GET /wikis` に `count` が効かない | ● `count=5` を付けても全件（実測 956 件）返った。ただし `keyword` を付ければサーバ側で絞られるので、検索用途では問題にならない。**キーワード無しの一覧取得は避ける** |
 | `GET /documents` は `projectIds[]` と `offset` を取る | ● 既定 20 件。`plain`・`json`・`title`・`statusId`・`tags`・`emoji` を含む |
 | `GET /issues` はパラメータ無しだとエラー | ● `projectId[]` の指定が要る |
+
+### 6.4 OAuth 2.0（公式ドキュメントで確認、2026-09-10）
+
+| 項目 | 値 | 根拠 |
+|---|---|---|
+| 認可エンドポイント | `GET /OAuth2AccessRequest.action` | ◎ developer.nulab.com |
+| トークンエンドポイント | `POST /api/v2/oauth2/token` | ◎ 同上 |
+| 認可リクエストのパラメータ | `response_type=code` / `client_id` / `redirect_uri` / `state`（任意） | ◎ 同上 |
+| `scope` | **記載なし**（送らない） | ◎ 同上 |
+| **PKCE** | **非対応**（`code_challenge` の記載が無い） | ◎ 同上 |
+| **`client_secret`** | **トークン要求に必須** | ◎ 同上 |
+| アクセストークンの寿命 | 3600 秒 | ◎ 同上 |
+| リフレッシュ | `grant_type=refresh_token` + `client_id` + `client_secret` + `refresh_token` | ◎ 同上 |
+
+**含意（重要）**: PKCE が使えず `client_secret` が必須なので、**ブラウザ拡張はシークレットを隠せない**。配布物に含めれば取り出せる。設計上の扱いは実装プラン §10 に記録する。

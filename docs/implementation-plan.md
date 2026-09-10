@@ -704,6 +704,22 @@ WXT の `storage.defineItem` でスキーマとマイグレーションを型で
 | **OAuth 2.0（既定）** | スペースごとに「接続」1 回。`browser.identity.launchWebAuthFlow` の認可コードフロー。リフレッシュトークンは SW が管理。非開発職にキーのコピペを求めない |
 | **API キー（フォールバック）** | Backlog Enterprise（オンプレ）、OAuth を組織で制限している環境、CLI 感覚で使いたいユーザー |
 
+### 10.1 `client_secret` を隠せない問題
+
+Backlog の OAuth は **PKCE 非対応で `client_secret` が必須**（`docs/backlog-facts.md` §6.4）。ブラウザ拡張は配布物からシークレットを取り出せるため、隠す手段がない。取りうる道は 3 つ。
+
+| 案 | 内容 | 代償 |
+|---|---|---|
+| **A. 配布物に含める** | 拡張にシークレットを埋める | 取り出せる。ただし `redirect_uri` は登録済みのものと一致が必要なので、盗んだ側は認可コードを自分に飛ばせない。悪用は「このアプリを名乗って認可画面を出す」程度に留まる |
+| B. 交換用のサーバを置く | 認可コード → トークンの交換だけをサーバで行う | 運用が要る。拡張だけで完結しなくなる |
+| C. OAuth を諦め API キーのみ | 接続は API キー入力に一本化 | 非開発職に「API キーをコピーしてくる」を要求する。§10 の前提が崩れる |
+
+**現状は A を前提に実装する**（ビルド時の env で注入）。ヌーラボ側の方針として許容されるかは製品判断で、決まるまで OAuth 接続は既定で無効。
+
+**リダイレクト URI**: `https://<拡張 ID>.chromiumapp.org/`。拡張 ID は読み込むディレクトリやプロファイルで変わるため、manifest の `key`（公開鍵）で固定した。Firefox は `browser.identity.getRedirectURL()` が別形式を返すので、Firefox 対応（M6）の時点で追加登録が要る。
+
+### 10.2 接続の導線
+
 - 初回体験は C1: 未接続なら「このスペースを接続」の 1 行だけ
 - トークン失効はサイドパネルの**行内**に再接続導線（B3・C2）
 - API キーは `storage.local` に平文で入る旨を設定画面に明記し、いつでも削除できる
@@ -864,9 +880,9 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | ~~2~~ | OAuth のリダイレクト URI を複数登録できるか | OAuth を既定にできるか | **解決**。OAuth アプリは登録できる |
 | ~~3~~ | 複数スペースに属するときの認証情報 | 認証モデル | **解決**。API キーも OAuth もスペースごとに別なので、スペース単位の「接続」という設計のままでよい |
 | 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認。**`commands` に割り当てがある間はブラウザがキーを消費し、ページに `keydown` が届かない**ことは M0 で確認済み。content script 側の捕捉はショートカット解除時の保険 |
-| 21 | OAuth の認可・トークンエンドポイントの実際のパス | OAuth 接続 | `/OAuth2AccessRequest.action` と `/api/v2/oauth2/token` で実装したが、`docs/backlog-facts.md` に事実として裏が無い。実機で確認して台帳に追記する |
-| 22 | OAuth で PKCE が使えるか | クライアントシークレットを配布物に含めるか | 現状は client_secret 前提。拡張機能はシークレットを隠せないので、PKCE が使えるならそちらに寄せる |
-| 23 | OAuth アプリのクライアント ID の受け取り方 | OAuth 接続の有効化 | 実装は `setOAuthApp()` で注入する形。ビルド時の env に寄せるか、配布物に埋めるかを決める |
+| ~~21~~ | OAuth の認可・トークンエンドポイントのパス | OAuth 接続 | **解決**。`/OAuth2AccessRequest.action` と `/api/v2/oauth2/token`。実装と一致（`docs/backlog-facts.md` §6.4） |
+| **22** | **`client_secret` を配布物に含めることの是非** | OAuth を既定にできるか | **PKCE は非対応で `client_secret` が必須**と確定（§6.4）。拡張はシークレットを隠せないので、含めるか・交換用のサーバを置くか・OAuth を諦めるかの製品判断が要る（§10.1） |
+| 23 | OAuth アプリのクライアント ID / シークレットの受け取り方 | OAuth 接続の有効化 | ビルド時の env（`BP_OAUTH_CLIENT_ID` / `BP_OAUTH_CLIENT_SECRET`）で注入する。#22 の結論次第で置き場所を変える |
 | 16 | Firefox 提出の追加要件 | M7 のみ | `data_collection_permissions`（2025-11-03 以降の新規拡張に必須）と `browser_specific_settings.gecko.id` が要る。`sidePanel` は Firefox が知らない権限なので、AMO の lint 対策として M6 でビルドごとに出し分ける |
 | ~~5~~ | API レートリミットの実値 | 並列数、既定スコープ | **解決**。`GET /api/v2/rateLimit` が実値を返す（実測: read 600 / search 150 / update 150）。検索は search 枠を消費する。接続時に取得してトークンバケットを初期化する |
 | 6 | `commands` からの `sidePanel.open()` がユーザー操作起点として通るか、表示ラグ | サイドパネルの起動経路 | スパイク（M0） |
