@@ -1,11 +1,12 @@
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
-import { onMessage } from '../src/messaging/ext.ts';
+import { onMessage, sendEvent } from '../src/messaging/ext.ts';
 import { isTrustedPageOrigin } from '../src/messaging/window.ts';
 import { disconnect } from '../src/services/auth/connect.ts';
 import { setOAuthApp } from '../src/services/auth/oauth.ts';
 import { buildBootstrap } from '../src/services/bootstrap.ts';
 import { connectSpace } from '../src/services/connectSpace.ts';
+import { runSearch } from '../src/services/search/index.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
 
 /**
@@ -47,6 +48,38 @@ async function configureOAuth(): Promise<void> {
 export default defineBackground(() => {
   configureOAuth().catch(() => {
     // 設定できなければ OAuth は notConfigured のまま。API キー接続は使える
+  });
+
+  /*
+   * 走っている検索を requestId で持つ。打鍵し直すたびに前の検索を止めないと、
+   * 古い結果が新しい結果に混ざる。
+   */
+  const running = new Map<string, AbortController>();
+
+  onMessage('startSearch', async ({ data }) => {
+    running.get(data.requestId)?.abort();
+    const controller = new AbortController();
+    running.set(data.requestId, controller);
+
+    try {
+      await runSearch(
+        data.state,
+        (chunk) => {
+          // 送信先は拡張ページ。失敗しても検索そのものは止めない
+          void sendEvent('searchChunk', { requestId: data.requestId, ...chunk }).catch(
+            () => undefined,
+          );
+        },
+        { signal: controller.signal },
+      );
+    } finally {
+      running.delete(data.requestId);
+    }
+  });
+
+  onMessage('cancelSearch', ({ data }) => {
+    running.get(data)?.abort();
+    running.delete(data);
   });
 
   onMessage('connectSpace', ({ data }) => connectSpace(data, Date.now()));
