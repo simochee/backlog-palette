@@ -312,7 +312,7 @@ test.describe('未接続のとき', () => {
     await expect(frame.locator('[role="option"]')).toHaveCount(1);
   });
 
-  test('接続に失敗したら、その場で理由が分かる', async ({ page, space, palette }) => {
+  test('接続すると、そのスペースが使えるようになる', async ({ page, space, palette }) => {
     await page.goto(space.url('/dashboard'));
     await page.keyboard.press('Meta+k');
 
@@ -320,9 +320,49 @@ test.describe('未接続のとき', () => {
     await frame.locator('input').waitFor({ state: 'visible' });
     await page.keyboard.press('Enter');
 
-    // 偽スペースは OAuth の認可画面を返さないので、失敗の文言が出れば経路は通っている
-    await expect(frame.locator('[role="option"]').first()).not.toContainText('このスペースを接続', {
-      timeout: 10_000,
+    // 認可のやり取りが 1 往復あるので、他のテストより長めに待つ
+    await expect(frame.locator('[role="option"]').first()).toContainText('に接続しました', {
+      timeout: 25_000,
     });
+  });
+});
+
+test.describe('テーマ', () => {
+  test('ダークではパレットの面が暗くなる', async ({ page, space, palette }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto(space.url('/view/PROJ-123'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    /*
+     * トークンの解決を色で確かめる。セレクタの書き方を誤ると light の
+     * ブロックが再宣言されて dark が黙って効かなくなる（実際に踏んだ）。
+     */
+    const background = await frame.evaluate(() => {
+      const surface = document.querySelector('[class*="surface"]');
+      return surface === null ? '' : getComputedStyle(surface).backgroundColor;
+    });
+
+    const [r, g, b] = background.match(/\d+/g)?.map(Number) ?? [255, 255, 255];
+    expect((r ?? 255) + (g ?? 255) + (b ?? 255)).toBeLessThan(300);
+  });
+
+  test('ライトではパレットの面が明るい', async ({ page, space, palette }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto(space.url('/view/PROJ-123'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    const background = await frame.evaluate(() => {
+      const surface = document.querySelector('[class*="surface"]');
+      return surface === null ? '' : getComputedStyle(surface).backgroundColor;
+    });
+
+    const [r, g, b] = background.match(/\d+/g)?.map(Number) ?? [0, 0, 0];
+    expect((r ?? 0) + (g ?? 0) + (b ?? 0)).toBeGreaterThan(600);
   });
 });

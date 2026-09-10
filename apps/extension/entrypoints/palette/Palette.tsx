@@ -126,6 +126,7 @@ export function Palette({ channel }: PaletteProps) {
     <div
       className="backdrop"
       data-bp-theme=""
+      data-bp-scheme={window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) channel.send({ t: 'close' });
       }}

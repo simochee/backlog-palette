@@ -75,7 +75,15 @@
   --bp-shadow-surface: 0 12px 32px rgb(23 22 29 / 18%), 0 2px 6px rgb(23 22 29 / 10%);
 }
 
-[data-bp-theme][data-bp-scheme="dark"] {
+/*
+ * dark を「同じ要素に両方の属性が付いているとき」に限定しない。
+ *
+ * 限定すると、scheme を持つ祖先の内側でコンポーネントが自分に data-bp-theme を
+ * 付けた瞬間、light のブロックが再宣言されて dark が上書きされる。パレットは
+ * iframe の中で自分にテーマ属性を付けるので、この形でないと dark が効かない。
+ */
+[data-bp-theme][data-bp-scheme="dark"],
+[data-bp-scheme="dark"] [data-bp-theme] {
   color-scheme: dark;
 
   --bp-surface-floating: #282630;
