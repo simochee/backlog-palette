@@ -89,3 +89,15 @@ describe('打鍵ごとの一致に渡す索引', () => {
     expect(index.map((entry) => entry.id)).toContain('command:copy-key');
   });
 });
+
+describe('プロジェクトの索引', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+  });
+
+  it('接続していないスペースのプロジェクトは索引に入らない', async () => {
+    const { index } = await buildBootstrap('modal', CTX, NOW);
+
+    expect(index.filter((entry) => entry.kind === 'project')).toEqual([]);
+  });
+});

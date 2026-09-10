@@ -2,7 +2,9 @@ import { availablePages, type IndexEntry, issueUrl, type NavContext } from '@bac
 import type { RowAction } from '../messaging/ext.ts';
 import type { PageContext } from '../messaging/window.ts';
 import { recentVisits } from '../storage/displayCache.ts';
+import { listConnections } from './auth/connect.ts';
 import { issueCommands } from './commands.ts';
+import { loadAllMasters } from './masters/index.ts';
 
 /**
  * モーダルがローカルだけで応答するための索引（実装プラン §7.2）。
@@ -33,6 +35,40 @@ export async function buildLocalIndex(
   for (const command of issueCommands(ctx)) {
     entries.push(command.entry);
     actions[command.entry.id] = command.action;
+  }
+
+  /*
+   * プロジェクトを索引に入れる。日本語のプロジェクト名は英字キーでも
+   * 引けるよう別名に入れる（§7.1）。マスタが無ければ入らないだけで、
+   * ページ移動と表示キャッシュはそのまま動く。
+   */
+  /*
+   * ホストは接続情報から引く。スペースキーから組み立てると
+   * .backlog.jp / .backlog.com / .backlogtool.com を取り違える。
+   */
+  const hosts = new Map((await listConnections()).map((c) => [c.spaceKey, c.host]));
+
+  for (const masters of await loadAllMasters(now)) {
+    const host = hosts.get(masters.spaceKey);
+    if (host === undefined) continue;
+
+    for (const project of masters.projects) {
+      const id = `project:${masters.spaceKey}:${project.projectKey}`;
+      entries.push({
+        id,
+        kind: 'project',
+        text: project.name,
+        aliases: [project.projectKey],
+        code: project.projectKey,
+        sub: masters.spaceKey,
+        context: project.projectKey === ctx.projectKey ? 'currentProject' : 'currentSpace',
+        ...(masters.spaceKey === ctx.spaceKey ? {} : { spaceKey: masters.spaceKey }),
+      });
+      actions[id] = {
+        kind: 'navigate',
+        url: `https://${host}/projects/${project.projectKey}`,
+      };
+    }
   }
 
   for (const page of availablePages(navContextOf(ctx))) {
