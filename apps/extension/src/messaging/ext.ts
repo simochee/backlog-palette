@@ -105,6 +105,10 @@ type ExtProtocol = {
   startSearch(request: { requestId: string; state: SearchState }): void;
   /** 打鍵し直したときに前の検索を止める */
   cancelSearch(requestId: string): void;
+  /** 検索クエリの履歴。新しい順（§9 の `local:searchHistory`） */
+  searchHistory(): readonly string[];
+  /** 実行したクエリを履歴に残す。更新後の履歴を返すので UI は重複規則を持たない */
+  rememberSearch(query: string): readonly string[];
   /** content script が閲覧を記録する。API は呼ばない（§9 の表示キャッシュ） */
   recordVisit(record: VisitRecord): void;
 };

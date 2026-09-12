@@ -56,6 +56,41 @@ const RATE_LIMIT = {
   },
 };
 
+const TESTER = { id: 1, userId: 'tester', name: 'テスト太郎' };
+
+function issue(keyId: number, summary: string, description: string) {
+  return {
+    id: 1000 + keyId,
+    projectId: 101,
+    issueKey: `PROJ-${keyId}`,
+    keyId,
+    summary,
+    description,
+    issueType: { id: 1, projectId: 101, name: 'タスク', color: '#7ea800' },
+    status: { id: 1, projectId: 101, name: '未対応', color: '#ed8077', displayOrder: 1000 },
+    priority: { id: 3, name: '中' },
+    assignee: TESTER,
+    createdUser: TESTER,
+    created: '2026-09-01T09:00:00Z',
+    updatedUser: TESTER,
+    updated: '2026-09-09T09:00:00Z',
+  };
+}
+
+/*
+ * キーワードでは絞らずに返す。拡張はキーワード対象を API に伝えられず、
+ * 取得後に自分で絞る（services/search/query.ts の rowFilter）ので、
+ * 素通しで返すほうが「どちらが絞ったのか」が分かる。
+ */
+const ISSUES = [
+  issue(
+    123,
+    '請求書の発行フローを見直す',
+    '月末の請求書発行が手作業のままで、担当者に負荷が寄っている。',
+  ),
+  issue(142, '請求先マスタの登録画面を直す', '請求先の郵便番号が全角で入ると保存できない。'),
+];
+
 const API: Record<string, unknown> = {
   '/api/v2/rateLimit': RATE_LIMIT,
   '/api/v2/users/myself': { id: 1, userId: 'tester', name: 'テスト太郎' },
@@ -63,7 +98,7 @@ const API: Record<string, unknown> = {
     { id: 101, projectKey: 'PROJ', name: 'Webリニューアル', archived: false, useWiki: true },
     { id: 102, projectKey: 'MOB', name: 'モバイルアプリ v3', archived: false, useWiki: true },
   ],
-  '/api/v2/issues': [],
+  '/api/v2/issues': ISSUES,
   '/api/v2/wikis': [],
   '/api/v2/documents': [],
 };

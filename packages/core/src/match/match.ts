@@ -1,4 +1,5 @@
 import { normalize } from '../query/normalize.ts';
+import { type Folded, fold, originOf, sourceRange } from './fold.ts';
 
 export type MatchTarget = {
   /** 主テキスト（ページ名・件名・プロジェクト名など） */
@@ -47,92 +48,23 @@ export function match(query: string, target: MatchTarget): MatchResult {
   return best;
 }
 
-type Folded = {
-  readonly source: string;
-  readonly value: string;
-  /** value[i] に対応する source 上の開始位置。1 対 1 に畳めたときは持たない */
-  readonly origin?: readonly number[];
-};
-
-/**
- * NFKC で形が変わらない文字だけの並び。半角カナ `ﾎﾞ` のように 2 文字が 1 文字へ
- * 畳まれる文字が混じると、正規化後の位置から元の位置へ戻せなくなる。
- *
- * 索引 5,000 件を打鍵ごとに走る（§14）ので、大半を占めるこの並びでは
- * 位置の対応表を作らず、正規形と元テキストの添字が一致することに頼る。
- */
-const NFKC_STABLE = /^[ -~、。々-〇ぁ-ゖゝ-ゟァ-ヶ・-ヾ一-鿿]*$/;
-
-function fold(text: string): Folded {
-  if (NFKC_STABLE.test(text)) return { source: text, value: normalize(text) };
-  return foldByChunks(text);
-}
-
-/**
- * 揺れのある文字を含むときだけ、まとまりごとに正規化して対応表を作る。
- * 文字列全体を一度に正規化すると長さが変わり、ハイライト位置を元の
- * インデックスへ戻せない。まとまり単位なら「元の 1 まとまり = 正規形の n 文字」
- * の対応が残る。
- */
-function foldByChunks(text: string): Folded {
-  const origin: number[] = [];
-  let value = '';
-  let index = 0;
-
-  while (index < text.length) {
-    const end = chunkEnd(text, index);
-    const chunk = normalize(text.slice(index, end));
-    for (let i = 0; i < chunk.length; i += 1) origin.push(index);
-    value += chunk;
-    index = end;
-  }
-
-  return { source: text, value, origin };
-}
-
-/**
- * 結合文字とハングルの字母は前の文字と合成されうるので、同じまとまりに入れる。
- * まとまりを広く取りすぎてもハイライトが粗くなるだけだが、狭く取ると
- * 正規形が文字列全体を正規化した結果とずれる。
- */
-const CHUNK_CONTINUATION = /[\p{M}ᄀ-ᇿﾞﾟﾠ-ￜ]/u;
-
-function chunkEnd(text: string, start: number): number {
-  let end = start + charWidthAt(text, start);
-  while (end < text.length && continuesChunk(text, end)) {
-    end += charWidthAt(text, end);
-  }
-  return end;
-}
-
-function charWidthAt(text: string, index: number): number {
-  const code = text.codePointAt(index) ?? 0;
-  return code > 0xffff ? 2 : 1;
-}
-
-function continuesChunk(text: string, index: number): boolean {
-  const code = text.codePointAt(index) ?? 0;
-  if (code < 0x0300) return false;
-  return CHUNK_CONTINUATION.test(String.fromCodePoint(code));
-}
-
 function matchFolded(query: string, folded: Folded): MatchResult {
   const { value } = folded;
 
   if (value === query) {
-    return { score: EXACT, ranges: [rangeOf(folded, 0, query.length - 1)] };
+    return { score: EXACT, ranges: [sourceRange(folded, 0, query.length - 1)] };
   }
 
   const at = value.indexOf(query);
   if (at === 0) {
-    return { score: PREFIX, ranges: [rangeOf(folded, 0, query.length - 1)] };
+    return { score: PREFIX, ranges: [sourceRange(folded, 0, query.length - 1)] };
   }
   if (at > 0) {
     const bonus = isWordHead(folded, at) ? SUBSTRING_WORD_HEAD_BONUS : 0;
     const penalty = Math.min(at, SUBSTRING_OFFSET_PENALTY_LIMIT);
     return {
       score: SUBSTRING + bonus - penalty,
-      ranges: [rangeOf(folded, at, at + query.length - 1)],
+      ranges: [sourceRange(folded, at, at + query.length - 1)],
     };
   }
 
@@ -227,7 +159,7 @@ function isWordHead(folded: Folded, index: number): boolean {
 
 /** 大文字の切れ目は正規形には残らないので、元テキストで見る */
 function startsUppercaseRun(folded: Folded, index: number): boolean {
-  const at = folded.origin?.[index] ?? index;
+  const at = originOf(folded, index);
   return at > 0 && isUppercase(folded.source, at) && !isUppercase(folded.source, at - 1);
 }
 
@@ -244,32 +176,12 @@ function rangesOf(folded: Folded, positions: readonly number[]): readonly [numbe
   for (let i = 1; i < positions.length; i += 1) {
     const at = positions[i] ?? 0;
     if (at !== previous + 1) {
-      ranges.push(rangeOf(folded, start, previous));
+      ranges.push(sourceRange(folded, start, previous));
       start = at;
     }
     previous = at;
   }
-  ranges.push(rangeOf(folded, start, previous));
+  ranges.push(sourceRange(folded, start, previous));
 
   return ranges;
-}
-
-function rangeOf(folded: Folded, first: number, last: number): [number, number] {
-  return [originOf(folded, first), originEndOf(folded, last)];
-}
-
-function originOf(folded: Folded, index: number): number {
-  return folded.origin?.[index] ?? index;
-}
-
-function originEndOf(folded: Folded, index: number): number {
-  const { origin } = folded;
-  if (origin === undefined) return index + 1;
-
-  const at = origin[index] ?? 0;
-  for (let i = index + 1; i < origin.length; i += 1) {
-    const next = origin[i] ?? 0;
-    if (next > at) return next;
-  }
-  return folded.source.length;
 }

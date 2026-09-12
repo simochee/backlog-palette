@@ -8,6 +8,7 @@ import { buildAssignedSection, buildBootstrap } from '../src/services/bootstrap.
 import { connectSpace } from '../src/services/connectSpace.ts';
 import { readPageScope } from '../src/services/pageContext.ts';
 import { runSearch } from '../src/services/search/index.ts';
+import { recentQueries, rememberQuery } from '../src/services/searchHistory.ts';
 import { recordVisit } from '../src/services/visit.ts';
 
 /**
@@ -61,6 +62,9 @@ export default defineBackground(() => {
     running.get(data)?.abort();
     running.delete(data);
   });
+
+  onMessage('searchHistory', () => recentQueries());
+  onMessage('rememberSearch', ({ data }) => rememberQuery(data));
 
   onMessage('connectSpace', ({ data }) => connectSpace(data, Date.now()));
   onMessage('disconnectSpace', ({ data }) => disconnect(data));

@@ -1,6 +1,6 @@
 import { Check, Search } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Autocomplete,
   Header,
@@ -63,6 +63,8 @@ export type PanelSurfaceProps = {
   onValueChange?: (value: string) => void;
   /** プレビューの対象。狭い幅ではこの行の下に展開する */
   selectedId?: string;
+  /** 仮想フォーカスが移った行。プレビューの対象を呼び出し側が決めるために要る */
+  onHighlight?: (id: string) => void;
   preview?: PreviewProps;
   previewPlaceholder?: string;
   /** 0 件のときに結果リストの代わりに出す提案 */
@@ -89,6 +91,21 @@ const DEFAULT_FOOTER: readonly FooterHint[] = [
 ];
 
 /**
+ * フォーカスが移ったことを呼び出し側へ伝える。
+ *
+ * React Aria は仮想フォーカスの移動を通知しない。選択（`onSelectionChange`）に
+ * 載せる手もあるが、リストが選択を持つとクリックの意味が「開く」から「選ぶ」へ
+ * 変わる。フォーカス中の行から 1 回だけ知らせれば、行の実行規則は変わらない。
+ */
+function FocusReport({ id, onHighlight }: { id: string; onHighlight: (id: string) => void }) {
+  useEffect(() => {
+    onHighlight(id);
+  }, [id, onHighlight]);
+
+  return null;
+}
+
+/**
  * 提案は props の並び順ではなくこの順で出す。効いている条件を外す提案を
  * 先頭に固定するのが 0 件の切り分けの要点で、呼び出し側の都合で崩れると困る。
  */
@@ -113,6 +130,7 @@ export function PanelSurface({
   placeholder = '課題・Wiki・ドキュメントを検索',
   onValueChange,
   selectedId,
+  onHighlight,
   preview,
   previewPlaceholder = '行を選ぶと、ここに内容が出ます',
   emptyState,
@@ -192,6 +210,9 @@ export function PanelSurface({
             <ListBoxItem key={id} id={id} textValue={row.title} className={styles.item}>
               {({ isFocused }) => (
                 <>
+                  {isFocused && onHighlight ? (
+                    <FocusReport id={id} onHighlight={onHighlight} />
+                  ) : null}
                   <Row
                     {...row}
                     selected={isFocused || id === selectedId || row.selected === true}

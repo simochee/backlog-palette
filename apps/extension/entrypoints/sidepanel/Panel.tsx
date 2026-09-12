@@ -1,106 +1,33 @@
-import {
-  buildShareUrl,
-  defaultSearchState,
-  type SearchResultType,
-  type SearchState,
-} from '@backlog-palette/core';
-import { type FilterField, PanelSurface } from '@backlog-palette/ui';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { buildShareUrl, defaultSearchState, type SearchState } from '@backlog-palette/core';
+import { type PaletteSection, type PanelEmptyState, PanelSurface } from '@backlog-palette/ui';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { sendMessage } from '../../src/messaging/ext.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
+import { applyFilter, filterFields } from '../../src/panel/filters.ts';
+import { previewFor } from '../../src/panel/preview.ts';
+import { applySuggestion, emptySuggestions } from '../../src/panel/suggestions.ts';
 import { useSearch } from './useSearch.ts';
 
-const TYPE_SETS: Record<string, readonly SearchResultType[]> = {
-  all: ['issue', 'wiki', 'document'],
-  issue: ['issue'],
-  wiki: ['wiki'],
-  document: ['document'],
-};
+const HISTORY_PREFIX = 'history:';
+const TOAST_MS = 4000;
+/** 履歴は全部は出さない。空入力の画面は「次に何を打つか」の助けで、一覧ではない */
+const HISTORY_ROWS = 8;
 
-function filterFields(state: SearchState): FilterField[] {
-  const typeId =
-    Object.entries(TYPE_SETS).find(
-      ([, types]) =>
-        types.length === state.types.length && types.every((t) => state.types.includes(t)),
-    )?.[0] ?? 'all';
+function historySections(history: readonly string[]): readonly PaletteSection[] {
+  if (history.length === 0) return [];
 
   return [
     {
-      id: 'scope',
-      label: 'スペース',
-      value: state.scope.kind === 'allSpaces' ? 'all' : 'current',
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: '全スペース' },
-        { id: 'current', label: 'このスペース' },
-      ],
-    },
-    {
-      id: 'type',
-      label: '種別',
-      value: typeId,
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: 'すべて' },
-        { id: 'issue', label: '課題' },
-        { id: 'wiki', label: 'Wiki' },
-        { id: 'document', label: 'ドキュメント' },
-      ],
-    },
-    {
-      id: 'status',
-      label: 'ステータス',
-      value: state.status.kind === 'preset' ? 'openOnly' : 'any',
-      neutralValue: 'any',
-      options: [
-        { id: 'any', label: 'すべて' },
-        { id: 'openOnly', label: '完了を除く' },
-      ],
-    },
-    {
-      id: 'assignee',
-      label: '担当者',
-      value: state.assignee.kind === 'me' ? 'me' : 'any',
-      neutralValue: 'any',
-      options: [
-        { id: 'any', label: 'すべて' },
-        { id: 'me', label: '自分' },
-      ],
-    },
-    {
-      id: 'updated',
-      label: '更新日',
-      value: state.updated.kind === 'withinDays' ? String(state.updated.days) : 'any',
-      neutralValue: 'any',
-      options: [
-        { id: 'any', label: 'すべて' },
-        { id: '7', label: '7 日以内' },
-        { id: '30', label: '30 日以内' },
-      ],
+      id: 'history',
+      label: '最近の検索',
+      rows: history.slice(0, HISTORY_ROWS).map((query, index) => ({
+        id: `${HISTORY_PREFIX}${query}`,
+        kind: 'filter' as const,
+        title: query,
+        hint: index === 0 ? ('enter' as const) : ('none' as const),
+      })),
     },
   ];
-}
-
-function applyFilter(state: SearchState, fieldId: string, optionId: string): SearchState {
-  switch (fieldId) {
-    case 'type':
-      return { ...state, types: TYPE_SETS[optionId] ?? TYPE_SETS.all ?? [] };
-    case 'status':
-      return {
-        ...state,
-        status: optionId === 'openOnly' ? { kind: 'preset', preset: 'openOnly' } : { kind: 'any' },
-      };
-    case 'assignee':
-      return { ...state, assignee: optionId === 'me' ? { kind: 'me' } : { kind: 'any' } };
-    case 'updated':
-      return {
-        ...state,
-        updated:
-          optionId === 'any' ? { kind: 'any' } : { kind: 'withinDays', days: Number(optionId) },
-      };
-    default:
-      return state;
-  }
 }
 
 /**
@@ -112,8 +39,9 @@ export function Panel() {
   const [ctx, setCtx] = useState<PageContext | undefined>(undefined);
   const [query, setQuery] = useState('');
   const [state, setState] = useState<SearchState>(defaultSearchState);
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const [toast, setToast] = useState<string | undefined>(undefined);
+  const [history, setHistory] = useState<readonly string[]>([]);
+  const [highlightedId, setHighlightedId] = useState<string | undefined>(undefined);
+  const [toast, setToast] = useState<{ message: string; detail: string } | undefined>(undefined);
   const search = useSearch(ctx?.spaceKey);
 
   useEffect(() => {
@@ -128,6 +56,10 @@ export function Panel() {
         }
       })
       .catch(() => undefined);
+
+    sendMessage('searchHistory')
+      .then(setHistory)
+      .catch(() => undefined);
   }, []);
 
   const [searched, setSearched] = useState('');
@@ -138,34 +70,82 @@ export function Panel() {
       if (next.query.trim() === '') return;
 
       setSearched(next.query);
+      setHighlightedId(undefined);
       search.start(next);
+
+      sendMessage('rememberSearch', next.query)
+        .then(setHistory)
+        .catch(() => undefined);
     },
     [search],
   );
 
+  const filterContext = useMemo(
+    () => (ctx?.spaceKey === undefined ? {} : { currentSpaceKey: ctx.spaceKey }),
+    [ctx?.spaceKey],
+  );
+
+  const suggestionContext = useMemo(
+    () => ({ ...filterContext, ...(ctx?.origin === undefined ? {} : { origin: ctx.origin }) }),
+    [filterContext, ctx?.origin],
+  );
+
+  const shareUrl = useCallback(
+    () => (ctx === undefined ? undefined : buildShareUrl(ctx.origin, { ...state, query })),
+    [ctx, state, query],
+  );
+
+  const latestQuery = history[0];
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   /*
-   * 検索状態を URL にして配る（§7.5）。フラグメントに載せるのでサーバーには
-   * 送られず、拡張を入れていない相手にも普通の Backlog ページとして開ける。
+   * キーは捕捉段階で受ける。React Aria が先に受け取ると、入力が空のときの `↑` が
+   * 候補リストの選択移動に消費されて、直前のクエリまで届かない。
    */
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
+
+      const inInput = event.target instanceof HTMLInputElement;
+
+      if (event.key === 'ArrowUp' && inInput && query === '' && latestQuery !== undefined) {
+        event.preventDefault();
+        event.stopPropagation();
+        setQuery(latestQuery);
+        return;
+      }
+
       const isCopy = (event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'C';
-      if (!isCopy || ctx === undefined) return;
+      const url = isCopy ? shareUrl() : undefined;
+      if (url === undefined) return;
 
       event.preventDefault();
       navigator.clipboard
-        .writeText(buildShareUrl(ctx.origin, { ...state, query }))
-        .then(() => setToast('検索 URL をコピーしました'))
+        .writeText(url)
+        .then(() => {
+          clearTimeout(toastTimer.current);
+          // 何をコピーしたかは URL の実体で見せる（モック B5）
+          setToast({ message: '検索 URL をコピーしました', detail: url });
+          toastTimer.current = setTimeout(() => setToast(undefined), TOAST_MS);
+        })
         .catch(() => undefined);
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [ctx, state, query]);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [query, latestQuery, shareUrl]);
 
-  const sections = useMemo(
-    () => [{ id: 'results', rows: search.results.rows.map((row) => ({ ...row })) }],
-    [search.results.rows],
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  const rows = search.results.rows;
+  const showHistory = query.trim() === '';
+
+  const sections = useMemo<readonly PaletteSection[]>(
+    () =>
+      showHistory
+        ? historySections(history)
+        : [{ id: 'results', rows: rows.map((row) => ({ ...row })) }],
+    [showHistory, history, rows],
   );
 
   const spaces = useMemo(
@@ -179,6 +159,32 @@ export function Panel() {
       })),
     [search.spaces],
   );
+
+  /*
+   * プレビューは選択行に追従する。まだ何も動かしていないときは先頭行を出す。
+   * 空のペインから始めると、↓ を押すまで「開かずに読める」ことに気づけない。
+   */
+  const previewRow = rows.find((row) => row.id === highlightedId) ?? rows[0];
+  const preview =
+    showHistory || previewRow === undefined ? undefined : previewFor(previewRow, searched);
+
+  const onHighlight = useCallback(
+    (id: string) => {
+      setHighlightedId(id);
+      const index = rows.findIndex((row) => row.id === id);
+      if (index >= 0) search.setSelectedIndex(index);
+    },
+    [rows, search],
+  );
+
+  const emptyState: PanelEmptyState | undefined =
+    showHistory || search.running || rows.length > 0 || searched === ''
+      ? undefined
+      : {
+          title: `「${searched}」に一致する結果がありません`,
+          description: '条件かスコープのどちらが効いているかで切り分けます',
+          suggestions: emptySuggestions(state, suggestionContext),
+        };
 
   const held = search.results.held.length;
 
@@ -195,23 +201,48 @@ export function Panel() {
         submitOnEnter={query !== searched}
         onSubmit={(value) => run({ ...state, query: value })}
         filters={filterFields(state)}
-        onFilterChange={(fieldId, optionId) => run(applyFilter(state, fieldId, optionId))}
+        onFilterChange={(fieldId, optionId) =>
+          run(applyFilter(state, fieldId, optionId, filterContext))
+        }
         onFilterClear={() => run({ ...defaultSearchState, query: state.query })}
         spaces={spaces}
         {...(held > 0 ? { statusSummary: `${held} 件の新しい結果 — ↑ で先頭へ` } : {})}
         sections={sections}
-        {...(selectedId === undefined ? {} : { selectedId })}
-        {...(toast === undefined ? {} : { toast: { message: toast } })}
+        {...(previewRow === undefined || showHistory ? {} : { selectedId: previewRow.id })}
+        {...(preview === undefined ? {} : { preview })}
+        onHighlight={onHighlight}
+        {...(emptyState === undefined ? {} : { emptyState })}
+        onSuggestion={(id) => {
+          const outcome = applySuggestion(state, id, suggestionContext);
+          if (outcome === undefined) return;
+
+          if (outcome.kind === 'search') {
+            run(outcome.state);
+            return;
+          }
+
+          void sendMessage('navigate', { url: outcome.url, target: 'newTab' }).catch(
+            () => undefined,
+          );
+        }}
+        {...(toast === undefined ? {} : { toast })}
         footer={[
           { keys: ['↑', '↓'], label: '移動' },
           { keys: ['↵'], label: '開く' },
           { keys: ['⌘', '⇧', 'C'], label: '検索 URL をコピー' },
         ]}
         onAction={(id) => {
-          const row = search.results.rows.find((candidate) => candidate.id === id);
+          if (id.startsWith(HISTORY_PREFIX)) {
+            const recalled = id.slice(HISTORY_PREFIX.length);
+            setQuery(recalled);
+            run({ ...state, query: recalled });
+            return;
+          }
+
+          const row = rows.find((candidate) => candidate.id === id);
           if (row === undefined) return;
 
-          setSelectedId(id);
+          setHighlightedId(id);
           void sendMessage('runRowAction', {
             kind: 'navigate',
             url: row.url,

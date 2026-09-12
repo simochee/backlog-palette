@@ -368,3 +368,71 @@ test.describe('テーマ', () => {
     expect((r ?? 0) + (g ?? 0) + (b ?? 0)).toBeGreaterThan(600);
   });
 });
+
+test.describe('スコープのスタック', () => {
+  test('⌫ を 2 回押すとスコープが 1 段外れる', async ({ page, space, palette }) => {
+    await connectWithApiKey(page, space);
+
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    const current = frame.locator('[data-current]');
+    await expect(current).toContainText('PROJ');
+
+    // 1 回目は予告だけ。ここで消えると、打った文字と区別が付かなくなる
+    await page.keyboard.press('Backspace');
+    await expect(frame.getByText('もう一度 ⌫ で右端を削除')).toBeVisible();
+    await expect(current).toContainText('PROJ');
+
+    await page.keyboard.press('Backspace');
+    await expect(current).toContainText('demo');
+    await expect(current).not.toContainText('PROJ');
+  });
+
+  test('キャレットが先頭にあるとき、入力した日本語は ⌫ で消えない', async ({
+    page,
+    space,
+    palette,
+  }) => {
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('ぼーど');
+    for (const _ of [0, 1, 2]) await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Backspace');
+
+    await expect(frame.locator('input')).toHaveValue('ぼーど');
+    await expect(frame.getByText('もう一度 ⌫ で右端を削除')).toBeVisible();
+  });
+});
+
+test.describe('2 段階のコマンド', () => {
+  test('コマンドを選ぶと階層が積まれ、Esc で戻る', async ({ page, space, palette }) => {
+    await connectWithApiKey(page, space);
+
+    await page.goto(space.url('/board/PROJ'));
+    await page.keyboard.press('Meta+k');
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+
+    await page.keyboard.type('すぺーす');
+    await expect(frame.locator('[role="option"]').first()).toContainText('スペースを切り替え');
+
+    await page.keyboard.press('Enter');
+
+    // 遷移せず、コマンドがスタックに積まれて引数の階層が出る
+    await expect(frame.locator('[data-current]')).toContainText('スペースを切り替え');
+    await expect(frame.locator('input')).toHaveValue('');
+    await expect(frame.getByText('1 つ前に戻る').first()).toBeVisible();
+    await expect(frame.getByRole('option')).toHaveCount(1);
+
+    await page.keyboard.press('Escape');
+
+    await expect(frame.locator('[data-current]')).toContainText('PROJ');
+    await expect(frame.locator('input')).toBeVisible();
+  });
+});

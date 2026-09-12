@@ -7,6 +7,7 @@ export {
 } from './palette/PaletteSurface.tsx';
 export { type PathSegment, PathStack, type PathStackProps } from './palette/PathStack.tsx';
 export { Row, type RowProps } from './palette/Row.tsx';
+export type { Caret } from './palette/surfaceKeys.ts';
 export {
   FilterBar,
   type FilterBarProps,
