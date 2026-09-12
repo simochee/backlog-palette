@@ -714,7 +714,22 @@ Backlog の OAuth は **PKCE 非対応で `client_secret` が必須**（`docs/ba
 | B. 交換用のサーバを置く | 認可コード → トークンの交換だけをサーバで行う | 運用が要る。拡張だけで完結しなくなる |
 | C. OAuth を諦め API キーのみ | 接続は API キー入力に一本化 | 非開発職に「API キーをコピーしてくる」を要求する。§10 の前提が崩れる |
 
-**現状は A を前提に実装する**（ビルド時の env で注入）。ヌーラボ側の方針として許容されるかは製品判断で、決まるまで OAuth 接続は既定で無効。
+**案 A で決定した。** 根拠は 2 つ。
+
+1. **標準側の位置づけ**: RFC 8252（OAuth for Native Apps）はインストール型アプリを public client と定め、**シークレットの機密性に依存してはならない**としている。本来の答えは PKCE だが Backlog は未対応なので、実質的な防御は `redirect_uri` の一致になる。盗んだ側は認可コードを自分に飛ばせない
+2. **代替案が前提を壊す**: B（交換用サーバ）は拡張だけで完結しなくなる。C（利用者が自分で OAuth アプリを登録）は、避けようとしていた API キー入力より手間が増え、「キーのコピペが不要で非開発職にも通る」という §10 の前提そのものを壊す
+
+**ヌーラボ内の前例**（調査日 2026-09-13）
+
+| 配布物 | 扱い |
+|---|---|
+| `@nulab/bee`（公式 CLI） | `BACKLOG_OAUTH_CLIENT_ID` / `_SECRET` を env から読み、無ければエラー。利用者が自分でアプリを登録する |
+| `nulab/backlog-mcp-server`（公式） | 同じく env 経由。README に「your Backlog application」と明記 |
+| `nulab/backlog-power-ups`（公式ブラウザ拡張） | **API を呼ばない**（権限は `storage` と `tabs` のみ）。認証を回避している |
+
+いずれも**シークレットを埋め込んでいない**が、前二者は開発者向けツールでアプリ登録の手間が許容される点が本拡張と違う。公式ブラウザ拡張は API 認証そのものを避けており、**Backlog のブラウザ拡張で OAuth をしている前例は見つからなかった**。
+
+**運用上の約束**: シークレットは機密として扱わない（漏洩を事故として扱わない）が、専用アプリとして登録し、Backlog が PKCE に対応したらそちらへ移す。
 
 **リダイレクト URI**: `https://<拡張 ID>.chromiumapp.org/`。拡張 ID は読み込むディレクトリやプロファイルで変わるため、manifest の `key`（公開鍵）で固定した。Firefox は `browser.identity.getRedirectURL()` が別形式を返すので、Firefox 対応（M6）の時点で追加登録が要る。
 
@@ -883,7 +898,7 @@ ARIA は `react-aria-components` の `Autocomplete` + `ListBox` に任せる（D
 | ~~3~~ | 複数スペースに属するときの認証情報 | 認証モデル | **解決**。API キーも OAuth もスペースごとに別なので、スペース単位の「接続」という設計のままでよい |
 | 4 | Backlog エディタ内の `⌘K` 割り当て、既存単キーショートカット（j/k 等）との干渉 | content script のキー捕捉条件 | 実機確認。**`commands` に割り当てがある間はブラウザがキーを消費し、ページに `keydown` が届かない**ことは M0 で確認済み。content script 側の捕捉はショートカット解除時の保険 |
 | ~~21~~ | OAuth の認可・トークンエンドポイントのパス | OAuth 接続 | **解決**。`/OAuth2AccessRequest.action` と `/api/v2/oauth2/token`。実装と一致（`docs/backlog-facts.md` §6.4） |
-| **22** | **`client_secret` を配布物に含めることの是非** | OAuth を既定にできるか | **PKCE は非対応で `client_secret` が必須**と確定（§6.4）。拡張はシークレットを隠せないので、含めるか・交換用のサーバを置くか・OAuth を諦めるかの製品判断が要る（§10.1） |
+| ~~22~~ | `client_secret` を配布物に含めることの是非 | OAuth を既定にできるか | **案 A（含める）で決定**。根拠と前例は §10.1 |
 | ~~24~~ | 1 つの OAuth アプリで複数スペースを認可できるか | スペース横断の成立そのもの | **解決。1 つの client_id ですべてのスペースを認可できる**（実機で確認）。スペースを増やすたびの登録は不要で、2 つ目以降も「接続」1 回で済む |
 | 23 | OAuth アプリのクライアント ID / シークレットの受け取り方 | OAuth 接続の有効化 | ビルド時の env（`BP_OAUTH_CLIENT_ID` / `BP_OAUTH_CLIENT_SECRET`）で注入する。#22 の結論次第で置き場所を変える |
 | 16 | Firefox 提出の追加要件 | M7 のみ | `data_collection_permissions`（2025-11-03 以降の新規拡張に必須）と `browser_specific_settings.gecko.id` が要る。`sidePanel` は Firefox が知らない権限なので、AMO の lint 対策として M6 でビルドごとに出し分ける |
