@@ -47,3 +47,36 @@ describe('閲覧の記録', () => {
     expect(event?.at).toBe(NOW);
   });
 });
+
+describe('行動ログに残さないもの', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+  });
+
+  it('件名は行動ログに入らない', async () => {
+    const subject = 'ログイン画面のバリデーション修正';
+    await recordVisit(
+      { spaceKey: 'nulab', id: 'PROJ-123', title: subject, kind: 'issue' },
+      Date.now(),
+    );
+
+    const stored = await fakeBrowser.storage.local.get('activity');
+    expect(JSON.stringify(stored)).not.toContain(subject);
+  });
+
+  it('行動ログに残るのはキーと種別と時刻だけ', async () => {
+    await recordVisit(
+      { spaceKey: 'nulab', id: 'PROJ-123', title: '件名', kind: 'issue' },
+      Date.now(),
+    );
+
+    const stored = await fakeBrowser.storage.local.get('activity');
+    const events = (stored.activity ?? []) as Record<string, unknown>[];
+    expect(events[0] === undefined ? [] : Object.keys(events[0]).sort()).toEqual([
+      'at',
+      'entityId',
+      'kind',
+    ]);
+    expect(String(events[0]?.entityId)).toBe('recent:nulab/PROJ-123');
+  });
+});

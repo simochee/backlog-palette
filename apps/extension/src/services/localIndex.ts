@@ -18,9 +18,13 @@ const ISSUE_KEY = /^[A-Z][A-Z0-9_]*-\d+$/;
 /**
  * 表示キャッシュから起こす行の id。行動ログの entityId もこれで作る。
  * 別々に組み立てると、ずれた瞬間に frecency が引けなくなる（§7.3）。
+ *
+ * 件名ではなくキャッシュのキー（`{spaceKey}/{識別子}`）から作る。件名を
+ * 使うと行動ログに件名が入り、「行動ログは ID・キー・種別・時刻だけ」と
+ * いう約束（§9）を破る。
  */
-export function recentEntryId(title: string): string {
-  return `recent:${title}`;
+export function recentEntryId(cacheKey: string): string {
+  return `recent:${cacheKey}`;
 }
 
 function navContextOf(ctx: PageContext): NavContext {
@@ -92,7 +96,7 @@ export async function buildLocalIndex(
   }
 
   for (const visit of await recentVisits(now, 30)) {
-    const id = recentEntryId(visit.title);
+    const id = recentEntryId(visit.key);
     if (actions[id] !== undefined) continue;
 
     const isIssue = visit.kind === 'issue' && ISSUE_KEY.test(visit.title);

@@ -16,7 +16,7 @@ describe('表示キャッシュ', () => {
   it('閲覧した項目は API を呼ばずに取り出せる', async () => {
     await rememberVisit('nulab', 'PROJ-123', issue, NOW);
 
-    expect(await recentVisits(NOW)).toEqual([{ ...issue, lastSeenAt: NOW }]);
+    expect(await recentVisits(NOW)).toEqual([{ ...issue, lastSeenAt: NOW, key: 'nulab/PROJ-123' }]);
   });
 
   it('同じ項目を再訪すると最終閲覧だけが更新される', async () => {

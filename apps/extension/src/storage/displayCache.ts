@@ -22,9 +22,13 @@ export async function rememberVisit(
   await displayCacheItem.setValue(next);
 }
 
-export async function recentVisits(now: number, limit = 20): Promise<DisplayCacheEntry[]> {
+/** 行の識別にはキー（`{spaceKey}/{識別子}`）を使う。件名は識別子にしない（§9） */
+export type RecentVisit = DisplayCacheEntry & { key: string };
+
+export async function recentVisits(now: number, limit = 20): Promise<RecentVisit[]> {
   const current = await displayCacheItem.getValue();
-  return Object.values(prune(current, now))
+  return Object.entries(prune(current, now))
+    .map(([key, entry]) => ({ ...entry, key }))
     .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
     .slice(0, limit);
 }
