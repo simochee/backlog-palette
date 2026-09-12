@@ -5,6 +5,7 @@ import { isTrustedPageOrigin } from '../src/messaging/window.ts';
 import { disconnect } from '../src/services/auth/connect.ts';
 import { buildAssignedSection, buildBootstrap } from '../src/services/bootstrap.ts';
 import { connectSpace } from '../src/services/connectSpace.ts';
+import { readPageScope } from '../src/services/pageContext.ts';
 import { runSearch } from '../src/services/search/index.ts';
 import { rememberVisit } from '../src/storage/displayCache.ts';
 
@@ -64,6 +65,16 @@ export default defineBackground(() => {
   onMessage('disconnectSpace', ({ data }) => disconnect(data));
 
   onMessage('getBootstrap', ({ data }) => buildBootstrap(data.surface, data.ctx, Date.now()));
+
+  onMessage('getActiveContext', async () => {
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.url === undefined) return undefined;
+
+    const scope = readPageScope(tab.url);
+    if (scope.spaceKey === undefined) return undefined;
+
+    return { origin: new URL(tab.url).origin, ...scope };
+  });
   onMessage('getAssignedIssues', ({ data }) => buildAssignedSection(data, Date.now()));
 
   /*

@@ -1,4 +1,5 @@
 import { Check, Search } from 'lucide-react';
+import type { KeyboardEvent } from 'react';
 import { useRef, useState } from 'react';
 import {
   Autocomplete,
@@ -71,6 +72,12 @@ export type PanelSurfaceProps = {
   footer?: readonly FooterHint[];
   footerNote?: string;
   onAction?: (id: string) => void;
+  /**
+   * Enter を行の実行ではなく検索の実行に使うか。
+   * 入力を変えた直後の Enter は検索、変えていなければ選択行を開く。
+   */
+  submitOnEnter?: boolean;
+  onSubmit?: (value: string) => void;
   onEscape?: () => void;
   autoFocus?: boolean;
 };
@@ -114,6 +121,8 @@ export function PanelSurface({
   footer = DEFAULT_FOOTER,
   footerNote = 'Backlog Palette',
   onAction,
+  submitOnEnter = false,
+  onSubmit,
   onEscape,
   autoFocus = false,
 }: PanelSurfaceProps) {
@@ -136,6 +145,27 @@ export function PanelSurface({
     onAction: showEmpty ? onSuggestion : onAction,
     onEscape,
   });
+
+  /*
+   * 入力を変えた直後の Enter は検索の実行に使う。行の実行に回すと、条件を
+   * 打ち直しても前の結果のまま開いてしまう。結果がまだ 1 件も無いときは
+   * 行の解決が失敗して何も起きないので、行より先にここで受ける。
+   */
+  const handleKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (
+      event.key === 'Enter' &&
+      submitOnEnter &&
+      onSubmit !== undefined &&
+      !event.nativeEvent.isComposing
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      onSubmit(inputRef.current?.value ?? '');
+      return;
+    }
+
+    guardComposition(event);
+  };
 
   const suggestionGroups = SUGGESTION_GROUPS.map((group) => ({
     ...group,
@@ -229,7 +259,7 @@ export function PanelSurface({
         defaultInputValue={defaultValue}
         onInputChange={onValueChange}
       >
-        <div className={styles.search} onKeyDownCapture={guardComposition}>
+        <div className={styles.search} onKeyDownCapture={handleKeys}>
           <Search size={16} strokeWidth={1.75} className={styles.searchIcon} aria-hidden />
           <TextField aria-label="サイドパネルの検索" className={styles.field}>
             <Input

@@ -76,6 +76,11 @@ type ExtProtocol = {
   /** パレットを開いたときに 1 回だけ。空状態と索引をまとめて渡す */
   getBootstrap(request: { surface: Surface; ctx: PageContext }): BootstrapState;
   /**
+   * 今いるタブの文脈。サイドパネルには content script がいないので
+   * Service Worker が browser.tabs から直接読む（§2.3・§9.3）。
+   */
+  getActiveContext(): PageContext | undefined;
+  /**
    * 担当中の課題。API が要るので初回描画から外し、届いた時点で追記する（§5.3）。
    * 取れなければ空配列で、空状態そのものは壊れない。
    */
