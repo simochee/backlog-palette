@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { rememberVisit } from '../storage/displayCache.ts';
-import { DEFAULT_SETTINGS, settingsItem } from '../storage/schema.ts';
+import { DEFAULT_SETTINGS, settingsItem, spacesItem } from '../storage/schema.ts';
 import { buildBootstrap } from './bootstrap.ts';
 import { recordVisit } from './visit.ts';
 
@@ -157,5 +157,53 @@ describe('索引に添える frecency', () => {
     const { frecency } = await buildBootstrap('modal', CTX, NOW);
 
     expect(frecency['page:board']).toBeUndefined();
+  });
+});
+
+describe('未接続のスペース', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+  });
+
+  it('接続済みが 1 つも無ければ、未接続の行を出さない', async () => {
+    const { index } = await buildBootstrap('modal', CTX, NOW);
+
+    expect(index.some((entry) => entry.id === 'connect-current')).toBe(false);
+  });
+
+  it('他のスペースが接続済みなら、今いる未接続のスペースを末尾に出す', async () => {
+    await spacesItem.setValue([
+      {
+        spaceKey: 'acme',
+        host: 'acme.backlog.com',
+        method: 'apiKey',
+        displayName: 'acme',
+        state: 'connected',
+      },
+    ]);
+
+    const { index, actions } = await buildBootstrap('modal', CTX, NOW);
+    const row = index.find((entry) => entry.id === 'connect-current');
+
+    expect(row?.text).toContain('nulab は未接続');
+    expect(actions['connect-current']).toEqual({
+      kind: 'navigate',
+      url: 'https://nulab.backlog.jp/EditApiSettings.action#bp-connect',
+    });
+  });
+
+  it('接続済みのスペースでは未接続の行を出さない', async () => {
+    await spacesItem.setValue([
+      {
+        spaceKey: 'nulab',
+        host: 'nulab.backlog.jp',
+        method: 'apiKey',
+        displayName: 'nulab',
+        state: 'connected',
+      },
+    ]);
+
+    const { index } = await buildBootstrap('modal', CTX, NOW);
+    expect(index.some((entry) => entry.id === 'connect-current')).toBe(false);
   });
 });

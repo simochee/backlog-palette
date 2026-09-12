@@ -2,6 +2,7 @@ import { availablePages, type IndexEntry, issueUrl, type NavContext } from '@bac
 import type { RowAction } from '../messaging/ext.ts';
 import type { PageContext } from '../messaging/window.ts';
 import { recentVisits } from '../storage/displayCache.ts';
+import { apiKeyPageUrl } from './apiKeyPage.ts';
 import { listConnections } from './auth/connect.ts';
 import { issueCommands } from './commands.ts';
 import { loadAllMasters } from './masters/index.ts';
@@ -58,7 +59,31 @@ export async function buildLocalIndex(
    * ホストは接続情報から引く。スペースキーから組み立てると
    * .backlog.jp / .backlog.com / .backlogtool.com を取り違える。
    */
-  const hosts = new Map((await listConnections()).map((c) => [c.spaceKey, c.host]));
+  const connections = await listConnections();
+  const hosts = new Map(connections.map((c) => [c.spaceKey, c.host]));
+
+  /*
+   * 未接続のスペースを候補の末尾に出す（モック A6）。
+   *
+   * 「結果が少ないのは接続していないからだ」に気づけるのは、探している
+   * 最中に見えたときだけ。設定画面に置いても見に行かない。
+   * 接続済みが 1 つも無いときは出さない。そのときは空状態そのものが
+   * 接続を促す形になっている（C1）。
+   */
+  if (connections.length > 0 && ctx.spaceKey !== undefined) {
+    const connected = connections.some((c) => c.spaceKey === ctx.spaceKey);
+    if (!connected) {
+      entries.push({
+        id: 'connect-current',
+        kind: 'connect',
+        text: `${ctx.spaceKey} は未接続 — 接続する`,
+        aliases: ['connect', 'せつぞく'],
+        sub: '接続すると、このスペースの課題と Wiki も同じ検索に含まれます',
+        context: 'currentSpace',
+      });
+      actions['connect-current'] = { kind: 'navigate', url: apiKeyPageUrl(ctx.origin) };
+    }
+  }
 
   for (const masters of await loadAllMasters(now)) {
     const host = hosts.get(masters.spaceKey);
