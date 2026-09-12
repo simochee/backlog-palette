@@ -1,19 +1,47 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import { WxtVitest } from 'wxt/testing/vitest-plugin';
+import type { Plugin } from 'vite';
+
+const projectRoot = new URL('..', import.meta.url).pathname;
+
+const rejectExtensionApi: Plugin = {
+  name: 'backlog-palette:reject-extension-api',
+  enforce: 'pre',
+  resolveId(source, importer) {
+    if (source !== '#imports' && !source.startsWith('wxt/')) return null;
+
+    throw new Error(
+      [
+        `components/ から拡張機能 API (${source}) を import しています: ${importer ?? '?'}`,
+        'components/ は props だけを受け取る presenter 層です。',
+        'browser API を使う処理は lib/ に置き、entrypoints/ から props として渡してください。',
+      ].join('\n'),
+    );
+  },
+};
 
 const config: StorybookConfig = {
-  stories: ['../{components,entrypoints}/**/*.stories.@(ts|tsx)'],
+  stories: ['../components/**/*.stories.@(ts|tsx)'],
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y'],
   framework: {
     name: '@storybook/react-vite',
     options: {},
   },
-  viteFinal: async (viteConfig) => {
+  viteFinal: (viteConfig) => {
+    // WXT の Vite プラグイン (`WxtVitest()`) はあえて読み込まない。読み込むと `#imports` が
+    // fakeBrowser に解決できてしまい、presenter 層への拡張機能 API 混入が Storybook 上で
+    // 動いてしまう。解決不能にしておくことで規約違反をビルドエラーとして検出する。
     viteConfig.plugins ??= [];
-    // vitest 専用に見えるが、実体は wxt.config.ts から `#imports` の解決・パスエイリアス・
-    // 拡張機能 API のモックを組み立てる汎用 Vite プラグイン。手書きの alias で代用すると
-    // wxt.config.ts の変更に追従できなくなるため、これを使う。
-    viteConfig.plugins.push(await WxtVitest());
+    viteConfig.plugins.push(rejectExtensionApi);
+
+    viteConfig.resolve ??= {};
+    viteConfig.resolve.alias = {
+      ...viteConfig.resolve.alias,
+      '@': projectRoot,
+      '@@': projectRoot,
+      '~': projectRoot,
+      '~~': projectRoot,
+    };
+
     return viteConfig;
   },
 };

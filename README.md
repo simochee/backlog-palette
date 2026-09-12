@@ -24,6 +24,20 @@ pnpm install
 | `pnpm build:storybook` | Storybook を静的ビルド |
 | `pnpm compile` | 型検査 (`tsc --noEmit`) |
 
+## 構成
+
+```
+components/    presenter。props だけを受け取る純粋な UI (atoms / molecules / organisms / templates)
+lib/           拡張機能 API を扱う非 UI ロジック
+entrypoints/   WXT のエントリポイント。lib/ と components/ を配線する container
+```
+
+`components/` は拡張機能 API に触れない。`browser` を使う処理は `lib/` に置き、
+`entrypoints/` が props として渡す。この規約は Storybook のビルドが検証する
+（違反すると `pnpm build:storybook` が失敗する）。
+
+詳しい規約は [CLAUDE.md](./CLAUDE.md) を参照。
+
 ## import のルール
 
 WXT の auto-import は無効化している (`wxt.config.ts` の `imports: false`)。
