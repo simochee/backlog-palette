@@ -1,0 +1,75 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+}
+
+#root {
+  height: 100%;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-5);
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--bp-space-6);
+  background: var(--bp-surface-floating);
+  border: 1px solid var(--bp-border-default);
+  border-radius: var(--bp-radius-surface);
+  box-shadow: var(--bp-shadow-surface);
+  font-family: var(--bp-font-body);
+  color: var(--bp-text-default);
+}
+
+.title {
+  margin: 0;
+  font: 700 var(--bp-size-text-lg) / 1.4 var(--bp-font-body);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--bp-text-subtle);
+  font: 400 var(--bp-size-text-sm) / 1.7 var(--bp-font-body);
+}
+
+.field {
+  display: flex;
+  gap: var(--bp-space-4);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--bp-space-4);
+  border: 1px solid var(--bp-border-strong);
+  border-radius: var(--bp-radius-control);
+  background: var(--bp-surface-floating);
+  color: var(--bp-text-default);
+  font: 400 var(--bp-size-text-md) / 1 var(--bp-font-code);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--bp-focus-ring, var(--bp-accent));
+  outline-offset: 1px;
+}
+
+.message {
+  margin: 0;
+  font: 400 var(--bp-size-text-sm) / 1.6 var(--bp-font-body);
+}
+
+.message[data-tone="error"] {
+  color: var(--bp-text-danger, var(--bp-marker-danger-dot));
+}
+
+.footerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--bp-space-4);
+}
