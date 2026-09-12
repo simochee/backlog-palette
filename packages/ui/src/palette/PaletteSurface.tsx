@@ -44,6 +44,8 @@ export type PaletteSurfaceProps = {
   onAction?: (id: string) => void;
   /** ⌫。キャレット位置つきで渡す。スタックの armed / pop に使う */
   onStackBackspace?: (caret: Caret) => void;
+  /** Tab。選択中の行 id を渡す */
+  onComplete?: (id: string) => void;
   /** Esc。1 階層戻すか閉じるかは呼び出し側が決める */
   onEscape?: () => void;
   /** Esc のヒント文言。コマンド階層では「1 つ前に戻る」に差し替わる（モック A7） */
@@ -74,6 +76,7 @@ export function PaletteSurface({
   onValueChange,
   onAction,
   onStackBackspace,
+  onComplete,
   onEscape,
   escLabel = '閉じる',
   autoFocus = false,
@@ -86,6 +89,7 @@ export function PaletteSurface({
     onAction,
     onEscape,
     onStackBackspace,
+    onComplete,
   });
 
   return (

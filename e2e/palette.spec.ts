@@ -256,14 +256,14 @@ test.describe('ページ移動', () => {
     await page.waitForURL(space.url('/view/PROJ-123'), { timeout: 5_000 });
   });
 
-  test('一致しなくてもサイドパネル検索への行は必ず残る', async ({ page, space, palette }) => {
+  test('一致しなくても検索への行は必ず残る', async ({ page, space, palette }) => {
     await page.goto(space.url('/board/PROJ'));
     await page.keyboard.press('Meta+k');
     const frame = await palette();
     await frame.locator('input').waitFor({ state: 'visible' });
 
     await page.keyboard.type('そんなページはない');
-    await expect(frame.getByText('をサイドパネルで検索')).toBeVisible();
+    await expect(frame.getByText('を検索')).toBeVisible();
   });
 });
 
@@ -434,5 +434,40 @@ test.describe('2 段階のコマンド', () => {
 
     await expect(frame.locator('[data-current]')).toContainText('PROJ');
     await expect(frame.locator('input')).toBeVisible();
+  });
+});
+
+test.describe('約束したキーが動く', () => {
+  test('語を打って Enter を押すと、検索結果がパレットに出る', async ({ page, space, palette }) => {
+    await connectWithApiKey(page, space);
+    await page.goto(space.url('/dashboard'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.type('請求');
+    await expect(frame.getByText('を検索')).toBeVisible();
+
+    await page.keyboard.press('Enter');
+
+    await expect(frame.getByText('検索結果')).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('Tab でプロジェクトをスコープとして決められる', async ({ page, space, palette }) => {
+    await connectWithApiKey(page, space);
+    await page.goto(space.url('/dashboard'));
+    await page.keyboard.press('Meta+k');
+
+    const frame = await palette();
+    await frame.locator('input').waitFor({ state: 'visible' });
+    await page.keyboard.type('Webリニューアル');
+    await expect(frame.locator('[role="option"]').first()).toContainText('Webリニューアル');
+
+    await page.keyboard.press('Tab');
+
+    // フォーカスはパレットの中に残り、スコープが 1 段積まれる
+    await expect(frame.locator('input')).toBeFocused();
+    await expect(frame.locator('input')).toHaveValue('');
+    await expect(frame.locator('[class*="segment"]').last()).toContainText('Webリニューアル');
   });
 });

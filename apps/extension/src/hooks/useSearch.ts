@@ -6,7 +6,7 @@ import {
   type SearchState,
 } from '@backlog-palette/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { onEvent, type SearchResultRow, sendMessage } from '../../src/messaging/ext.ts';
+import { onEvent, type SearchResultRow, sendMessage } from '../messaging/ext.ts';
 
 export type SpaceProgress = {
   spaceKey: string;

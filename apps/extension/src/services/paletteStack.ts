@@ -4,6 +4,7 @@ import {
   buildCandidates,
   type CandidateLabels,
   type CandidateSection,
+  canPush,
   disarm,
   emptyStack,
   type IndexEntry,
@@ -35,7 +36,9 @@ export type PaletteEvent =
   | { type: 'query'; value: string }
   | { type: 'backspace'; caret: Caret }
   | { type: 'escape' }
-  | { type: 'command'; commandId: string; label: string };
+  | { type: 'command'; commandId: string; label: string }
+  /** 候補をスコープとして積む。Tab で「そのプロジェクトに決める」操作 */
+  | { type: 'scope'; segment: StackSegment };
 
 export type PaletteTransition = {
   readonly state: PaletteState;
@@ -93,6 +96,15 @@ export function reduce(state: PaletteState, event: PaletteEvent): PaletteTransit
         }),
         query: '',
       });
+
+    case 'scope':
+      /*
+       * 積めない組み合わせは黙って無視する。プロジェクトの上にプロジェクトを
+       * 積もうとする入力は、利用者から見れば「そのプロジェクトに決めたい」
+       * なので、エラーにするより今の階層のままにする方が読みやすい。
+       */
+      if (!canPush(state.stack, event.segment)) return stay(state);
+      return stay({ stack: push(state.stack, event.segment), query: '' });
   }
 }
 

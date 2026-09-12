@@ -50,6 +50,37 @@ export function findMemoInput(root: ParentNode): HTMLInputElement | undefined {
  * value を代入するだけでは React や Vue の状態が追従せず、登録時に空の
  * まま送られることがある。input イベントを明示的に投げる。
  */
+/**
+ * メモ欄が現れるまで待つ。
+ *
+ * content script は document_idle で走るが、フォームがその後に描画されると
+ * 一度きりの探索では見つからない（実機で埋まらなかった原因）。
+ * 見つからないまま黙って諦めるより、短い間だけ待つ。
+ */
+export function waitForMemoInput(
+  root: Document,
+  timeoutMs = 5_000,
+): Promise<HTMLInputElement | undefined> {
+  const found = findMemoInput(root);
+  if (found !== undefined) return Promise.resolve(found);
+
+  return new Promise((resolve) => {
+    const done = (input: HTMLInputElement | undefined) => {
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve(input);
+    };
+
+    const observer = new MutationObserver(() => {
+      const input = findMemoInput(root);
+      if (input !== undefined) done(input);
+    });
+
+    const timer = setTimeout(() => done(undefined), timeoutMs);
+    observer.observe(root.documentElement, { childList: true, subtree: true });
+  });
+}
+
 export function fillMemo(input: HTMLInputElement, value = KEY_MEMO): void {
   if (input.value.trim() !== '') return;
 

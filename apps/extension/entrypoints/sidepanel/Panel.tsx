@@ -1,12 +1,12 @@
 import { buildShareUrl, defaultSearchState, type SearchState } from '@backlog-palette/core';
 import { type PaletteSection, type PanelEmptyState, PanelSurface } from '@backlog-palette/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearch } from '../../src/hooks/useSearch.ts';
 import { sendMessage } from '../../src/messaging/ext.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
 import { applyFilter, filterFields } from '../../src/panel/filters.ts';
 import { previewFor } from '../../src/panel/preview.ts';
 import { applySuggestion, emptySuggestions } from '../../src/panel/suggestions.ts';
-import { useSearch } from './useSearch.ts';
 
 const HISTORY_PREFIX = 'history:';
 const TOAST_MS = 4000;

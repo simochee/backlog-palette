@@ -12,6 +12,8 @@ export type SurfaceKeyHandlerOptions = {
   onEscape?: () => void;
   /** ⌫。キャレットの位置を渡す。スタックに効かせるかは呼び出し側が決める */
   onStackBackspace?: (caret: Caret) => void;
+  /** Tab。選択中の行 id を渡す。補完かスコープの確定かは呼び出し側が決める */
+  onComplete?: (id: string) => void;
 };
 
 /**
@@ -24,6 +26,7 @@ export function createSurfaceKeyHandler({
   onAction,
   onEscape,
   onStackBackspace,
+  onComplete,
 }: SurfaceKeyHandlerOptions) {
   return (event: KeyboardEvent<HTMLElement>) => {
     /**
@@ -39,6 +42,23 @@ export function createSurfaceKeyHandler({
     }
 
     /*
+     * Tab は候補の補完に使う（§3 D1）。
+     *
+     * ブラウザ既定のフォーカス移動を止めないと、パレットから出てしまう。
+     * フッターが「⇥ 候補を補完」と約束している以上、押して何も起きない
+     * 状態は約束を破っている。
+     */
+    if (event.key === 'Tab' && onComplete && !event.shiftKey) {
+      const key = focusedRowKey(event, getListRoot);
+      if (key !== undefined) {
+        event.preventDefault();
+        event.stopPropagation();
+        onComplete(key);
+        return;
+      }
+    }
+
+    /*
      * Enter の宛先は自分で決める。
      *
      * React Aria は候補が入れ替わっても仮想フォーカスを持ち越すため、
@@ -51,13 +71,9 @@ export function createSurfaceKeyHandler({
      * 「見えている選択と Enter の宛先は必ず一致する」を保証できる。
      */
     if (event.key === 'Enter' && onAction) {
-      const root = getListRoot?.(event) ?? event.currentTarget;
-      const list = root?.querySelector('[role="listbox"]');
-      const focused = list?.querySelector('[role="option"][data-focused]');
-      const target = focused ?? list?.querySelector('[role="option"]');
-      const key = target?.getAttribute('data-key');
+      const key = focusedRowKey(event, getListRoot);
 
-      if (key !== null && key !== undefined) {
+      if (key !== undefined) {
         event.preventDefault();
         event.stopPropagation();
         onAction(key);
@@ -92,4 +108,23 @@ export function createSurfaceKeyHandler({
       onStackBackspace(caret);
     }
   };
+}
+
+/**
+ * いま選ばれている行の id。実在するフォーカス行、無ければ先頭行。
+ *
+ * React Aria は候補が入れ替わってもフォーカスを持ち越し、消えた行を指したまま
+ * 残ることがある。DOM から引き直すことで「見えている選択と宛先が一致する」を
+ * 保証する。Enter と Tab で同じ規則を使う。
+ */
+function focusedRowKey(
+  event: KeyboardEvent<HTMLElement>,
+  getListRoot: SurfaceKeyHandlerOptions['getListRoot'],
+): string | undefined {
+  const root = getListRoot?.(event) ?? event.currentTarget;
+  const list = root?.querySelector('[role="listbox"]');
+  const focused = list?.querySelector('[role="option"][data-focused]');
+  const target = focused ?? list?.querySelector('[role="option"]');
+
+  return target?.getAttribute('data-key') ?? undefined;
 }

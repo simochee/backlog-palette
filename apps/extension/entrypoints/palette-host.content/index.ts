@@ -3,7 +3,7 @@ import { createIframeUi } from 'wxt/utils/content-script-ui/iframe';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { sendMessage } from '../../src/messaging/ext.ts';
 import { isFromIframe, type PageContext, type ToIframe } from '../../src/messaging/window.ts';
-import { fillMemo, findMemoInput, isConnectRequest } from '../../src/services/apiKeyPage.ts';
+import { fillMemo, isConnectRequest, waitForMemoInput } from '../../src/services/apiKeyPage.ts';
 import { readPageScope, readVisitedPage } from '../../src/services/pageContext.ts';
 
 function readPageContext(): PageContext {
@@ -97,8 +97,9 @@ export default defineContentScript({
      * メモ欄を埋めて、貼り付け先の拡張ページを出す。キーそのものは読まない。
      */
     if (isConnectRequest(window.location.href)) {
-      const memo = findMemoInput(document);
-      if (memo !== undefined) fillMemo(memo);
+      void waitForMemoInput(document).then((memo) => {
+        if (memo !== undefined) fillMemo(memo);
+      });
 
       const connect = createIframeUi(ctx, {
         page: '/connect.html',

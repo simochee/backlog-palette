@@ -1,6 +1,12 @@
-import { activeCommand } from '@backlog-palette/core';
+import {
+  activeCommand,
+  defaultSearchState,
+  type SearchState,
+  scopeOf,
+} from '@backlog-palette/core';
 import { type PaletteSection, PaletteSurface } from '@backlog-palette/ui';
 import { useEffect, useMemo, useState } from 'react';
+import { useSearch } from '../../src/hooks/useSearch.ts';
 import { type BootstrapState, type RowAction, sendMessage } from '../../src/messaging/ext.ts';
 import type { HostChannel } from '../../src/messaging/hostChannel.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
@@ -88,6 +94,7 @@ export function Palette({ channel }: PaletteProps) {
   const [state, setState] = useState<PaletteState>(() => initialState({}));
   const [openSeq, setOpenSeq] = useState(0);
   const [toast, setToast] = useState<string | undefined>(undefined);
+  const search = useSearch(ctx?.spaceKey);
   const [connectStatus, setConnectStatus] = useState<string | undefined>(undefined);
 
   /*
@@ -130,7 +137,7 @@ export function Palette({ channel }: PaletteProps) {
       return [...bootstrap.sections, ...onboardingSections(connectStatus)];
     }
 
-    return withTwoStageHints(
+    const local = withTwoStageHints(
       candidatesFor({
         state,
         base: { spaceKey: ctx?.spaceKey, projectKey: ctx?.projectKey },
@@ -140,10 +147,38 @@ export function Palette({ channel }: PaletteProps) {
         labels: CANDIDATE_LABELS,
       }),
     );
-  }, [stage, state, bootstrap, connectStatus, ctx?.spaceKey, ctx?.projectKey]);
+
+    /*
+     * 検索結果はパレットの中に出す。実機で触って、打った語の結果がその場に
+     * 出ないのが不自然だと分かった。サイドパネルは「詳しく見る」側に回る。
+     */
+    if (search.results.rows.length === 0 && !search.running) return local;
+
+    return [
+      ...local,
+      {
+        id: 'search-results',
+        label: '検索結果',
+        meta: search.running ? '検索中…' : `${search.results.rows.length} 件`,
+        rows: search.results.rows.map((row) => ({ ...row })),
+      },
+    ];
+  }, [
+    stage,
+    state,
+    bootstrap,
+    connectStatus,
+    ctx?.spaceKey,
+    ctx?.projectKey,
+    search.results,
+    search.running,
+  ]);
 
   const actions = useMemo(() => {
     const map: Record<string, RowAction> = { ...bootstrap.actions, ...stage?.actions };
+    for (const row of search.results.rows) {
+      map[row.id] = { kind: 'navigate', url: row.url };
+    }
     const issueKey = state.query.trim();
     if (/^[A-Z][A-Z0-9_]*-\d+$/.test(issueKey) && ctx !== undefined) {
       map[`openIssue:${issueKey}`] = {
@@ -152,7 +187,7 @@ export function Palette({ channel }: PaletteProps) {
       };
     }
     return map;
-  }, [bootstrap.actions, stage, state.query, ctx]);
+  }, [bootstrap.actions, stage, state.query, ctx, search.results.rows]);
 
   useEffect(() => {
     const unsubscribe = channel.subscribe((message) => {
@@ -234,10 +269,61 @@ export function Palette({ channel }: PaletteProps) {
           onValueChange={(next) =>
             setState((current) => reduce(current, { type: 'query', value: next }).state)
           }
+          onComplete={(id) => {
+            /*
+             * Tab は「その候補に決める」。プロジェクトやスペースならスコープと
+             * して積み、それ以外は入力を候補の文言で補完する（§3 D1）。
+             * 積むほうを優先するのは、絞り込んでから探すのが普通の順序だから。
+             */
+            const entry = bootstrap.index.find((candidate) => candidate.id === id);
+            const projectKey = entry?.kind === 'project' ? entry.code : undefined;
+            if (entry !== undefined && projectKey !== undefined) {
+              setState(
+                (current) =>
+                  reduce(current, {
+                    type: 'scope',
+                    segment: { kind: 'project', projectId: projectKey, label: entry.text },
+                  }).state,
+              );
+              return;
+            }
+            if (entry?.kind === 'space') {
+              setState(
+                (current) =>
+                  reduce(current, {
+                    type: 'scope',
+                    segment: { kind: 'space', spaceId: entry.text, label: entry.text },
+                  }).state,
+              );
+              return;
+            }
+            if (entry !== undefined) {
+              setState((current) => reduce(current, { type: 'query', value: entry.text }).state);
+            }
+          }}
           onStackBackspace={(caret) =>
             setState((current) => reduce(current, { type: 'backspace', caret }).state)
           }
           onAction={(id) => {
+            if (id === 'searchInPanel') {
+              /*
+               * 検索はパレットの中で走らせる。行の実行が何も起こさない状態だと、
+               * 一番普通の操作（語を打って Enter）が死ぬ。
+               */
+              const scope = scopeOf(state.stack);
+              search.start({
+                ...defaultSearchState,
+                query: state.query.trim(),
+                scope:
+                  scope.kind === 'project'
+                    ? { kind: 'project', spaceKey: scope.spaceId, projectKey: scope.projectId }
+                    : scope.kind === 'space'
+                      ? { kind: 'space', spaceKey: scope.spaceId }
+                      : { kind: 'allSpaces' },
+              } satisfies SearchState);
+              return;
+            }
+
             if (id === 'connect') {
               /*
                * 発行ページまで連れて行くだけ。そこで content script が
