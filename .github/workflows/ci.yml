@@ -1,0 +1,52 @@
+name: CI
+
+on: push
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # バージョンは package.json の devEngines が決めるので、ここは pnpm を起動できる
+      # 状態を作るだけでよい。corepack や pnpm/action-setup はワークフロー側にも
+      # バージョン指定を要求し、devEngines との二重管理になるため使わない。
+      # Node も同様に devEngines 経由で取得されるため setup-node を置かない。
+      - name: Bootstrap pnpm
+        run: npm install --global pnpm@12
+
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # 前段が落ちても後続を走らせる。1 回の実行で失敗箇所が出揃わないと、
+      # 直して push し直すたびに次の失敗を知ることになり往復が増える。
+      - name: Type check
+        if: ${{ !cancelled() }}
+        run: pnpm compile
+
+      - name: Build (chrome)
+        if: ${{ !cancelled() }}
+        run: pnpm build
+
+      - name: Build (firefox)
+        if: ${{ !cancelled() }}
+        run: pnpm build:firefox
+
+      - name: Build Storybook
+        if: ${{ !cancelled() }}
+        run: pnpm build:storybook

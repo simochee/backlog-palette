@@ -23,6 +23,27 @@ pnpm 12 は postinstall をデフォルトで実行しない。ネイティブ�
 | `pnpm build:storybook` | Storybook 静的ビルド |
 | `pnpm compile` | 型検査 (`tsc --noEmit`) |
 
+## ローカルのクオリティゲート
+
+CI で検証することをローカルで繰り返さない。CI は非同期に動くので、結果を待つ間
+セッションを止める理由がない。書けたらコミットしてプッシュし、結果は後から確認する。
+
+`.github/workflows/ci.yml` が実行する。ローカルでは実行しない:
+
+- `pnpm compile`
+- `pnpm build` / `pnpm build:firefox`
+- `pnpm build:storybook`
+
+ローカルで動かすのは、手元で見ないと分からないものだけ。`pnpm dev` と `pnpm storybook`
+の開発サーバがこれにあたる。
+
+チェックを増やしたくなったら CI に足す。コミット前フックやローカル専用の検証
+スクリプトは作らない。同じ検証を二重に走らせても分かることは増えず、待ち時間だけが
+増える。
+
+CI は前段が落ちても後続を走らせ、1 回の実行で失敗箇所を出し切る。直してプッシュする
+たびに次の失敗を知る、という往復を避けるため。
+
 ## レイヤ構成
 
 ディレクトリはすべてプロジェクトルート直下に並ぶ。`components/` はここ一つだけ。
@@ -65,8 +86,8 @@ lib/        ──✗ React, components/
 `#imports` / `wxt/*` を解決不能にしてビルドを落とす。
 
 **`tsc --noEmit` はこの違反を検出しない。** WXT が生成する `#imports` の型宣言は
-プロジェクト全体に効いているため、型検査は通ってしまう。CI では `pnpm compile` と
-`pnpm build:storybook` の両方を実行すること。
+プロジェクト全体に効いているため、型検査は通ってしまう。検出役は
+`pnpm build:storybook` だけなので、CI からこれを外さないこと。
 
 ### Storybook
 

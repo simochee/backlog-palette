@@ -24,6 +24,8 @@ pnpm install
 | `pnpm build:storybook` | Storybook を静的ビルド |
 | `pnpm compile` | 型検査 (`tsc --noEmit`) |
 
+型検査とビルドは push のたびに CI が実行するので、手元で繰り返す必要はない。
+
 ## 構成
 
 ```
