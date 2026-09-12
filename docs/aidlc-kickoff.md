@@ -11,8 +11,11 @@
 **ローカルの worktree やブランチの前後関係に依存しない。** 参照する文書はすべて
 `gh api` で読める（private リポジトリだが `gh` の認証で通る）。
 
+**`?ref=mvp` を必ず付ける。** 既定ブランチの `main` は空のコミット 1 つだけで、
+中身は置いていない（§2）。
+
 ```sh
-gh api repos/simochee/backlog-palette/contents/docs/<名前>.md \
+gh api 'repos/simochee/backlog-palette/contents/docs/<名前>.md?ref=mvp' \
   -H 'Accept: application/vnd.github.raw'
 ```
 
@@ -29,9 +32,12 @@ gh api repos/simochee/backlog-palette/contents/docs/<名前>.md \
 | | |
 |---|---|
 | リポジトリ | `simochee/backlog-palette`（private） |
-| ブランチ | `main` = `mvp`。どちらも MVP の最終状態を指す |
+| ブランチ | **`mvp`**。MVP の最終状態を指す固定の目印 |
+| `main` | 空のコミット 1 つだけ。実体は置かない |
 
-`mvp` は「ここまでが MVP」を示す目印として固定する。正式実装はここから分岐する。
+`main` を空にしているのは、作業ツリーごとに枝が伸びる運用で「main に何が入っているか」を
+考えなくて済むようにするため。**内容を探すときは必ずブランチ名で指す。**
+正式実装は `mvp` から分岐する。
 
 ## 3. 起動手順
 
