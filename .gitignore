@@ -16,3 +16,6 @@ playwright-report/
 .chrome-profile/
 
 test-results/
+
+# ビルド成果物
+*.zip

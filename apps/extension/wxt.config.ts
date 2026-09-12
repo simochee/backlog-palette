@@ -29,6 +29,9 @@ export default defineConfig({
   // 自動 import を使わない。どのモジュールから来た関数かを読める状態を保つ
   imports: false,
 
+  // 既定はパッケージ名から作られ backlog-paletteextension になる
+  zip: { name: 'backlog-palette' },
+
   hooks: {
     /*
      * chrome-launcher は userDataDir の存在を前提に chrome-out.log を開くため、
@@ -70,6 +73,20 @@ export default defineConfig({
      */
     key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtrGHBdIEFb22eU56b8L9jQrQkULqEIroQYcswiFJME98pmIrQcajs1JbqiLOie0Wt1SbobOqlvbz9Msy3BSlMDhlv0LJrgQKf11GQvO3npjUHDhbstF5dq5Ea+8lGxSu8iiyny7po0ic43OgA2VMEQlP0VatNxl1ml0dAKQshFS+sDfghUKDUMnlQpv5aYDZ2IzK53nwoCLJEM+6uYGN+psqtazFPhJmPSvw26lPVYp8849cxPnWK6aD3uKiAaHqKNyki5FYvdnSreJyvPlHX8guEeolnP+IlydBz2x0nbs+tXEqoCDApIw+YtCJbNJSd/BKfPrAPt180psOJqRYPQIDAQAB',
     description: 'Cmd+K で Backlog のどこへでも。',
+    /*
+     * ツールバーのアイコンは飾りではない。sidePanel.open() はユーザー操作
+     * 起点でしか呼べず、commands 経路が通るとは限らないため（§18-6）、
+     * クリックできる対象が manifest に無いとサイドパネルへの保証経路が消える。
+     */
+    icons: {
+      16: 'icon/16.png',
+      32: 'icon/32.png',
+      48: 'icon/48.png',
+      128: 'icon/128.png',
+    },
+    action: {
+      default_title: 'Backlog Palette の検索パネルを開く',
+    },
     permissions: ['storage', 'tabs', 'sidePanel', 'clipboardWrite', 'identity'],
     optional_permissions: ['history'],
     host_permissions: BACKLOG_MATCHES,
