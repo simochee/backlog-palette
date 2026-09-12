@@ -23,8 +23,18 @@ export function Connect() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const parent = new URLSearchParams(window.location.search).get('host');
-    if (parent !== null && isTrustedPageOrigin(`https://${parent}`)) setHost(parent);
+    /*
+     * どのスペースに繋ぐかは Service Worker がタブ URL から決める（§2.3・§9.3）。
+     * iframe の src にホストを載せると、ページ側が差し替えられる余地が残る。
+     */
+    sendMessage('getActiveContext')
+      .then((active) => {
+        if (active === undefined) return;
+        const parsed = new URL(active.origin);
+        if (isTrustedPageOrigin(parsed.origin)) setHost(parsed.host);
+      })
+      .catch(() => undefined);
+
     inputRef.current?.focus();
   }, []);
 

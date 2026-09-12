@@ -1,3 +1,4 @@
+import { connectWithApiKey } from './fixtures/connect.ts';
 import { expect, test } from './fixtures/extension.ts';
 
 /**
@@ -30,12 +31,7 @@ test.describe('サイドパネル', () => {
     page,
     space,
   }) => {
-    // 先にスペースを接続しておく
-    await page.goto(space.url('/dashboard'));
-    await page.keyboard.press('Meta+k');
-    await page.waitForTimeout(500);
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(4000);
+    await connectWithApiKey(page, space);
 
     const panel = await openPanel(context);
     await panel.locator('input').first().click();

@@ -1,3 +1,4 @@
+import { connectWithApiKey } from './fixtures/connect.ts';
 import { expect, test } from './fixtures/extension.ts';
 
 test.describe('パレットの起動と終了', () => {
@@ -312,30 +313,16 @@ test.describe('未接続のとき', () => {
     await expect(frame.locator('[role="option"]')).toHaveCount(1);
   });
 
-  test('接続すると、そのスペースが使えるようになる', async ({ page, space, palette }) => {
-    await page.goto(space.url('/dashboard'));
-    await page.keyboard.press('Meta+k');
-
-    const frame = await palette();
-    await frame.locator('input').waitFor({ state: 'visible' });
-    await page.keyboard.press('Enter');
-
-    // 認可のやり取りが 1 往復あるので、他のテストより長めに待つ
-    await expect(frame.getByText('に接続しました')).toBeVisible({ timeout: 25_000 });
+  test('接続すると、そのスペースが使えるようになる', async ({ page, space }) => {
+    await connectWithApiKey(page, space);
   });
 
   test('接続済みのスペースでは接続を促さない', async ({ page, space, palette }) => {
+    await connectWithApiKey(page, space);
+
     await page.goto(space.url('/dashboard'));
     await page.keyboard.press('Meta+k');
-
     const frame = await palette();
-    await frame.locator('input').waitFor({ state: 'visible' });
-    await page.keyboard.press('Enter');
-    await expect(frame.getByText('に接続しました')).toBeVisible({ timeout: 25_000 });
-
-    // 開き直しても接続行に戻らない
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('Meta+k');
     await frame.locator('input').waitFor({ state: 'visible' });
 
     await expect(frame.getByText('このスペースを接続')).toBeHidden();

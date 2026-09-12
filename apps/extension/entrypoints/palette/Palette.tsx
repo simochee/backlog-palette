@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { type BootstrapState, type RowAction, sendMessage } from '../../src/messaging/ext.ts';
 import type { HostChannel } from '../../src/messaging/hostChannel.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
+import { apiKeyPageUrl } from '../../src/services/apiKeyPage.ts';
 import { CANDIDATE_LABELS } from '../../src/services/candidateLabels.ts';
 
 export type PaletteProps = {
@@ -40,7 +41,7 @@ function onboardingSections(status: string | undefined): PaletteSection[] {
           id: 'connect',
           kind: 'connect',
           title: status ?? 'このスペースを接続',
-          sub: '接続すると最近見た課題と検索が使えます',
+          sub: 'API キーの発行ページを開きます',
           tone: 'accent',
           hint: 'enter',
         },
@@ -196,24 +197,17 @@ export function Palette({ channel }: PaletteProps) {
           onValueChange={setValue}
           onAction={(id) => {
             if (id === 'connect') {
-              setConnectStatus('接続しています…');
-              sendMessage('connectSpace', { method: 'oauth', host: new URL(ctx.origin).host })
-                .then((outcome) => {
-                  if (outcome.ok) {
-                    /*
-                     * 成功は行ではなくトーストで伝える。接続できた瞬間に
-                     * 接続行そのものが消えるので、行に出すと結果が見えない。
-                     */
-                    setConnectStatus(undefined);
-                    setToast(`${outcome.displayName} に接続しました`);
-                    return sendMessage('getBootstrap', { surface: 'modal', ctx }).then(
-                      setBootstrap,
-                    );
-                  }
-                  setConnectStatus(outcome.message);
-                  return undefined;
-                })
-                .catch(() => setConnectStatus('接続できませんでした'));
+              /*
+               * 発行ページまで連れて行くだけ。そこで content script が
+               * メモ欄を埋め、貼り付け先を出す（§10.2）。キーの読み取りは
+               * 拡張がやらない。
+               */
+              void sendMessage('runRowAction', {
+                kind: 'navigate',
+                url: apiKeyPageUrl(ctx.origin),
+                target: 'currentTab',
+              }).catch(() => undefined);
+              channel.send({ t: 'close' });
               return;
             }
 

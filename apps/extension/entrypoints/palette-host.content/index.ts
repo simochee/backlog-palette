@@ -3,6 +3,7 @@ import { createIframeUi } from 'wxt/utils/content-script-ui/iframe';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { sendMessage } from '../../src/messaging/ext.ts';
 import { isFromIframe, type PageContext, type ToIframe } from '../../src/messaging/window.ts';
+import { fillMemo, findMemoInput, isConnectRequest } from '../../src/services/apiKeyPage.ts';
 import { readPageScope, readVisitedPage } from '../../src/services/pageContext.ts';
 
 function readPageContext(): PageContext {
@@ -90,6 +91,40 @@ export default defineContentScript({
     });
 
     ui.mount();
+
+    /*
+     * API キーの発行ページを接続の合図つきで開かれたときの下ごしらえ（§10.2）。
+     * メモ欄を埋めて、貼り付け先の拡張ページを出す。キーそのものは読まない。
+     */
+    if (isConnectRequest(window.location.href)) {
+      const memo = findMemoInput(document);
+      if (memo !== undefined) fillMemo(memo);
+
+      const connect = createIframeUi(ctx, {
+        page: '/connect.html',
+        position: 'modal',
+        zIndex: 2_147_483_646,
+        anchor: 'body',
+        onMount(wrapper, iframe) {
+          wrapper.style.display = 'block';
+          /*
+           * 'modal' は iframe を inset:0 の全面にする。右下に寄せるので
+           * top と left を明示的に外す。残したままだと左上を覆い、
+           * ページ側の登録ボタンが押せなくなる。
+           */
+          iframe.style.position = 'fixed';
+          iframe.style.top = 'auto';
+          iframe.style.left = 'auto';
+          iframe.style.right = '24px';
+          iframe.style.bottom = '24px';
+          iframe.style.width = 'min(420px, calc(100vw - 48px))';
+          iframe.style.height = '280px';
+          iframe.style.border = '0';
+          iframe.style.colorScheme = 'normal';
+        },
+      });
+      connect.mount();
+    }
 
     const send = (message: ToIframe) => {
       iframeEl?.contentWindow?.postMessage(message, extensionOrigin);

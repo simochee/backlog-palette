@@ -24,6 +24,22 @@ const PAGES: Record<string, string> = {
   '/dashboard': 'ダッシュボード',
 };
 
+/** API キーの発行ページ。メモ欄と発行済みキーの一覧を持つ */
+const API_SETTINGS_HTML = `<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<title>API | 個人設定</title></head><body><h1>API</h1>
+<form id="api-form"><label>メモ <input type="text" name="apiKey.memo"></label>
+<button type="button" id="issue">登録</button></form>
+<table id="keys"></table>
+<script>
+document.getElementById('issue').addEventListener('click', () => {
+  const memo = document.querySelector('input[name="apiKey.memo"]').value;
+  const row = document.createElement('tr');
+  row.innerHTML = '<td class="memo"></td><td class="key">test-api-key</td>';
+  row.querySelector('.memo').textContent = memo;
+  document.getElementById('keys').appendChild(row);
+});
+</script></body></html>`;
+
 /*
  * API と OAuth もこのサーバで受ける。
  *
@@ -106,6 +122,12 @@ export async function startFakeSpace(): Promise<FakeSpace> {
     if (api !== undefined) {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(api));
+      return;
+    }
+
+    if (url.pathname === '/EditApiSettings.action') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(API_SETTINGS_HTML);
       return;
     }
 
