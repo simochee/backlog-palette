@@ -1,4 +1,4 @@
-import { buildCandidates } from '@backlog-palette/core';
+import { activeCommand } from '@backlog-palette/core';
 import { type PaletteSection, PaletteSurface } from '@backlog-palette/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { type BootstrapState, type RowAction, sendMessage } from '../../src/messaging/ext.ts';
@@ -6,6 +6,23 @@ import type { HostChannel } from '../../src/messaging/hostChannel.ts';
 import type { PageContext } from '../../src/messaging/window.ts';
 import { apiKeyPageUrl } from '../../src/services/apiKeyPage.ts';
 import { CANDIDATE_LABELS } from '../../src/services/candidateLabels.ts';
+import {
+  SWITCH_SPACE,
+  spaceOrigins,
+  switchSpaceStage,
+  twoStageCommandEntries,
+  twoStageCommandOf,
+  withTwoStageHints,
+} from '../../src/services/paletteCommands.ts';
+import {
+  candidatesFor,
+  escapeLabel,
+  footerHints,
+  initialState,
+  type PaletteState,
+  pathOf,
+  reduce,
+} from '../../src/services/paletteStack.ts';
 
 export type PaletteProps = {
   channel: HostChannel;
@@ -68,13 +85,32 @@ const EMPTY: BootstrapState = {
 export function Palette({ channel }: PaletteProps) {
   const [ctx, setCtx] = useState<PageContext | undefined>(undefined);
   const [bootstrap, setBootstrap] = useState<BootstrapState>(EMPTY);
-  const [value, setValue] = useState('');
+  const [state, setState] = useState<PaletteState>(() => initialState({}));
   const [openSeq, setOpenSeq] = useState(0);
   const [toast, setToast] = useState<string | undefined>(undefined);
   const [connectStatus, setConnectStatus] = useState<string | undefined>(undefined);
 
+  /*
+   * コマンドを積んでいる間は索引を見ない。出すのはそのコマンドの引数だけで、
+   * 同じ入力でページ候補も混ぜると「今どの階層にいるか」が画面から消える（A7）。
+   */
+  const stage = useMemo(() => {
+    if (activeCommand(state.stack)?.commandId !== SWITCH_SPACE || ctx === undefined) {
+      return undefined;
+    }
+
+    const origins = spaceOrigins(bootstrap.actions, ctx);
+    return switchSpaceStage({
+      spaces: bootstrap.connectedSpaces,
+      originOf: (spaceKey) => origins.get(spaceKey),
+      query: state.query,
+    });
+  }, [state.stack, state.query, bootstrap.actions, bootstrap.connectedSpaces, ctx]);
+
   const sections = useMemo(() => {
-    if (value.trim() === '') {
+    if (stage !== undefined) return stage.sections;
+
+    if (state.query.trim() === '') {
       /*
        * 接続を促すのは「まだ接続していないとき」だけ。空状態が空かどうかで
        * 判断すると、接続済みでも履歴が無いだけで接続行が出てしまう。
@@ -94,18 +130,21 @@ export function Palette({ channel }: PaletteProps) {
       return [...bootstrap.sections, ...onboardingSections(connectStatus)];
     }
 
-    return buildCandidates({
-      input: value,
-      index: bootstrap.index,
-      frecencyOf: (id) => bootstrap.frecency[id] ?? 0,
-      labels: CANDIDATE_LABELS,
-      showSpaceBadges: false,
-    });
-  }, [value, bootstrap, connectStatus, ctx?.spaceKey]);
+    return withTwoStageHints(
+      candidatesFor({
+        state,
+        base: { spaceKey: ctx?.spaceKey, projectKey: ctx?.projectKey },
+        index: bootstrap.index,
+        commands: twoStageCommandEntries(bootstrap.connectedSpaces),
+        frecencyOf: (id) => bootstrap.frecency[id] ?? 0,
+        labels: CANDIDATE_LABELS,
+      }),
+    );
+  }, [stage, state, bootstrap, connectStatus, ctx?.spaceKey, ctx?.projectKey]);
 
   const actions = useMemo(() => {
-    const map: Record<string, RowAction> = { ...bootstrap.actions };
-    const issueKey = value.trim();
+    const map: Record<string, RowAction> = { ...bootstrap.actions, ...stage?.actions };
+    const issueKey = state.query.trim();
     if (/^[A-Z][A-Z0-9_]*-\d+$/.test(issueKey) && ctx !== undefined) {
       map[`openIssue:${issueKey}`] = {
         kind: 'navigate',
@@ -113,18 +152,18 @@ export function Palette({ channel }: PaletteProps) {
       };
     }
     return map;
-  }, [bootstrap.actions, value, ctx]);
+  }, [bootstrap.actions, stage, state.query, ctx]);
 
   useEffect(() => {
     const unsubscribe = channel.subscribe((message) => {
       if (message.t === 'close') {
         setCtx(undefined);
-        setValue('');
+        setState(initialState({}));
         return;
       }
 
       setCtx(message.ctx);
-      setValue('');
+      setState(initialState(message.ctx));
       setToast(undefined);
       setConnectStatus(undefined);
       setOpenSeq((seq) => seq + 1);
@@ -185,16 +224,19 @@ export function Palette({ channel }: PaletteProps) {
     >
       <div className="slot">
         <PaletteSurface
-          path={[
-            { label: ctx.spaceKey ?? '全スペース', avatar: ctx.spaceKey !== undefined },
-            ...(ctx.projectKey === undefined
-              ? []
-              : [{ label: ctx.projectKey, avatar: true } as const]),
-          ]}
+          path={pathOf(state.stack)}
           sections={sections}
-          value={value}
+          value={state.query}
+          footer={footerHints(state)}
           footerNote={toast}
-          onValueChange={setValue}
+          armedNotice={state.stack.armedForDelete}
+          escLabel={escapeLabel(state)}
+          onValueChange={(next) =>
+            setState((current) => reduce(current, { type: 'query', value: next }).state)
+          }
+          onStackBackspace={(caret) =>
+            setState((current) => reduce(current, { type: 'backspace', caret }).state)
+          }
           onAction={(id) => {
             if (id === 'connect') {
               /*
@@ -208,6 +250,16 @@ export function Palette({ channel }: PaletteProps) {
                 target: 'currentTab',
               }).catch(() => undefined);
               channel.send({ t: 'close' });
+              return;
+            }
+
+            /*
+             * 2 段階のコマンドは遷移させない。ここで閉じると、コマンドの
+             * 引数を選ぶ階層そのものが出せなくなる（§3 D3・モック A7）。
+             */
+            const command = twoStageCommandOf(id);
+            if (command !== undefined) {
+              setState((current) => reduce(current, { type: 'command', ...command }).state);
               return;
             }
 
@@ -229,7 +281,11 @@ export function Palette({ channel }: PaletteProps) {
             sendMessage('runRowAction', { ...action, entryId: id }).catch(() => {});
             channel.send({ t: 'close' });
           }}
-          onEscape={() => channel.send({ t: 'close' })}
+          onEscape={() => {
+            const step = reduce(state, { type: 'escape' });
+            if (step.close) channel.send({ t: 'close' });
+            else setState(step.state);
+          }}
           autoFocus
         />
       </div>

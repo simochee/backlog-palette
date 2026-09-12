@@ -1,5 +1,8 @@
 import type { KeyboardEvent } from 'react';
 
+/** 入力欄のキャレット。⌫ をスタックと入力文字列のどちらに効かせるかの材料 */
+export type Caret = { start: number; end: number };
+
 export type SurfaceKeyHandlerOptions = {
   /** キャレット位置を見るための入力欄 */
   getInput: () => HTMLInputElement | null;
@@ -7,7 +10,8 @@ export type SurfaceKeyHandlerOptions = {
   getListRoot?: (event: KeyboardEvent<HTMLElement>) => Element | null | undefined;
   onAction?: (id: string) => void;
   onEscape?: () => void;
-  onStackBackspace?: () => void;
+  /** ⌫。キャレットの位置を渡す。スタックに効かせるかは呼び出し側が決める */
+  onStackBackspace?: (caret: Caret) => void;
 };
 
 /**
@@ -73,14 +77,19 @@ export function createSurfaceKeyHandler({
       return;
     }
 
+    /*
+     * ⌫ は入力欄に任せるか、スタックに回すかが分かれる唯一のキー。
+     * 分岐の規則そのものは呼び出し側が持つので、ここはキャレットを渡し、
+     * 入力欄の 1 文字削除を止めるかどうかだけを決める。
+     */
     if (event.key === 'Backspace' && onStackBackspace) {
       const input = getInput();
-      const atStart = input?.selectionStart === 0 && input?.selectionEnd === 0;
-      if (atStart) {
+      const caret = { start: input?.selectionStart ?? 0, end: input?.selectionEnd ?? 0 };
+      if (caret.start === 0 && caret.end === 0) {
         event.preventDefault();
         event.stopPropagation();
-        onStackBackspace();
       }
+      onStackBackspace(caret);
     }
   };
 }

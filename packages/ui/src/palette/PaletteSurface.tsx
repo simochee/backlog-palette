@@ -12,7 +12,7 @@ import { Kbd } from '../primitives/Kbd.tsx';
 import styles from './PaletteSurface.module.css';
 import { type PathSegment, PathStack } from './PathStack.tsx';
 import { Row, type RowProps } from './Row.tsx';
-import { createSurfaceKeyHandler } from './surfaceKeys.ts';
+import { type Caret, createSurfaceKeyHandler } from './surfaceKeys.ts';
 
 export type PaletteRow = RowProps & { id: string };
 
@@ -42,10 +42,12 @@ export type PaletteSurfaceProps = {
   width?: number;
   onValueChange?: (value: string) => void;
   onAction?: (id: string) => void;
-  /** キャレットが先頭にあるときの ⌫。スタックの armed / pop に使う */
-  onStackBackspace?: () => void;
+  /** ⌫。キャレット位置つきで渡す。スタックの armed / pop に使う */
+  onStackBackspace?: (caret: Caret) => void;
   /** Esc。1 階層戻すか閉じるかは呼び出し側が決める */
   onEscape?: () => void;
+  /** Esc のヒント文言。コマンド階層では「1 つ前に戻る」に差し替わる（モック A7） */
+  escLabel?: string;
   /** 表示と同時に入力欄へフォーカスする */
   autoFocus?: boolean;
 };
@@ -73,6 +75,7 @@ export function PaletteSurface({
   onAction,
   onStackBackspace,
   onEscape,
+  escLabel = '閉じる',
   autoFocus = false,
 }: PaletteSurfaceProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +125,7 @@ export function PaletteSurface({
 
           <span className={styles.escHint}>
             <Kbd keys={['esc']} />
-            閉じる
+            {escLabel}
           </span>
         </div>
 
