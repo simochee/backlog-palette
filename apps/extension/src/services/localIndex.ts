@@ -15,6 +15,14 @@ import { loadAllMasters } from './masters/index.ts';
 
 const ISSUE_KEY = /^[A-Z][A-Z0-9_]*-\d+$/;
 
+/**
+ * 表示キャッシュから起こす行の id。行動ログの entityId もこれで作る。
+ * 別々に組み立てると、ずれた瞬間に frecency が引けなくなる（§7.3）。
+ */
+export function recentEntryId(title: string): string {
+  return `recent:${title}`;
+}
+
 function navContextOf(ctx: PageContext): NavContext {
   return {
     origin: ctx.origin,
@@ -84,7 +92,7 @@ export async function buildLocalIndex(
   }
 
   for (const visit of await recentVisits(now, 30)) {
-    const id = `recent:${visit.title}`;
+    const id = recentEntryId(visit.title);
     if (actions[id] !== undefined) continue;
 
     const isIssue = visit.kind === 'issue' && ISSUE_KEY.test(visit.title);

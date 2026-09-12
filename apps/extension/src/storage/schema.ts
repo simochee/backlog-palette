@@ -1,3 +1,4 @@
+import type { ActivityEvent } from '@backlog-palette/core';
 import { storage } from 'wxt/utils/storage';
 import type { KeywordTarget } from './types.ts';
 
@@ -64,6 +65,12 @@ export const displayCacheItem = storage.defineItem<Record<string, DisplayCacheEn
   'local:displayCache',
   { fallback: {}, version: 1 },
 );
+
+/** 行動ログ。残すのは ID・種別・時刻だけで、件名もクエリも持たない（§9） */
+export const activityItem = storage.defineItem<ActivityEvent[]>('local:activity', {
+  fallback: [],
+  version: 1,
+});
 
 export const searchHistoryItem = storage.defineItem<string[]>('local:searchHistory', {
   fallback: [],

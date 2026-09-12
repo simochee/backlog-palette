@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { rememberVisit } from '../storage/displayCache.ts';
-import { settingsItem } from '../storage/schema.ts';
+import { DEFAULT_SETTINGS, settingsItem } from '../storage/schema.ts';
 import { buildBootstrap } from './bootstrap.ts';
+import { recordVisit } from './visit.ts';
 
 const NOW = Date.UTC(2026, 8, 10);
 const CTX = { origin: 'https://nulab.backlog.jp', spaceKey: 'nulab', projectKey: 'PROJ' };
@@ -121,5 +122,40 @@ describe('プロジェクトの索引', () => {
     const { index } = await buildBootstrap('modal', CTX, NOW);
 
     expect(index.filter((entry) => entry.kind === 'project')).toEqual([]);
+  });
+});
+
+describe('索引に添える frecency', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+  });
+
+  it('閲覧した行には索引の id で frecency が付く', async () => {
+    await recordVisit(
+      { spaceKey: 'nulab', id: 'PROJ-1', title: 'ログイン修正', kind: 'issue' },
+      NOW,
+    );
+
+    const { index, frecency } = await buildBootstrap('modal', CTX, NOW);
+    const row = index.find((entry) => entry.text === 'ログイン修正');
+
+    expect(row).toBeDefined();
+    expect(frecency[row?.id ?? '']).toBeGreaterThan(0);
+  });
+
+  it('学習をオフにしていると frecency は渡らない', async () => {
+    await recordVisit(
+      { spaceKey: 'nulab', id: 'PROJ-1', title: 'ログイン修正', kind: 'issue' },
+      NOW,
+    );
+    await settingsItem.setValue({ ...DEFAULT_SETTINGS, learningEnabled: false });
+
+    expect((await buildBootstrap('modal', CTX, NOW)).frecency).toEqual({});
+  });
+
+  it('触っていない行は frecency を持たない', async () => {
+    const { frecency } = await buildBootstrap('modal', CTX, NOW);
+
+    expect(frecency['page:board']).toBeUndefined();
   });
 });

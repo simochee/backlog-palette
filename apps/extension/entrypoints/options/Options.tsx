@@ -1,6 +1,7 @@
 import { Button, ChoiceGroup, Marker, Section, SettingRow, Switch } from '@backlog-palette/ui';
 import { useEffect, useState } from 'react';
 import { sendMessage } from '../../src/messaging/ext.ts';
+import { eraseHistory } from '../../src/services/eraseHistory.ts';
 import {
   currentHistoryImport,
   type HistoryImportOutcome,
@@ -9,7 +10,6 @@ import {
 } from '../../src/services/historyImport.ts';
 import { loadSettings, resolveColorScheme, updateSettings } from '../../src/services/settings.ts';
 import { loadSpaceSummaries, type SpaceSummary } from '../../src/services/spaceView.ts';
-import { clearHistory } from '../../src/storage/displayCache.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../../src/storage/schema.ts';
 
 const SURFACE_CHOICES = [
@@ -106,7 +106,7 @@ export function Options() {
   };
 
   const clear = () => {
-    void clearHistory().then(() => setClearStep('cleared'));
+    void eraseHistory().then(() => setClearStep('cleared'));
   };
 
   return (

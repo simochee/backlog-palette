@@ -3,6 +3,7 @@ import type { RowView } from '../messaging/rowView.ts';
 import type { PageContext } from '../messaging/window.ts';
 import { recentVisits } from '../storage/displayCache.ts';
 import { type DisplayCacheEntry, settingsItem, spacesItem } from '../storage/schema.ts';
+import { frecencyIndex } from './activity/index.ts';
 import { buildLocalIndex } from './localIndex.ts';
 import { loadAssignedIssues } from './masters/index.ts';
 
@@ -39,12 +40,19 @@ export async function buildBootstrap(
   ctx: PageContext,
   now: number,
 ): Promise<BootstrapState> {
-  const [visits, spaces, settings, local] = await Promise.all([
+  const [visits, spaces, settings, local, frecencyOf] = await Promise.all([
     recentVisits(now, surface === 'modal' ? 8 : 12),
     spacesItem.getValue(),
     settingsItem.getValue(),
     buildLocalIndex(ctx, now),
+    frecencyIndex(now),
   ]);
+
+  const frecency: Record<string, number> = {};
+  for (const entry of local.entries) {
+    const score = frecencyOf(entry.id);
+    if (score > 0) frecency[entry.id] = score;
+  }
 
   const sections: PaletteSection[] = [];
 
@@ -89,6 +97,7 @@ export async function buildBootstrap(
   return {
     sections: withSelection,
     index: local.entries,
+    frecency,
     actions: local.actions,
     connectedSpaces: spaces.map((space) => ({
       spaceKey: space.spaceKey,

@@ -52,6 +52,7 @@ function onboardingSections(status: string | undefined): PaletteSection[] {
 const EMPTY: BootstrapState = {
   sections: [],
   index: [],
+  frecency: {},
   actions: {},
   connectedSpaces: [],
   learningEnabled: true,
@@ -95,8 +96,7 @@ export function Palette({ channel }: PaletteProps) {
     return buildCandidates({
       input: value,
       index: bootstrap.index,
-      // 行動ログは M5。学習をオフにしているときもここは 0 で据え置く
-      frecencyOf: () => 0,
+      frecencyOf: (id) => bootstrap.frecency[id] ?? 0,
       labels: CANDIDATE_LABELS,
       showSpaceBadges: false,
     });
@@ -232,7 +232,7 @@ export function Palette({ channel }: PaletteProps) {
               return;
             }
 
-            sendMessage('runRowAction', action).catch(() => {});
+            sendMessage('runRowAction', { ...action, entryId: id }).catch(() => {});
             channel.send({ t: 'close' });
           }}
           onEscape={() => channel.send({ t: 'close' })}

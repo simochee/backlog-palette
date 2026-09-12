@@ -7,6 +7,12 @@
 
 export const RETENTION_DAYS = 90;
 export const DISPLAY_CACHE_LIMIT = 5_000;
+/*
+ * 行動ログの件数上限。減衰の半減期が 14 日なので、これを超えるほど溜まった
+ * 古い記録は並びをほとんど動かさない。書き込みのたびに配列全体を
+ * 直列化する経路なので、効かない分まで抱えない。
+ */
+export const ACTIVITY_LIMIT = 5_000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

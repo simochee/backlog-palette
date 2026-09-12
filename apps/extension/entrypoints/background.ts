@@ -2,12 +2,13 @@ import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
 import { onMessage, sendEvent } from '../src/messaging/ext.ts';
 import { isTrustedPageOrigin } from '../src/messaging/window.ts';
+import { recordActivity } from '../src/services/activity/index.ts';
 import { disconnect } from '../src/services/auth/connect.ts';
 import { buildAssignedSection, buildBootstrap } from '../src/services/bootstrap.ts';
 import { connectSpace } from '../src/services/connectSpace.ts';
 import { readPageScope } from '../src/services/pageContext.ts';
 import { runSearch } from '../src/services/search/index.ts';
-import { rememberVisit } from '../src/storage/displayCache.ts';
+import { recordVisit } from '../src/services/visit.ts';
 
 /**
  * M0 スパイク: ⌘K からパレットを開くまでの経路を通す。
@@ -83,15 +84,20 @@ export default defineBackground(() => {
    * 呼び出した拡張ページに返して、そちらで書き込ませる。
    */
   onMessage('runRowAction', async ({ data }) => {
+    /*
+     * 記録は遷移より先に済ませる。遷移を待つと、その間に Service Worker が
+     * 止められたときに書き込みごと失われる。
+     */
+    if (data.entryId !== undefined) {
+      await recordActivity({ entityId: data.entryId, kind: 'selected', at: Date.now() });
+    }
+
     if (data.kind === 'navigate') {
       await navigateTo(data.url, data.target ?? 'currentTab');
     }
   });
 
-  onMessage('recordVisit', ({ data }) => {
-    const { spaceKey, id, ...entry } = data;
-    return rememberVisit(spaceKey, id, entry, Date.now());
-  });
+  onMessage('recordVisit', ({ data }) => recordVisit(data, Date.now()));
 
   /*
    * 遷移は SW が行う。ページ側のスクリプトに location を触らせない（§2.3）。

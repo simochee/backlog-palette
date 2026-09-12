@@ -29,6 +29,12 @@ export type BootstrapState = {
    * 1 打鍵 16ms の予算（§14）も守りやすい。
    */
   index: readonly IndexEntry[];
+  /**
+   * 索引の行 id → frecency。索引と一緒に渡す。
+   *
+   * 打鍵ごとに Service Worker へ問い合わせると、index を先に渡した意味が無くなる。
+   */
+  frecency: Record<string, number>;
   /** 行 id → 起きること */
   actions: Record<string, RowAction>;
   connectedSpaces: readonly { spaceKey: string; displayName: string }[];
@@ -56,9 +62,13 @@ export type VisitRecord = {
  * UI は「何が起きるか」を知らずに id を返すだけ。実際の遷移とコピーは
  * Service Worker が行う（§2.3）。
  */
-export type RowAction =
+export type RowAction = (
   | { kind: 'navigate'; url: string; target?: 'currentTab' | 'newTab' }
-  | { kind: 'copy'; text: string; toast: string };
+  | { kind: 'copy'; text: string; toast: string }
+) & {
+  /** 選んだ行の索引 id。行動ログに残すためだけに受ける（行の中身は送らない） */
+  entryId?: string;
+};
 
 export type ConnectRequest =
   | { method: 'oauth'; host: string }
