@@ -1,0 +1,11 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx"
+  },
+  // TypeScript のワイルドカードは `.` 始まりのディレクトリを拾わないため、
+  // `.storybook` と WXT の生成型は明示的に列挙する。
+  "include": ["**/*", ".storybook/**/*", ".wxt/wxt.d.ts"],
+  "exclude": ["node_modules", ".output"]
+}

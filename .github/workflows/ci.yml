@@ -1,0 +1,81 @@
+name: CI
+
+on: push
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # version も runtime も指定しない。どちらも package.json の devEngines から
+      # 読まれるので、ここに書くとバージョンが二重管理になる。
+      # cache は pnpm store が対象で、ランタイム導入より前に復元される。
+      - uses: pnpm/setup@v2
+        with:
+          cache: true
+
+      # playwright が置くブラウザ本体は pnpm store の外にあり、
+      # pnpm/setup の cache では復元されない。
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # 前段が落ちても後続を走らせる。1 回の実行で失敗箇所が出揃わないと、
+      # 直して push し直すたびに次の失敗を知ることになり往復が増える。
+      - name: Type check
+        if: ${{ !cancelled() }}
+        run: pnpm compile
+
+      - name: Build (chrome)
+        if: ${{ !cancelled() }}
+        run: pnpm build
+
+      - name: Build (firefox)
+        if: ${{ !cancelled() }}
+        run: pnpm build:firefox
+
+      - name: Build Storybook
+        if: ${{ !cancelled() }}
+        run: pnpm build:storybook
+
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: pnpm test
+
+      - uses: actions/upload-pages-artifact@v5
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          path: storybook-static
+
+  # verify が通ったときだけ公開する。公開物は verify ジョブがビルドしたものを
+  # 受け渡し、同じ Storybook を二度ビルドしない。
+  deploy-storybook:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: verify
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/configure-pages@v6
+      - id: deployment
+        uses: actions/deploy-pages@v5
