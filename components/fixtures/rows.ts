@@ -126,9 +126,10 @@ export function directJumpRow(key: string, labels: Labels): RowView {
 
 export function connectRow(spaceLabel: string | undefined, labels: Labels): RowView {
   return {
-    id: spaceLabel ? `connect:${spaceLabel}` : 'connect',
+    id: spaceLabel === undefined ? 'connect' : `connect:${spaceLabel}`,
     kind: 'connect',
-    title: spaceLabel ? labels.rows.connectSpace(spaceLabel) : labels.rows.connectThis,
+    title:
+      spaceLabel === undefined ? labels.rows.connectThis : labels.rows.connectSpace(spaceLabel),
     tone: 'danger',
     hints: ['enter'],
   };

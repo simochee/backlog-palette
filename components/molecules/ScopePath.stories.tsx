@@ -47,6 +47,7 @@ export const Armed: Story = {
     const label = within(canvasElement).getByText(projects.web.name);
 
     await expect(getComputedStyle(label).textDecorationLine).toContain('line-through');
+    await expect(label.closest('li')).toHaveAttribute('data-armed', 'true');
   },
 };
 

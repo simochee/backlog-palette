@@ -2,7 +2,7 @@ type SpaceBadgeProps = {
   label: string;
 };
 
-const asciiWord = /^[\x20-\x7E]+$/u;
+const asciiWord = /^[\u0020-\u007E]+$/u;
 
 export function initialsOf(label: string): { first: string; second?: string } {
   const chars = Array.from(label.trim());
@@ -24,7 +24,7 @@ export function SpaceBadge({ label }: SpaceBadgeProps) {
       className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control border border-border bg-sunken px-1 font-mono text-xs font-semibold leading-none text-subtle"
     >
       <span aria-hidden>{first}</span>
-      {second && (
+      {second !== undefined && (
         <span aria-hidden className="@max-narrow:hidden">
           {second}
         </span>

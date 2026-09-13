@@ -25,22 +25,16 @@ const priority: Record<KeyHintId, number> = {
 };
 
 function defaultLabel(id: KeyHintId, labels: Labels): string {
-  switch (id) {
-    case 'enter':
-      return labels.keys.open;
-    case 'move':
-      return labels.keys.move;
-    case 'back':
-      return labels.keys.back;
-    case 'take':
-      return labels.keys.complete;
-    case 'modEnter':
-      return labels.keys.newTab;
-    case 'toPanel':
-      return labels.keys.toPanel;
-    case 'copyUrl':
-      return labels.keys.copyUrl;
-  }
+  const byId: Record<KeyHintId, string> = {
+    enter: labels.keys.open,
+    move: labels.keys.move,
+    back: labels.keys.back,
+    take: labels.keys.complete,
+    modEnter: labels.keys.newTab,
+    toPanel: labels.keys.toPanel,
+    copyUrl: labels.keys.copyUrl,
+  };
+  return byId[id];
 }
 
 export function footerHints(

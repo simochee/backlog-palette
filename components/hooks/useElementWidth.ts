@@ -5,7 +5,7 @@ export function useElementWidth(ref: RefObject<HTMLElement | null>): number | un
 
   useLayoutEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (element === null) return undefined;
 
     const measure = () => setWidth(element.getBoundingClientRect().width);
     measure();

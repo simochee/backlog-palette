@@ -41,8 +41,8 @@ export function Button({
       type={type}
       data-variant={variant}
       data-tone={tone}
-      aria-busy={busy || undefined}
-      disabled={disabled || busy}
+      aria-busy={busy ? true : undefined}
+      disabled={disabled === true || busy}
       className={cn(
         'inline-flex h-(--bp-size-control) items-center justify-center gap-1.5 rounded-control px-3 font-body text-md font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
         styles[tone][variant],

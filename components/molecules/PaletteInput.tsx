@@ -13,8 +13,20 @@ type PaletteInputProps = {
   'aria-label': string;
   'aria-controls'?: string;
   'aria-activedescendant'?: string;
-  'aria-expanded'?: boolean;
 };
+
+function GhostCompletion({ value, completion }: { value: string; completion: string }) {
+  return (
+    <div
+      aria-hidden
+      data-testid="ghost-completion"
+      className="pointer-events-none absolute inset-0 flex items-center overflow-hidden font-body text-md whitespace-pre select-none"
+    >
+      <span className="invisible">{value}</span>
+      <span className="text-subtle">{completion}</span>
+    </div>
+  );
+}
 
 export function PaletteInput({
   value,
@@ -27,27 +39,18 @@ export function PaletteInput({
   ...aria
 }: PaletteInputProps) {
   const [composing, setComposing] = useState(false);
-  const showGhost = Boolean(completion) && !composing && value.length > 0;
+  const showGhost = completion !== undefined && completion !== '' && !composing && value !== '';
 
   return (
     <div className="relative min-w-0 flex-1">
-      {showGhost && (
-        <div
-          aria-hidden
-          data-testid="ghost-completion"
-          className="pointer-events-none absolute inset-0 flex items-center overflow-hidden whitespace-pre font-body text-md select-none"
-        >
-          <span className="invisible">{value}</span>
-          <span className="text-subtle">{completion}</span>
-        </div>
-      )}
+      {showGhost && <GhostCompletion value={value} completion={completion} />}
       <input
         ref={ref}
         id={id}
         type="text"
         role="combobox"
         aria-autocomplete="list"
-        aria-expanded={aria['aria-expanded'] ?? true}
+        aria-expanded
         aria-controls={aria['aria-controls']}
         aria-activedescendant={aria['aria-activedescendant']}
         aria-label={aria['aria-label']}
@@ -57,14 +60,14 @@ export function PaletteInput({
         spellCheck={false}
         value={value}
         placeholder={placeholder}
-        data-composing={composing || undefined}
+        data-composing={composing ? true : undefined}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={onKeyDown}
         onCompositionStart={() => setComposing(true)}
         onCompositionEnd={() => setComposing(false)}
         className={cn(
           'relative h-full w-full min-w-0 border-0 bg-transparent p-0 font-body text-md text-default outline-none placeholder:text-disabled',
-          composing && 'underline decoration-dotted decoration-1 underline-offset-2',
+          composing && 'underline decoration-1 decoration-dotted underline-offset-2',
         )}
       />
     </div>

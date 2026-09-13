@@ -9,8 +9,18 @@ import './preview.css';
 type Theme = 'light' | 'dark';
 type Locale = 'ja' | 'en';
 
-const widths = { auto: undefined, '360': 360, '640': 640, '720': 720 } as const;
-type WidthKey = keyof typeof widths;
+function resolveWidth(value: unknown): number | undefined {
+  switch (value) {
+    case '360':
+      return 360;
+    case '640':
+      return 640;
+    case '720':
+      return 720;
+    default:
+      return undefined;
+  }
+}
 
 function StoryFrame({
   theme,
@@ -44,7 +54,7 @@ const withFrame: Decorator = (Story, { globals }) => (
   <StoryFrame
     theme={globals.theme === 'dark' ? 'dark' : 'light'}
     locale={globals.locale === 'en' ? 'en' : 'ja'}
-    width={widths[(globals.width as WidthKey | undefined) ?? 'auto']}
+    width={resolveWidth(globals.width)}
   >
     <Story />
   </StoryFrame>

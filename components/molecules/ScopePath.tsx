@@ -16,18 +16,19 @@ export function ScopePath({ segments }: ScopePathProps) {
         return (
           <li
             key={segment.id}
-            data-armed={segment.armed || undefined}
+            data-armed={segment.armed === true ? true : undefined}
             className={cn(
               'flex items-center gap-1 whitespace-nowrap',
-              segment.armed && 'text-warning line-through decoration-2',
+              segment.armed === true && 'text-warning',
             )}
           >
-            {segment.badge && <SpaceBadge label={segment.label} />}
+            {segment.badge === true && <SpaceBadge label={segment.label} />}
             <span
               className={cn(
                 'max-w-40 truncate',
-                segment.compact && 'hidden',
-                !isLast && !segment.compact && '@max-compact:hidden',
+                segment.armed === true && 'line-through decoration-2',
+                segment.compact === true && 'hidden',
+                !isLast && segment.compact !== true && '@max-compact:hidden',
               )}
             >
               {segment.label}

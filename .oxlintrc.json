@@ -35,7 +35,12 @@
 
     // React の props 型に Readonly<> を付ける慣習はなく、@types/react 由来の型も
     // readonly ではない。全 props が違反になり、シグナルが埋もれる。
-    "typescript/prefer-readonly-parameter-types": "off"
+    "typescript/prefer-readonly-parameter-types": "off",
+
+    // 候補リストは role="listbox" / role="option" を div に付けて自前で描く (D-13)。
+    // 仮想フォーカス (aria-activedescendant) と行の中の複数要素 (バッジ・キー記号) は
+    // <select> / <option> では表現できない。トーストの role="status" は <output> で書く。
+    "jsx-a11y/prefer-tag-over-role": "off"
   },
   "overrides": [
     {
