@@ -1,5 +1,6 @@
 import { storage } from '#imports';
 import type { SpaceRateRecord } from '@/lib/backlog/rateLimit';
+import type { ConnectedSpace } from '@/lib/connect/connectSpace';
 
 export type VisitedKind = 'issue' | 'project' | 'wiki' | 'document';
 
@@ -38,6 +39,12 @@ export const apiKeys = storage.defineItem<Record<string, string>>('local:apiKeys
 
 /** レート枠の共有状態。ホストごと。形は lib/backlog/rateLimit.ts の SpaceRateRecord */
 export const rateLimits = storage.defineItem<Record<string, SpaceRateRecord>>('local:rateLimits', {
+  fallback: {},
+  version: 1,
+});
+
+/** 接続済みスペースの記録。ホストごと。鍵は含まない（apiKeys が持つ） */
+export const spaces = storage.defineItem<Record<string, ConnectedSpace>>('local:spaces', {
   fallback: {},
   version: 1,
 });
