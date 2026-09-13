@@ -1,5 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import type { Plugin } from 'vite';
+import { mergeConfig, type Plugin } from 'vite';
 
 const projectRoot = new URL('..', import.meta.url).pathname;
 
@@ -26,24 +26,21 @@ const config: StorybookConfig = {
     name: '@storybook/react-vite',
     options: {},
   },
-  viteFinal: (viteConfig) => {
-    // WXT の Vite プラグイン (`WxtVitest()`) はあえて読み込まない。読み込むと `#imports` が
-    // fakeBrowser に解決できてしまい、presenter 層への拡張機能 API 混入が Storybook 上で
-    // 動いてしまう。解決不能にしておくことで規約違反をビルドエラーとして検出する。
-    viteConfig.plugins ??= [];
-    viteConfig.plugins.push(rejectExtensionApi);
-
-    viteConfig.resolve ??= {};
-    viteConfig.resolve.alias = {
-      ...viteConfig.resolve.alias,
-      '@': projectRoot,
-      '@@': projectRoot,
-      '~': projectRoot,
-      '~~': projectRoot,
-    };
-
-    return viteConfig;
-  },
+  // WXT の Vite プラグイン (`WxtVitest()`) はあえて読み込まない。読み込むと `#imports` が
+  // fakeBrowser に解決できてしまい、presenter 層への拡張機能 API 混入が Storybook 上で
+  // 動いてしまう。解決不能にしておくことで規約違反をビルドエラーとして検出する。
+  viteFinal: (viteConfig) =>
+    mergeConfig(viteConfig, {
+      plugins: [rejectExtensionApi],
+      resolve: {
+        alias: {
+          '@': projectRoot,
+          '@@': projectRoot,
+          '~': projectRoot,
+          '~~': projectRoot,
+        },
+      },
+    }),
 };
 
 export default config;
