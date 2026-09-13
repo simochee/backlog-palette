@@ -14,15 +14,18 @@ import { summaryFromTitle } from './title.ts';
  * 付けて iframe を 0×0 に潰し、'modal' でも wrapper の div が 1 つ増える。
  * content script がページに作る DOM は iframe 1 つだけにする（tech-stack.md §2）。
  */
-function createPaletteFrame(src: string): HTMLIFrameElement {
+function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameElement {
   const iframe = document.createElement('iframe');
   iframe.src = src;
   iframe.dataset.backlogPalette = '';
   /*
    * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
    * Permissions Policy で許可する必要がある。コピーコマンドの前提。
+   * 許可先を拡張の origin で名指しする。既定の 'src' は src 属性の origin を指すが、
+   * use_dynamic_url の src は毎回変わる GUID の origin で、読み込まれた文書の origin
+   * （chrome-extension://<id>）と一致せず、許可が届かない
    */
-  iframe.allow = 'clipboard-write';
+  iframe.allow = `clipboard-write ${extensionOrigin}`;
   iframe.style.cssText = [
     'display:none',
     'position:fixed',
@@ -44,6 +47,7 @@ function readPageContext(): PageContext {
   const issueKey = ISSUE_PATH.exec(pathname)?.[1];
   return {
     origin,
+    pathname,
     spaceKey: spaceKeyOf(origin),
     projectKey: issueKey?.slice(0, issueKey.lastIndexOf('-')),
     issueKey,
@@ -139,7 +143,7 @@ export default defineContentScript({
   main(ctx) {
     const extensionOrigin = new URL(browser.runtime.getURL('/')).origin;
     // 初回 ⌘K で読み込みを待たせないため、非表示のまま先に注入する（palette.md §3）
-    const iframe = createPaletteFrame(browser.runtime.getURL('/palette.html'));
+    const iframe = createPaletteFrame(browser.runtime.getURL('/palette.html'), extensionOrigin);
     /*
      * body ではなく documentElement に付ける。body に transform や filter が
      * 掛かると position:fixed の基準が body になり、全面を覆えなくなる。
