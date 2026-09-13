@@ -117,8 +117,8 @@ describe('自由語（§4）', () => {
 
   it('根で語を打っても検索行は出ず、スペース名の照合だけ', () => {
     const d = run({ stack: emptyStack, input: 'acme' });
-    expect(sectionIds(d)).toEqual(['pages']);
-    expect(titles(d, 'pages')).toEqual([acme.label]);
+    expect(sectionIds(d)).toEqual(['spaces']);
+    expect(titles(d, 'spaces')).toEqual([acme.label]);
   });
 });
 

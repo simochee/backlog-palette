@@ -148,9 +148,9 @@ export function pageSectionCandidates(env: Env): Candidate[] {
   ];
 }
 
-/** 根の照合対象はスペース名と共通ページ名だけ（D-20） */
-export function rootCandidates(env: Env): Candidate[] {
-  return [...spaceCandidates(env, 'spaces'), ...pageCandidates(env, 'common')];
+/** 根の共通ページ（個人設定・API キー）。根の照合対象はこれとスペース名だけ（D-20） */
+export function commonPageCandidates(env: Env): Candidate[] {
+  return pageCandidates(env, 'common');
 }
 
 /** 照合して同じ強さの中だけ個人化で並べる。language は語が空なら全件を元の順で返す */
