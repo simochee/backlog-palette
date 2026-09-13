@@ -50,6 +50,7 @@ const OWNED_KEYS = [
   'activity',
   'transitions',
   'settings',
+  'panelRequest',
 ];
 
 export type ExtensionFixtures = {
