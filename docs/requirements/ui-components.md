@@ -15,7 +15,7 @@
 
 ```ts
 export type RowKind =
-  | 'page' | 'issue' | 'wiki' | 'document' | 'project' | 'space'
+  | 'page' | 'issue' | 'wiki' | 'document' | 'project' | 'space' | 'user'
   | 'command' | 'search' | 'connect' | 'status' | 'notice' | 'external' | 'hint';
 
 export type Tone = 'neutral' | 'info' | 'success' | 'done' | 'warning' | 'danger';
@@ -55,7 +55,7 @@ export type PathSegmentView = {
 
 /** フッターのキーヒント。container が KeyBinding から導出して渡す（不変条件 I2） */
 export type KeyHint = {
-  id: 'enter' | 'modEnter' | 'move' | 'back' | 'complete' | 'copyUrl';
+  id: 'enter' | 'modEnter' | 'move' | 'back' | 'complete' | 'copyUrl' | 'toPanel';
   keys: readonly string[];       // 表示するキー記号（['⌘', '↵']）
   label: string;
   priority: number;              // 小さいほど残る。↵ は 0
@@ -85,6 +85,51 @@ export type PaletteView = {
 | `back` | `Backspace`（キャレット先頭） | `onBackspaceAtStart()` |
 | `complete` | `Tab` | `onComplete(selectedId)` |
 | `copyUrl` | `Meta+Shift+C` | `onCopySearchUrl()` |
+| `toPanel` | `Meta+ArrowRight` | `onOpenPanel()` |
+
+### 1.1 サイドパネル用の語彙
+
+```ts
+export type FilterOption = { id: string; label: string; count?: number; tone?: Tone };
+export type FilterField = {
+  id: string; label: string; value: string;
+  options: readonly FilterOption[];
+  neutralValue?: string;         // 無条件を表す選択肢。value がこれと違えば「効いている」
+};
+
+export type SpaceProgress = {
+  id: string; label: string;
+  state: 'loading' | 'ready' | 'error';
+  count?: number; message?: string;
+  action?: { label: string };    // 「再接続」。押下は onSpaceAction(id)
+};
+
+export type DetailSegment = { text: string; highlight?: boolean };
+export type DetailView = {
+  kind: RowKind; code?: string; title: string; sub?: string;
+  marker?: Badge; tag?: Badge; space?: { label: string };
+  excerpt?: readonly DetailSegment[];   // 無ければ bodylessNote
+  bodylessNote?: string;
+  meta?: readonly { label: string; value: string }[];
+};
+
+export type PanelView = {
+  input: { value: string; placeholder: string };
+  recentQueries: readonly string[];
+  filters: readonly FilterField[];
+  spaces: readonly SpaceProgress[];
+  sections: readonly SectionView[];
+  selectedId?: string;
+  detail?: DetailView;
+  footer: readonly KeyHint[];
+  toast?: ToastView;
+};
+```
+
+### 1.2 文言
+
+部品の文言は `labels` として受け取り、`components/labels/ja.ts` と `en.ts` の辞書から渡す。既定は `ja`。
+Storybook の toolbar に locale を持ち、両言語で見る。ドメイン語（ステータス名など）は辞書に入れず props で渡す。
 
 ---
 
@@ -115,11 +160,18 @@ components/
     PaletteHeader.tsx            ScopePath + PaletteInput + esc ヒント + 削除待ちの予告
     PaletteFooter.tsx            KeyHints + Toast／銘
     Palette.tsx                  上 3 つを束ね、キー処理を 1 箇所に持つ。PaletteView とコールバックだけを受ける
-    ConnectSheet.tsx             API キーの貼り付けシート（surfaces §1）
+    FilterBar.tsx                常設フィルターバー。単一選択のラジオとして描く（surfaces §5）
+    StatusStrip.tsx              スペース単位の進捗・件数・エラー。リストの外に固定
+    DetailPane.tsx               詳細（本文の抜粋 + ハイライト + メタ）。pane / inline の 2 形
+    SidePanel.tsx                入力 + FilterBar + StatusStrip + CandidateList + DetailPane。PanelView を受ける
+    ConnectSheet.tsx             API キーの貼り付けシート（surfaces §1）。OAuth の副ボタンつき
     SpaceList.tsx                設定画面の接続スペース一覧
+    CustomDomainForm.tsx         カスタムドメインの追加（surfaces §8）
   templates/
     PaletteFrame.tsx             ヘッダー／リスト／フッターの配置と高さの規則。データを持たない
     Overlay.tsx                  暗転 + 上寄せ中央配置。外側クリックを onDismiss で通知
+    PopupFrame.tsx               ポップアップ用。暗転なし、幅の上限だけ（surfaces §6）
+    PanelLayout.tsx              1 カラム／2 カラムの切替（幅 480px）。詳細ペインのスロット
     OptionsLayout.tsx            設定画面の 1 カラム配置
 ```
 
@@ -136,10 +188,15 @@ type PaletteProps = PaletteView & {
   onBackspaceAtStart: () => void;
   onEscape: () => void;
   onCopySearchUrl?: () => void;
+  onOpenPanel?: () => void;
   onDismiss?: () => void;          // 暗転クリック
+  labels?: Partial<PaletteLabels>; // 既定は ja
   width?: number;                  // story 用。省略時はトークンの既定
 };
 ```
+
+`SidePanel` も同じ形（`PanelView` + コールバック）。フィルターの変更は `onFilterChange(fieldId, optionId)`、
+ステータス帯の操作は `onSpaceAction(spaceId)`。行の動作・キー処理は `Palette` と同じ規則を共有する。
 
 キー処理（§palette 6・13）は `Palette` の 1 箇所に置く。`isComposing` の捨て方、`Tab` の既定動作の抑止、
 `Enter` の宛先を DOM から引き直す規則はここ。**molecules はキーを解釈しない。**
@@ -188,6 +245,8 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 - 長い件名（40 文字以上）を最低 1 件: `受託案件 請求フロー標準手順（2024 改訂）に基づく請求書テンプレートの差し替え依頼`
 - 人名: `田中 拓也` `佐藤 美咲` `山本 遼`
 - `palette.md` の状態ごとに `PaletteView` を 1 つずつ用意する（S0〜S12、§5.4）
+- `surfaces.md` §5 の状態ごとに `PanelView` を用意する（P1〜P6、§5.5）
+- 英語の辞書で同じフィクスチャを描いたとき、レイアウトが崩れないことを見る（ラベル長が変わる）
 
 ---
 
@@ -216,7 +275,7 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | `Badge` | 6 つの tone が並ぶ／dot つき |
 | `SpaceBadge` | 英字キー／日本語ラベルは頭文字 1 文字 |
 | `KindIcon` | 全 RowKind が並ぶ（写像の抜けを描画で検出） |
-| `ResultRow` | 課題（コード + マーカー + タグ + バッジ）／ページ／コマンド `›`／検索行（アクセント）／未接続（危険色）／検索中（スピナー）／**長い件名は 1 行で省略され title 属性に全文を持つ**／**選択行は左端の罫とタイトルの太字で示される**／**ヒントが空なら何も描かれない**／幅 360 |
+| `ResultRow` | 課題（コード + マーカー + タグ + バッジ）／ページ／ユーザー（頭文字）／コマンド `›`／検索行（アクセント、条件つきの補足）／未接続（危険色）／検索中（スピナー）／**長い件名は 1 行で省略され title 属性に全文を持つ**／**選択行は左端の罫とタイトルの太字で示される**／**ヒントが空なら何も描かれない**／幅 360 |
 | `SectionHeader` | 見出しだけ／補足つき |
 | `ScopePath` | 根／1 段／2 段／コマンド階層／**削除待ちの段は取り消し線で示される**／**幅が足りないと左の段がバッジだけになる** |
 | `PaletteInput` | 空でプレースホルダ／入力中／**ゴースト補完は入力の続きとして表示され選択できない**／変換中（下線つきの未確定文字） |
@@ -230,7 +289,11 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | `CandidateList` | 3 セクション／**↓ で選択が次の行へ移り末尾で止まる**／**↑ は先頭で止まる**／**セクション見出しは選択の対象にならない**／**クリックで onAction が呼ばれ、ホバーでは選択が動かない**／**selectedId が変わると aria-activedescendant が追従する** |
 | `PaletteHeader` | 通常／削除待ちの予告つき／esc ラベルが「1 つ前に戻る」 |
 | `PaletteFooter` | ヒントのみ／トーストつき（ヒントは消えない） |
-| `ConnectSheet` | 入力待ち／送信中／エラー／完了／**Enter で接続が送信される**／**変換中の Enter では送信されない**／**空のまま接続は押せない** |
+| `ConnectSheet` | 入力待ち／送信中／エラー／完了／**Enter で接続が送信される**／**変換中の Enter では送信されない**／**空のまま接続は押せない**／**OAuth の副ボタンで onOAuth が呼ばれる** |
+| `FilterBar` | 条件なし／2 条件が効いている（強調）／compact／**選択肢は 1 つだけ選べる**／**neutral に戻すと強調が消える** |
+| `StatusStrip` | 全部 ready（1 行に畳む）／読み込み中を含む／エラーと再接続ボタン／**再接続を押すと onSpaceAction が呼ばれる** |
+| `DetailPane` | 課題（抜粋 + ハイライト + メタ）／Wiki／本文なし／inline 形／**ハイライトはアクセントと別の色** |
+| `CustomDomainForm` | 空／入力中／追加済み一覧／**不正なホストでは追加できない** |
 | `SpaceList` | 接続済み 3 件／要再接続を含む／0 件の案内／**削除は 1 回目で確認になり 2 回目で onDisconnect が呼ばれる** |
 
 ### 5.4 `Palette` の状態 story
@@ -253,8 +316,25 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | S10 | 未接続スペースがある全スペース検索 | 末尾に接続行が 1 つ。バナーは無い |
 | S11 | 一部スペースが認証切れ | 末尾に再接続行。他の結果は出ている |
 | S12 | コピー直後 | フッター右端にトースト、ヒントは消えない |
+| S13 | 条件つき自由語（`処理中 決済`） | 検索行が 2 つあり、条件つきが先頭でアクセント／補足に条件が文字で出る |
+| S14 | `@たな` を入力中 | ユーザー行が並び、Enter で onAction |
+| S15 | ポップアップ（Backlog 外） | プロジェクトのセクションが無く、コピー系が無い／暗転が無い |
 | — | 狭い幅（360） | ↵ が残り、補足が隠れ、パスがバッジだけになる |
 | — | ダーク | S1 と S6 をダークで（描画のみ） |
+| — | English | S1 と S6 を英語の辞書で（描画のみ。ラベル長の違いでフッターが溢れないこと） |
+
+### 5.5 `SidePanel` の状態 story
+
+§5.1 の共通検査（フッターのキー・行の Enter・Tab・IME）を同じく回す。
+
+| # | 状態 | 固有の検査（name） |
+|---|---|---|
+| P1 | 初期（前回の語と最近の検索） | 入力欄が空で ↑ を押すと onInputChange に直前の語が渡る |
+| P2 | 結果 + 詳細（幅 720） | 選択行の詳細が右ペインに出る／↓ で詳細が切り替わる |
+| P3 | 結果 + インライン詳細（幅 380） | 選択行の直下に詳細が展開され、他の行の位置は変わらない |
+| P4 | スペース単位の逐次到着 | ステータス帯に読み込み中とエラーが並び、結果の行は動かない |
+| P5 | 0 件 | 条件を外す提案が先頭 |
+| P6 | フィルター変更直後 | onFilterChange が呼ばれ、結果は検索中の表示になる |
 
 ---
 
@@ -266,8 +346,10 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 4. `ScopePath` `PaletteInput` `KeyHints` `Toast`
 5. `CandidateList`（キーによる選択移動、controlled）
 6. `PaletteHeader` `PaletteFooter` `PaletteFrame` `Overlay`
-7. `Palette` と S0〜S12 のフィクスチャ、共通の不変条件 play
-8. `ConnectSheet` `SettingRow` `SpaceList` `OptionsLayout`
+7. `Palette` と S0〜S15 のフィクスチャ、共通の不変条件 play、`PopupFrame`
+8. `FilterBar` `StatusStrip` `DetailPane` `PanelLayout` → `SidePanel` と P1〜P6
+9. `ConnectSheet` `SettingRow` `SpaceList` `CustomDomainForm` `OptionsLayout`
+10. 英語辞書と locale toolbar。全 story を両言語・両テーマで通す
 
 5 が終わった時点で `lib/` のスタック・入力解釈・キーマップの実装に並行して入れる。7 の story が緑になったら
-container（`entrypoints/palette/`）の配線を始める。
+container（`entrypoints/palette/`）の配線を始める。順番と並行の詳細は [`milestones.md`](milestones.md)。
