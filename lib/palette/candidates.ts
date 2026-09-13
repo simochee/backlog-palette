@@ -46,11 +46,16 @@ function spaceOf(index: PaletteIndex, spaceId: string): SpaceEntry | undefined {
 }
 
 function pageCandidates({ index, scope, labels }: Env, section: string): Candidate[] {
-  const owner = scope.kind === 'root' ? undefined : spaceOf(index, scope.spaceId);
+  const ownerLabel =
+    scope.kind === 'root'
+      ? undefined
+      : scope.kind === 'project'
+        ? index.projects.find((project) => project.id === scope.projectId)?.name
+        : spaceOf(index, scope.spaceId)?.label;
   const sub =
     scope.kind === 'root'
       ? labels.rows.commonPageSub
-      : `${owner?.label ?? ''} · ${labels.rows.pageSub}`;
+      : `${ownerLabel ?? ''} · ${labels.rows.pageSub}`;
   return index.pagesFor(scope).map((page) => ({
     built: pageRow(section, page, sub),
     target: { text: page.title, aliases: page.aliases },
