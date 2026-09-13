@@ -8,7 +8,7 @@ describe('コレクションのスキーマ', () => {
       displayCacheSchema.safeParse({
         url: 'https://nulab.backlog.com/view/PROJ-1',
         kind: 'issue',
-        spaceKey: 'nulab',
+        spaceHost: 'nulab.backlog.com',
         projectKey: 'PROJ',
         key: 'PROJ-1',
         visitedAt: 1,
@@ -33,7 +33,6 @@ describe('コレクションのスキーマ', () => {
   it('スペースの記録は鍵を持たない', () => {
     const parsed = spaceSchema.safeParse({
       id: 'demo.backlog.jp',
-      host: 'demo.backlog.jp',
       label: 'デモ',
       connectedAt: 1,
       apiKey: 'secret',
