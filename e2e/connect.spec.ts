@@ -58,6 +58,17 @@ test.describe('API キーで接続する導線', () => {
         '/api/v2/space',
         '/api/v2/rateLimit',
         '/api/v2/projects',
+        ...PROJECTS.map((project) => `/api/v2/projects/${project.id}/statuses`),
+      ]),
+    );
+    // マスタは Query のキャッシュとして永続化され、パレットが開いたときに即描ける
+    const cache = await readStorage<{ clientState: { queries: { queryKey: unknown[] }[] } }>(
+      'queryCache',
+    );
+    expect(cache?.clientState.queries.map((q) => q.queryKey)).toEqual(
+      expect.arrayContaining([
+        ['backlog', SPACE_HOST, 'projects'],
+        ['backlog', SPACE_HOST, 'projects', PROJECTS[0]?.id, 'statuses'],
       ]),
     );
     expect(

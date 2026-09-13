@@ -47,6 +47,7 @@ const OWNED_KEYS = [
   'apiKeys',
   'spaces',
   'rateLimits',
+  'queryCache',
   'activity',
   'transitions',
   'settings',
