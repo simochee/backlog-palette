@@ -53,9 +53,13 @@ test.describe('Firefox: パレットの注入と開閉', () => {
     await tab.keyboard.press('k');
     await tab.keyboard.up(HOTKEY_MODIFIER);
 
-    // スコープパスの先頭の段がタブ URL から決めたスペース。未接続なので表示名はホストのまま
+    /*
+     * スコープパスの先頭の段がタブ URL から決めたスペース。接続済みなら表示名（GET /space の
+     * name）、未接続ならホスト名になる。Firefox の fixture はテスト間で拡張の storage を
+     * 消さないので、接続の E2E が先に走ったかどうかで表示が変わる
+     */
     await frame.waitForFunction(
-      () => document.querySelector('ol li')?.textContent?.includes('demo.backlog.jp') === true,
+      () => /demo\.backlog\.jp|デモスペース/u.test(document.querySelector('ol li')?.textContent ?? ''),
       { timeout: 5000 },
     );
   });

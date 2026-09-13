@@ -19,9 +19,9 @@ export type SearchRunner = {
 };
 
 /*
- * M4 の Query 層（1 スペース内で種別を useQueries で並列）が差し込まれるまでの代役。
- * 何も取らずに全種別を 0 件で揃える。検索行の ↵ が「0 件の提案行」まで辿れる状態を
- * 先に成立させ、行と動作の対応（I1）を検査できるようにする
+ * 何も取らずに全種別を 0 件で揃える代役。本番は lib/backlog/setup の runner（M4）。
+ * 検索行の ↵ が「0 件の提案行」まで辿れる状態を API 無しで成立させ、行と動作の
+ * 対応（I1）を検査できるようにするために残す
  */
 export const emptySearchRunner: SearchRunner = {
   run(_query, _scope, report) {

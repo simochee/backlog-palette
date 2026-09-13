@@ -6,13 +6,16 @@ import { createFakeApi, type FakeApi, handleApi } from './api.ts';
 
 export const SPACE_HOST = 'demo.backlog.jp';
 
+/** 2 つ目のスペース。根で切り替える先（palette.md §9） */
+export const SECOND_SPACE_HOST = 'acme.backlog.jp';
+
 /** スペースではないホスト。content script の excludeMatches が効くことを見る */
 export const NOT_A_SPACE_HOST = 'www.backlog.jp';
 
 /** Backlog と無関係なホスト。matches に当たらないことを見る */
 export const OTHER_HOST = 'other.example';
 
-export const HOSTS = [SPACE_HOST, NOT_A_SPACE_HOST, OTHER_HOST] as const;
+export const HOSTS = [SPACE_HOST, SECOND_SPACE_HOST, NOT_A_SPACE_HOST, OTHER_HOST] as const;
 
 /**
  * Backlog のスペースに見せかけたローカルサーバ。
