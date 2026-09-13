@@ -1,11 +1,11 @@
 import { browser } from '#imports';
 import { SettingRow } from '@/components/molecules/SettingRow';
 
-import { text } from './text.ts';
+import type { OptionsText } from './text.ts';
 
 const REPOSITORY_URL = 'https://github.com/simochee/backlog-palette';
 
-export function AboutSection() {
+export function AboutSection({ text }: { text: OptionsText }) {
   return (
     <SettingRow
       label={text.about.version(browser.runtime.getManifest().version)}

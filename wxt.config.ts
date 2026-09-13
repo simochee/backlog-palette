@@ -15,6 +15,8 @@ export default defineConfig({
     name: 'Backlog Palette',
     description: '⌘K で Backlog のどこへでも。',
     permissions: ['storage', 'tabs', 'clipboardWrite', 'alarms'],
+    // ブラウザ履歴の取り込みは設定でオンにしたときだけ求める（surfaces.md §2）
+    optional_permissions: ['history'],
     // popup は持たない（D-22）。クリックは background の action.onClicked が受ける
     action: { default_title: 'Backlog Palette' },
     web_accessible_resources: [

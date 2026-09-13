@@ -42,7 +42,15 @@ type ChromeStorage = {
 const DISPLAY_CACHE_KEY = 'displayCache';
 
 /** テスト間で消す item。拡張が書くものだけを列挙し、storage.local.clear() は使わない */
-const OWNED_KEYS = [DISPLAY_CACHE_KEY, 'apiKeys', 'spaces', 'rateLimits'];
+const OWNED_KEYS = [
+  DISPLAY_CACHE_KEY,
+  'apiKeys',
+  'spaces',
+  'rateLimits',
+  'settings',
+  'activity',
+  'customHosts',
+];
 
 export type ExtensionFixtures = {
   context: BrowserContext;
@@ -88,6 +96,8 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
         {
           channel: 'chromium',
           headless: true,
+          // 「ブラウザに従う」の既定を日本語にする。headless の既定 UI 言語は英語
+          locale: 'ja-JP',
           ignoreDefaultArgs: ['--disable-extensions'],
           args: [
             `--disable-extensions-except=${EXTENSION_PATH}`,

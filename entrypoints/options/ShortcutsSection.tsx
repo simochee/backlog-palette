@@ -3,7 +3,7 @@ import { SettingRow } from '@/components/molecules/SettingRow';
 import { isMacPlatform } from '@/lib/hotkey/paletteHotkey';
 import { navigate } from '@/lib/tabs';
 
-import { text } from './text.ts';
+import type { OptionsText } from './text.ts';
 
 /*
  * ⌘K は content script が捕捉していて commands には無い（D-10）ので、ブラウザの
@@ -12,7 +12,7 @@ import { text } from './text.ts';
  */
 const SHORTCUTS_PAGE = import.meta.env.FIREFOX ? 'about:addons' : 'chrome://extensions/shortcuts';
 
-export function ShortcutsSection() {
+export function ShortcutsSection({ text }: { text: OptionsText }) {
   const hotkey = isMacPlatform(navigator.platform) ? '⌘K' : 'Ctrl+K';
   return (
     <SettingRow
