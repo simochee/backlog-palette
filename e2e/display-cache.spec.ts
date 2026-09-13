@@ -48,6 +48,37 @@ test.describe('表示キャッシュの収集', () => {
       .toEqual(['PROJ-123', 'PROJ-142']);
   });
 
+  test('Wiki のページ名とドキュメント ID は大文字小文字をそのまま記録する', async ({
+    page,
+    space,
+    readDisplayCache,
+  }) => {
+    await page.goto(space.url('/wiki/PROJ/Home'));
+    await expect.poll(readDisplayCache).toHaveLength(1);
+    await page.goto(space.url('/document/PROJ/abcDEF0123'));
+    await expect.poll(readDisplayCache).toHaveLength(2);
+
+    expect(await readDisplayCache()).toMatchObject([
+      { kind: 'document', projectKey: 'PROJ', key: 'abcDEF0123' },
+      { kind: 'wiki', projectKey: 'PROJ', key: 'Home' },
+    ]);
+  });
+
+  test('Wiki のページ名はパーセントエンコードを戻して記録し、URL は元のまま残す', async ({
+    page,
+    space,
+    readDisplayCache,
+  }) => {
+    const path = `/wiki/PROJ/${encodeURIComponent('リリース手順')}/Sub Page`;
+    await page.goto(space.url(path));
+
+    await expect
+      .poll(readDisplayCache)
+      .toMatchObject([
+        { kind: 'wiki', key: 'リリース手順/Sub Page', url: space.url(path).replace(' ', '%20') },
+      ]);
+  });
+
   test('表示キャッシュに載せない画面（ダッシュボード）は記録しない', async ({
     page,
     space,
