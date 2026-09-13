@@ -12,7 +12,7 @@ test.describe('表示キャッシュの収集', () => {
       {
         url: space.url('/view/PROJ-123'),
         kind: 'issue',
-        spaceKey: 'demo',
+        spaceHost: 'demo.backlog.jp',
         projectKey: 'PROJ',
         key: 'PROJ-123',
         title: 'ログイン画面のバリデーション修正',
