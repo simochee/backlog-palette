@@ -70,10 +70,13 @@ export default defineBackground(() => {
     if (alarm.name === PRUNE_DISPLAY_CACHE) void pruneDisplayCache();
   });
 
-  // Backlog のタブではサイドパネルを開く。それ以外のタブは設定画面（surfaces.md §4。設定画面は後続の PR）
+  // Backlog のタブではサイドパネルを開く。それ以外のタブは設定画面（surfaces.md §4）
   browser.action.onClicked.addListener((tab) => {
     if (tab.id === undefined || tab.url === undefined) return;
-    if (!isBacklogSpaceOrigin(new URL(tab.url).origin)) return;
+    if (!isBacklogSpaceOrigin(new URL(tab.url).origin)) {
+      void browser.runtime.openOptionsPage();
+      return;
+    }
     const sidebarAction = readSidebarAction();
     if (sidebarAction !== undefined) {
       sidebarAction.toggle();

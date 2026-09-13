@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@tanstack/react-form": "1.33.5",
+    "@tanstack/react-router": "1.170.35",
     "@webext-core/messaging": "4.0.0",
     "lucide-react": "1.45.0",
     "radix-ui": "1.6.7",
