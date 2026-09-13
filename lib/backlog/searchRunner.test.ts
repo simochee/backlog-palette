@@ -86,7 +86,6 @@ describe('検索の実行役', () => {
 
     expect(reported).toEqual([]);
   });
-
 });
 
 describe('検索を走らせない場面', () => {
@@ -99,7 +98,9 @@ describe('検索を走らせない場面', () => {
     runner.run('   ', space, report);
 
     expect(issue).not.toHaveBeenCalled();
-    expect(reported.filter(([, outcome]) => outcome.ok && outcome.rows.length === 0)).toHaveLength(6);
+    expect(reported.filter(([, outcome]) => outcome.ok && outcome.rows.length === 0)).toHaveLength(
+      6,
+    );
   });
 
   it('種別の条件があれば、その種別だけを走らせる', async () => {
