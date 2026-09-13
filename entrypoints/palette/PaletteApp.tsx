@@ -1,5 +1,5 @@
 import { useSelector } from '@tanstack/react-store';
-import { type RefObject, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
@@ -8,12 +8,10 @@ import { detectPlatform } from '@/lib/keys';
 import { derive, type PaletteStore } from '@/lib/palette';
 import { scopeOf } from '@/lib/stack/stack';
 
-import { type ActionEnv, type Pending, restartSearch } from './actions.ts';
+import type { ActionEnv } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import { hostChannel } from './hostChannel.ts';
-import { OpeningSink } from './OpeningSink.tsx';
-import { handOffToPanel } from './panel.ts';
-import { type OpenSession, useOpenSession } from './session.ts';
+import { type PaletteSession, usePaletteSession } from './session.ts';
 
 const TOAST_LIFETIME_MS = 2000;
 
@@ -48,35 +46,9 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
   }, [store, toast]);
 }
 
-/**
- * 共有 URL で開いたときに検索を復元する（palette.md §7.6）。条件つきの状態はサイドパネルへ渡し、
- * 開けない環境（Firefox）では語とスコープだけをパレットで復元する（surfaces.md §5.1・§5.5）
- */
-function useRestoredSearch(session: OpenSession, pending: RefObject<Pending>, close: () => void) {
-  const { restore, runner, store } = session;
-
-  useEffect(() => {
-    if (restore === undefined) return;
-    const run = async () => {
-      if (restore.toPanel && (await handOffToPanel(restore.state))) {
-        close();
-        return;
-      }
-      restartSearch(
-        restore.query,
-        restore.scope,
-        { runner, dispatch: store.dispatch },
-        pending.current,
-      );
-    };
-    void run();
-  }, [restore, runner, store, pending, close]);
-}
-
-function OpenPalette({ session, close }: { session: OpenSession; close: () => void }) {
-  const { store, index, labels, context, runner } = session;
+function OpenPalette({ session, close }: { session: PaletteSession; close: () => void }) {
+  const { store, index, labels, context, runner, pending } = session;
   const state = useSelector(store, (snapshot) => snapshot);
-  const pending = useRef<Pending>({ search: undefined, lastSearch: undefined });
   useToastExpiry(store, state.toast);
 
   const derived = useMemo(
@@ -98,15 +70,7 @@ function OpenPalette({ session, close }: { session: OpenSession; close: () => vo
     }),
     [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
-  useRestoredSearch(session, pending, close);
-  const callbacks = usePaletteCallbacks({
-    store,
-    derived,
-    env,
-    pending,
-    stack: state.stack,
-    close,
-  });
+  const callbacks = usePaletteCallbacks({ store, derived, env, pending, stack: state.stack, close });
 
   return (
     <LabelsProvider labels={labels}>
@@ -117,13 +81,14 @@ function OpenPalette({ session, close }: { session: OpenSession; close: () => vo
 
 /**
  * パレットの container。Store を購読し derive の結果を presenter に渡す。状態を持つのは
- * ここと Store だけ（CLAUDE.md の層構成）。開くたびに OpenPalette を作り直し、前回の入力・
- * 選択・スクロールを持ち越さない（palette.md §3）
+ * ここと Store だけ（CLAUDE.md の層構成）。
+ *
+ * 表示・非表示は content script が iframe ごと切り替えるので、ここは閉じている間も描き続ける。
+ * `open` を待ってから描くと、iframe が表示された直後の打鍵が入力欄に届かない
  */
 export function PaletteApp() {
-  const { phase, close, onTyped } = useOpenSession(hostChannel);
+  const { session, close } = usePaletteSession(hostChannel);
   useCloseOnHotkey(close);
-  // 閉じている間も sink を置く。次に開いたとき、open が届く前の打鍵を受けるため
-  if (phase?.kind !== 'open') return <OpeningSink onTyped={onTyped} onEscape={close} />;
-  return <OpenPalette key={phase.session.openedAt} session={phase.session} close={close} />;
+  if (session === undefined) return null;
+  return <OpenPalette session={session} close={close} />;
 }

@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import type { PaletteCallbacks } from '@/components/organisms/Palette';
 import type { DerivedPalette, PaletteStore } from '@/lib/palette';
@@ -18,7 +18,7 @@ type Input = {
   store: PaletteStore;
   derived: DerivedPalette;
   env: ActionEnv;
-  pending: RefObject<Pending>;
+  pending: Pending;
   stack: Stack;
   close: () => void;
 };
@@ -30,7 +30,7 @@ function useRowCallbacks({ store, derived, env, pending }: Input): RowCallbacks 
   const onAction = useCallback(
     (id: string, opts: { newTab: boolean }) => {
       const action = derived.actions.get(id);
-      if (action !== undefined) void performAction(action, opts.newTab, env, pending.current);
+      if (action !== undefined) void performAction(action, opts.newTab, env, pending);
     },
     [derived.actions, env, pending],
   );
@@ -52,7 +52,7 @@ export function usePaletteCallbacks(input: Input): PaletteCallbacks {
   const onInputChange = useCallback(
     (value: string) => {
       // 入力が変わったら走っている検索は捨てる（palette.md §7.4）
-      cancelSearch(pending.current);
+      cancelSearch(pending);
       store.dispatch({ type: 'inputChanged', value });
     },
     [store, pending],
@@ -71,7 +71,7 @@ export function usePaletteCallbacks(input: Input): PaletteCallbacks {
       onEscape,
       onSelectionChange: (id: string) => store.dispatch({ type: 'selected', id }),
       onBackspaceAtStart: () => store.dispatch({ type: 'backspacedAtStart' }),
-      onCopySearchUrl: () => void copySearchUrl(env, pending.current),
+      onCopySearchUrl: () => void copySearchUrl(env, pending),
       onOpenPanel: () => void openPanel(env),
       onDismiss: close,
     }),
