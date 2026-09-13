@@ -22,7 +22,6 @@ jobs:
       - uses: pnpm/setup@v2
         with:
           cache: true
-          require-lockfile: true
 
       # playwright が置くブラウザ本体は pnpm store の外にあり、
       # pnpm/setup の cache では復元されない。
