@@ -39,9 +39,14 @@ test.describe('API キーで接続する導線', () => {
     expect(await readStorage<Record<string, string>>('apiKeys')).toEqual({
       [SPACE_HOST]: VALID_API_KEY,
     });
-    expect(await readStorage<Record<string, { projectCount: number }>>('spaces')).toMatchObject({
-      [SPACE_HOST]: { name: SPACE.name, spaceKey: SPACE.spaceKey, projectCount: PROJECTS.length },
-    });
+    expect(await readStorage<{ host: string }[]>('spaces')).toEqual([
+      expect.objectContaining({
+        host: SPACE_HOST,
+        name: SPACE.name,
+        spaceKey: SPACE.spaceKey,
+        projectCount: PROJECTS.length,
+      }),
+    ]);
     expect(await readStorage<Record<string, unknown>>('rateLimits')).toMatchObject({
       [SPACE_HOST]: { search: { limit: 150 } },
     });
