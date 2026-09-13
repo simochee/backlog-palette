@@ -11,7 +11,8 @@ export type Ranked<T> = {
   /** 課題キー完全一致・コマンド名完全一致。個人化で動かない（決定済み: 筋肉記憶を守る） */
   pinned: boolean;
   context: RankContext;
-  frecency: number;
+  /** 同点の決め手として効く個人化のスコア。内訳は frecency（頻度 × 直近性）と語 → 対象の学習 */
+  personalScore: number;
 };
 
 function compare(a: Ranked<unknown>, b: Ranked<unknown>): number {
@@ -24,7 +25,7 @@ function compare(a: Ranked<unknown>, b: Ranked<unknown>): number {
   if (!a.pinned) {
     const byContext = contexts.indexOf(a.context) - contexts.indexOf(b.context);
     if (byContext !== 0) return byContext;
-    if (a.frecency !== b.frecency) return b.frecency - a.frecency;
+    if (a.personalScore !== b.personalScore) return b.personalScore - a.personalScore;
   }
 
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
