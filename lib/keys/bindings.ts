@@ -1,0 +1,117 @@
+import type { Hotkey } from '@tanstack/hotkeys';
+
+import type { Labels } from '@/components/labels';
+import type { KeyHintId, RowKind, RowView } from '@/components/types';
+
+/**
+ * 状態から導いた、いま押せるキー（palette.md §6）。フッターはこの配列から描き、
+ * ヒントの文言を手で書く経路を作らない（不変条件 I2）。
+ */
+export type KeyBinding = {
+  id: KeyHintId;
+  /** 照合に使う。表示に出さない同義キー（Ctrl+N / Ctrl+P）も含む */
+  hotkeys: readonly Hotkey[];
+  /** フッターに出すキー */
+  display: readonly Hotkey[];
+  label: string;
+  /** 幅が足りないとき大きい方から落とす。↵ は必ず残る（§6） */
+  priority: number;
+};
+
+export type KeyState = {
+  /** 選択行。仕様どおり DOM 上で選択されている行、無ければ先頭行 */
+  selected: RowView | undefined;
+  rowCount: number;
+  /** ⌫ で外せる段があるか（根では無い） */
+  canPopStack: boolean;
+  /** 削除待ちの段のラベル。削除待ちでなければ undefined */
+  armedLabel: string | undefined;
+  hasInput: boolean;
+  /** 検索結果が出ている（⌘⇧C の対象がある） */
+  hasResults: boolean;
+  /** サイドパネルへ渡せるか。Firefox はサイドバーが開いているときだけ（surfaces.md §5.5） */
+  panelAvailable: boolean;
+};
+
+/** §6 の優先順。小さいほど残る */
+const priorities: Record<KeyHintId, number> = {
+  enter: 0,
+  move: 1,
+  back: 2,
+  take: 3,
+  modEnter: 4,
+  toPanel: 5,
+  copyUrl: 6,
+};
+
+function binding(id: KeyHintId, hotkeys: readonly Hotkey[], label: string): KeyBinding;
+function binding(
+  id: KeyHintId,
+  hotkeys: readonly Hotkey[],
+  label: string,
+  display: readonly Hotkey[],
+): KeyBinding;
+function binding(
+  id: KeyHintId,
+  hotkeys: readonly Hotkey[],
+  label: string,
+  display: readonly Hotkey[] = hotkeys,
+): KeyBinding {
+  return { id, hotkeys, display, label, priority: priorities[id] };
+}
+
+/** ↵ の文言は行による: 開く／検索／適用／接続（§6）。載っていない種別は「開く」 */
+const enterLabelKeys: Partial<Record<RowKind, 'search' | 'connect' | 'apply'>> = {
+  search: 'search',
+  connect: 'connect',
+  status: 'connect',
+  command: 'apply',
+  notice: 'apply',
+};
+
+function enterLabel(row: RowView, labels: Labels): string {
+  return labels.keys[enterLabelKeys[row.kind] ?? 'open'];
+}
+
+/** ⇥ は積む行・階層を開く行・補完する行で文言が変わる。取り込める行が無ければ出さない（I3 は presenter 側で止める） */
+function takeLabel(row: RowView, labels: Labels): string | undefined {
+  if (row.hints.includes('descend')) return labels.keys.descend;
+  if (row.hints.includes('stack')) return labels.keys.stack;
+  if (row.hints.includes('complete')) return labels.keys.complete;
+  return undefined;
+}
+
+function rowBindings(row: RowView | undefined, labels: Labels): KeyBinding[] {
+  if (row === undefined || row.hints.length === 0) return [];
+  const bindings = [binding('enter', ['Enter'], enterLabel(row, labels))];
+  const take = takeLabel(row, labels);
+  if (take !== undefined) bindings.push(binding('take', ['Tab'], take));
+  if (row.hints.includes('modEnter'))
+    bindings.push(binding('modEnter', ['Mod+Enter'], labels.keys.newTab));
+  return bindings;
+}
+
+export function deriveBindings(state: KeyState, labels: Labels): KeyBinding[] {
+  const bindings = rowBindings(state.selected, labels);
+
+  if (state.rowCount > 1)
+    bindings.push(
+      binding('move', ['ArrowUp', 'ArrowDown', 'Control+N', 'Control+P'], labels.keys.move, [
+        'ArrowUp',
+        'ArrowDown',
+      ]),
+    );
+  if (state.canPopStack)
+    bindings.push(
+      binding(
+        'back',
+        ['Backspace'],
+        state.armedLabel === undefined ? labels.keys.back : labels.keys.backArmed(state.armedLabel),
+      ),
+    );
+  if (state.hasInput && state.panelAvailable)
+    bindings.push(binding('toPanel', ['Mod+ArrowRight'], labels.keys.toPanel));
+  if (state.hasResults) bindings.push(binding('copyUrl', ['Mod+Shift+C'], labels.keys.copyUrl));
+
+  return bindings.toSorted((a, b) => a.priority - b.priority);
+}
