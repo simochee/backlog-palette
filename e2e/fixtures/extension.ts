@@ -44,7 +44,8 @@ type ChromeStorage = {
 const DISPLAY_CACHE_KEY = 'displayCache';
 
 /** テスト間で消す item。拡張が書くものだけを列挙し、storage.local.clear() は使わない */
-const OWNED_KEYS = [
+/** テストが書く item。テスト間で消す（Firefox の fixture も同じ一覧を消す） */
+export const OWNED_KEYS = [
   DISPLAY_CACHE_KEY,
   'apiKeys',
   'spaces',
