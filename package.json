@@ -38,6 +38,7 @@
     "@tanstack/hotkeys": "0.8.0",
     "@tanstack/pacer": "0.22.0",
     "@tanstack/react-form": "1.33.5",
+    "@tanstack/react-router": "1.170.35",
     "@tanstack/store": "0.11.1",
     "@webext-core/messaging": "4.0.0",
     "backlog-js": "0.20.1",
