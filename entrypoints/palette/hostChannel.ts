@@ -20,7 +20,7 @@ export type HostChannel = {
 
 export function createHostChannel(scope: Window): HostChannel {
   const buffered: ToIframe[] = [];
-  let handler: ((message: ToIframe) => void) | undefined;
+  const handlers = new Set<(message: ToIframe) => void>();
   let parentOrigin: string | undefined;
 
   scope.addEventListener('message', (event: MessageEvent<unknown>) => {
@@ -32,19 +32,19 @@ export function createHostChannel(scope: Window): HostChannel {
     // 返信先は「実際に送ってきた origin」。ページが名乗った値は使わない
     parentOrigin = event.origin;
 
-    if (handler === undefined) {
+    if (handlers.size === 0) {
       buffered.push(event.data);
       return;
     }
-    handler(event.data);
+    for (const handler of handlers) handler(event.data);
   });
 
   return {
     subscribe(next) {
-      handler = next;
+      handlers.add(next);
       for (const message of buffered.splice(0)) next(message);
       return () => {
-        handler = undefined;
+        handlers.delete(next);
       };
     },
 
