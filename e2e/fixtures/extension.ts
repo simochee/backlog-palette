@@ -47,8 +47,10 @@ const OWNED_KEYS = [
   'apiKeys',
   'spaces',
   'rateLimits',
-  'settings',
   'activity',
+  'transitions',
+  'settings',
+  'panelRequest',
   'customHosts',
 ];
 
@@ -96,7 +98,7 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
         {
           channel: 'chromium',
           headless: true,
-          // 「ブラウザに従う」の既定を日本語にする。headless の既定 UI 言語は英語
+          // 文言は日本語の仕様（palette.md）で検査する。既定の en-US だと行のタイトルが英語になる
           locale: 'ja-JP',
           ignoreDefaultArgs: ['--disable-extensions'],
           args: [
