@@ -51,7 +51,6 @@ describe('利用状況の集計', () => {
       panelFilterChanges: 2,
     });
   });
-
 });
 
 describe('集計の日付', () => {
