@@ -3,6 +3,7 @@ import type { ContentScriptContext } from '#imports';
 import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/backlog/host';
 import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
+import { SHARE_FRAGMENT_KEY } from '@/lib/share';
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
@@ -14,15 +15,18 @@ import { summaryFromTitle } from './title.ts';
  * 付けて iframe を 0×0 に潰し、'modal' でも wrapper の div が 1 つ増える。
  * content script がページに作る DOM は iframe 1 つだけにする（tech-stack.md §2）。
  */
-function createPaletteFrame(src: string): HTMLIFrameElement {
+function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameElement {
   const iframe = document.createElement('iframe');
   iframe.src = src;
   iframe.dataset.backlogPalette = '';
   /*
    * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
    * Permissions Policy で許可する必要がある。コピーコマンドの前提。
+   * 許可先を拡張の origin で名指しする。既定の 'src' は src 属性の origin を指すが、
+   * use_dynamic_url の src は毎回変わる GUID の origin で、読み込まれた文書の origin
+   * （chrome-extension://<id>）と一致せず、許可が届かない
    */
-  iframe.allow = 'clipboard-write';
+  iframe.allow = `clipboard-write ${extensionOrigin}`;
   iframe.style.cssText = [
     'display:none',
     'position:fixed',
@@ -44,6 +48,7 @@ function readPageContext(): PageContext {
   const issueKey = ISSUE_PATH.exec(pathname)?.[1];
   return {
     origin,
+    pathname,
     spaceKey: spaceKeyOf(origin),
     projectKey: issueKey?.slice(0, issueKey.lastIndexOf('-')),
     issueKey,
@@ -78,7 +83,7 @@ function createPaletteFrameControl(
   };
 }
 
-type PaletteHost = { toggle: () => void; close: () => void };
+type PaletteHost = { open: () => void; toggle: () => void; close: () => void };
 
 function createPaletteHost(
   ctx: ContentScriptContext,
@@ -113,6 +118,7 @@ function createPaletteHost(
   });
 
   return {
+    open,
     toggle: () => {
       if (isOpen) {
         close();
@@ -122,6 +128,18 @@ function createPaletteHost(
     },
     close,
   };
+}
+
+/**
+ * 検索状態の共有 URL を開いたらパレットを開く（palette.md §7.6）。何を復元するかは
+ * iframe 側が自分で読んだタブ URL から決めるので、ここはフラグメントの有無だけを見る
+ */
+function openOnSharedSearch(ctx: ContentScriptContext, host: PaletteHost) {
+  const run = () => {
+    if (window.location.hash.includes(`${SHARE_FRAGMENT_KEY}=`)) host.open();
+  };
+  run();
+  ctx.addEventListener(window, 'wxt:locationchange', run);
 }
 
 /** URL と document.title だけから表示キャッシュに記録する。本文・コメントは読まない（surfaces.md §3） */
@@ -139,7 +157,7 @@ export default defineContentScript({
   main(ctx) {
     const extensionOrigin = new URL(browser.runtime.getURL('/')).origin;
     // 初回 ⌘K で読み込みを待たせないため、非表示のまま先に注入する（palette.md §3）
-    const iframe = createPaletteFrame(browser.runtime.getURL('/palette.html'));
+    const iframe = createPaletteFrame(browser.runtime.getURL('/palette.html'), extensionOrigin);
     /*
      * body ではなく documentElement に付ける。body に transform や filter が
      * 掛かると position:fixed の基準が body になり、全面を覆えなくなる。
@@ -171,6 +189,7 @@ export default defineContentScript({
     ctx.addEventListener(window, 'wxt:locationchange', recordCurrentPage);
 
     setupConnectPage(ctx, browser.runtime.getURL('/connect.html'), extensionOrigin);
+    openOnSharedSearch(ctx, host);
 
     ctx.addEventListener(window, 'message', (event) => {
       // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する
