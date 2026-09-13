@@ -55,7 +55,9 @@ describe('接続の手順', () => {
     expect(d.createClient).toHaveBeenCalledWith(HOST, 'key');
     expect(d.saveApiKey).toHaveBeenCalledWith(HOST, 'key');
     expect(d.initializeRateLimit).toHaveBeenCalledWith(HOST, SNAPSHOT);
-    expect(d.saveSpace).toHaveBeenCalledWith(expect.objectContaining({ host: HOST, projectCount: 2 }));
+    expect(d.saveSpace).toHaveBeenCalledWith(
+      expect.objectContaining({ host: HOST, projectCount: 2 }),
+    );
   });
 
   it('キーの検証に失敗したら何も保存せず unauthorized を返す', async () => {
