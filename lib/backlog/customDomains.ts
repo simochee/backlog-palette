@@ -11,12 +11,17 @@ export type ContentScriptSpec = {
 export type CustomDomainApis = {
   requestOrigin: (origin: string) => Promise<boolean>;
   removeOrigin: (origin: string) => Promise<boolean>;
-  registerContentScript: (script: ContentScriptSpec & { id: string; matches: string[] }) => Promise<void>;
+  registerContentScript: (
+    script: ContentScriptSpec & { id: string; matches: string[] },
+  ) => Promise<void>;
   unregisterContentScript: (id: string) => Promise<void>;
   registeredIds: () => Promise<readonly string[]>;
   /** 静的に登録している content script。同じものをカスタムドメインにも当てる */
   contentScript: () => ContentScriptSpec;
-  hosts: { load: () => Promise<readonly string[]>; save: (hosts: readonly string[]) => Promise<void> };
+  hosts: {
+    load: () => Promise<readonly string[]>;
+    save: (hosts: readonly string[]) => Promise<void>;
+  };
 };
 
 export type RegisterOutcome = 'granted' | 'denied';
@@ -55,7 +60,8 @@ export function createCustomDomainRegistry(apis: CustomDomainApis): CustomDomain
       if (!granted) return 'denied';
       const known = await apis.hosts.load();
       if (!known.includes(host)) await apis.hosts.save([...known, host]);
-      if (!(await apis.registeredIds()).includes(contentScriptIdOf(host))) await registerScript(host);
+      if (!(await apis.registeredIds()).includes(contentScriptIdOf(host)))
+        await registerScript(host);
       return 'granted';
     },
 

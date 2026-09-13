@@ -59,7 +59,8 @@ test.describe('Firefox: パレットの注入と開閉', () => {
      * 消さないので、接続の E2E が先に走ったかどうかで表示が変わる
      */
     await frame.waitForFunction(
-      () => /demo\.backlog\.jp|デモスペース/u.test(document.querySelector('ol li')?.textContent ?? ''),
+      () =>
+        /demo\.backlog\.jp|デモスペース/u.test(document.querySelector('ol li')?.textContent ?? ''),
       { timeout: 5000 },
     );
   });

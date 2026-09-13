@@ -55,7 +55,6 @@ describe('カスタムドメインの登録', () => {
     expect(apis.registerContentScript).not.toHaveBeenCalled();
     expect(hosts()).toEqual([]);
   });
-
 });
 
 describe('カスタムドメインの削除と復元', () => {
@@ -90,7 +89,9 @@ describe('カスタムドメインの削除と復元', () => {
 
 describe('ホスト名の正規化', () => {
   it('スキーム・パス・大文字を落としてホスト名だけにする', () => {
-    expect(normalizeHost(' https://Backlog.Example.co.jp/dashboard ')).toBe('backlog.example.co.jp');
+    expect(normalizeHost(' https://Backlog.Example.co.jp/dashboard ')).toBe(
+      'backlog.example.co.jp',
+    );
     expect(normalizeHost('backlog.example.co.jp')).toBe('backlog.example.co.jp');
   });
 });

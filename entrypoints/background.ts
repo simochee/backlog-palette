@@ -1,6 +1,6 @@
 import { browser, defineBackground } from '#imports';
-import { serializeResponse } from '@/lib/backlog/delegatedFetch';
 import { restoreCustomHosts } from '@/lib/backlog/customDomainsRegistry';
+import { serializeResponse } from '@/lib/backlog/delegatedFetch';
 import { isKnownSpaceOrigin } from '@/lib/backlog/spaceOrigins';
 import { onMessage } from '@/lib/messaging/background';
 import type { CurrentTab } from '@/lib/tabs/types';

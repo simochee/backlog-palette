@@ -60,7 +60,10 @@ function createInbox(scope: Window): Inbox {
   };
 }
 
-export function createHostChannel(scope: Window, extraTrust: TrustOrigin = noExtraTrust): HostChannel {
+export function createHostChannel(
+  scope: Window,
+  extraTrust: TrustOrigin = noExtraTrust,
+): HostChannel {
   const { accept, subscribe, send } = createInbox(scope);
 
   /*
