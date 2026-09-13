@@ -23,7 +23,10 @@ function urlOf(input: string | URL | Request): string {
   return input instanceof URL ? input.toString() : input.url;
 }
 
-export function serializeRequest(input: string | URL | Request, init?: RequestInit): DelegatedRequest {
+export function serializeRequest(
+  input: string | URL | Request,
+  init?: RequestInit,
+): DelegatedRequest {
   const body = init?.body;
   if (body !== undefined && body !== null && typeof body !== 'string') {
     throw new TypeError('委譲できる body は文字列だけ');

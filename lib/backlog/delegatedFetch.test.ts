@@ -37,7 +37,6 @@ describe('委譲する fetch', () => {
     expect(response.headers.get('X-RateLimit-Remaining')).toBe('599');
     await expect(response.json()).resolves.toEqual({ id: 1 });
   });
-
 });
 
 describe('直列化の境界', () => {
