@@ -23,7 +23,8 @@ pnpm 12 は postinstall をデフォルトで実行しない。ネイティブ�
 | `pnpm build:storybook` | Storybook 静的ビルド |
 | `pnpm test` | story をテストとして実行 |
 | `pnpm test:watch` | 同上、監視モード |
-| `pnpm compile` | 型検査 (`tsc --noEmit`) |
+| `pnpm lint` / `pnpm lint:fix` | oxlint。型検査を兼ねる |
+| `pnpm format` | oxfmt で整形 |
 
 ## ローカルのクオリティゲート
 
@@ -32,7 +33,8 @@ CI で検証することをローカルで繰り返さない。CI は非同期�
 
 `.github/workflows/ci.yml` が実行する。ローカルでは実行しない:
 
-- `pnpm compile`
+- `pnpm lint:fix`
+- `pnpm format`
 - `pnpm build` / `pnpm build:firefox`
 - `pnpm build:storybook`
 - `pnpm test`
@@ -46,6 +48,60 @@ CI で検証することをローカルで繰り返さない。CI は非同期�
 
 CI は前段が落ちても後続を走らせ、1 回の実行で失敗箇所を出し切る。直してプッシュする
 たびに次の失敗を知る、という往復を避けるため。
+
+## Lint と整形
+
+oxc に寄せている。lint と型検査が oxlint (`.oxlintrc.json`)、整形が oxfmt
+(`.oxfmtrc.json`)。整形は oxfmt の LSP かエディタの保存時整形に任せ、まとめて直したい
+ときだけ `pnpm format` を叩く。
+
+### 自動修正は CI がコミットする
+
+CI は lint と整形を検査ではなく修正として走らせ (`pnpm lint:fix` / `pnpm format`)、
+出た差分をオープンな PR があるブランチにコミットする。機械が直せる指摘を人に
+往復させないため。
+
+`oxlint --fix` は直せなかった指摘だけを報告して非ゼロ終了するので、検査を別に
+走らせる必要はない。一方 `oxfmt` は書き換えるだけで非ゼロ終了しないため、
+整形の検証点は「コミットできる PR がないのに差分が出たら落とす」という形で
+Commit fixes ステップが持っている。
+
+**push したら次の作業の前に `git pull` する。** CI がコミットを積んでいるとブランチが
+進んでいる。
+
+自動修正のコミットは新しい CI 実行を起こさない。`GITHUB_TOKEN` による push は
+ワークフローをトリガしない仕様で、加えてコミット件名に `[skip ci]` を付けている。
+片方だけでも止まるが、required status checks のために GitHub App トークンへ
+差し替えた瞬間に前者の前提が消えるため、二重にしてある。
+
+修正後のコードは同じ実行の後続ステップが検証するので検証漏れはないが、
+**チェック結果は修正前のコミットに紐づく**。PR の最新コミットにチェックが
+付いていないように見えるのはこのため。ここを埋めたくなったら
+`[skip ci]` を外した上でトークンを差し替えることになる。
+
+### 型検査を oxlint に統合している
+
+`tsc --noEmit` は使わない。`options.typeCheck` が TypeScript コンパイラの診断
+(`TS2322` などのエラーコード) をそのまま出すため、同じ検査を 2 プロセスに分ける理由が
+ない。tsconfig は共有しているので `strict` 系オプションも `#imports` の型も効く。
+
+ただし**報告対象のファイル集合は一致しない**。tsc は tsconfig の `include`、oxlint は
+ファイル走査から `.gitignore` を引いたもの。`web-ext.config.ts` のような gitignore 済みの
+ローカル専用ファイルは oxlint の検査に載らない。
+
+`typeCheck` は実験的機能である点も承知しておく。oxlint の型診断を疑うときは
+`pnpm exec tsc --noEmit` が基準。script にしていないのは、常設すると CI で同じ検査を
+二重に走らせることになるため。
+
+### カテゴリの選び方
+
+`correctness` / `suspicious` / `perf` / `pedantic` を error にしている。`style` と
+`restriction` は採用しない。このプロジェクトの規約と正面から衝突するため
+（`filename-case` は `Button.tsx` を kebab-case にしろと言い、`no-default-export` は
+WXT の `defineBackground` と story の `meta` を否定する）。
+
+個別ルールを切るときは、ルールごと `off` にする前にオプションで絞れないか見る。
+無効化の理由は `.oxlintrc.json` にコメントとして残す。
 
 ## レイヤ構成
 
@@ -88,8 +144,9 @@ lib/        ──✗ React, components/
 `.storybook/main.ts` の `rejectExtensionApi` プラグインが、`components/` からの
 `#imports` / `wxt/*` を解決不能にしてビルドを落とす。
 
-**`tsc --noEmit` はこの違反を検出しない。** WXT が生成する `#imports` の型宣言は
-プロジェクト全体に効いているため、型検査は通ってしまう。検出役は
+**型検査も lint もこの違反を検出しない。** WXT が生成する `#imports` の型宣言は
+プロジェクト全体に効いているため、型としては解決できてしまう。`no-restricted-imports`
+で禁止リストを書く手もあるが、モジュール解決を失敗させる方が抜け道がない。検出役は
 `pnpm build:storybook` だけなので、CI からこれを外さないこと。
 
 ### Storybook
