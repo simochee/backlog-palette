@@ -11,7 +11,8 @@ export type VisitedKind = 'issue' | 'project' | 'wiki' | 'document';
 export type DisplayCacheEntry = {
   url: string;
   kind: VisitedKind;
-  spaceKey: string;
+  /** スペースの識別子はホスト名（D-32）。`demo.backlog.jp` */
+  spaceHost: string;
   projectKey: string;
   /** 課題キー・Wiki の名前や ID・ドキュメント ID。プロジェクトのページでは無い */
   key?: string;
