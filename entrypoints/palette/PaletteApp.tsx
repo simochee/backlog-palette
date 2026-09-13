@@ -1,16 +1,18 @@
 import { useSelector } from '@tanstack/react-store';
-import { useEffect, useMemo, useRef } from 'react';
+import { type RefObject, useEffect, useMemo, useRef } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { detectPlatform } from '@/lib/keys';
 import { derive, type PaletteStore } from '@/lib/palette';
+import { scopeOf } from '@/lib/stack/stack';
 
-import { type ActionEnv, type Pending } from './actions.ts';
+import { type ActionEnv, type Pending, restartSearch } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import { hostChannel } from './hostChannel.ts';
 import { OpeningSink } from './OpeningSink.tsx';
+import { handOffToPanel } from './panel.ts';
 import { type OpenSession, useOpenSession } from './session.ts';
 
 const TOAST_LIFETIME_MS = 2000;
@@ -46,6 +48,31 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
   }, [store, toast]);
 }
 
+/**
+ * 共有 URL で開いたときに検索を復元する（palette.md §7.6）。条件つきの状態はサイドパネルへ渡し、
+ * 開けない環境（Firefox）では語とスコープだけをパレットで復元する（surfaces.md §5.1・§5.5）
+ */
+function useRestoredSearch(session: OpenSession, pending: RefObject<Pending>, close: () => void) {
+  const { restore, runner, store } = session;
+
+  useEffect(() => {
+    if (restore === undefined) return;
+    const run = async () => {
+      if (restore.toPanel && (await handOffToPanel(restore.state))) {
+        close();
+        return;
+      }
+      restartSearch(
+        restore.query,
+        restore.scope,
+        { runner, dispatch: store.dispatch },
+        pending.current,
+      );
+    };
+    void run();
+  }, [restore, runner, store, pending, close]);
+}
+
 function OpenPalette({ session, close }: { session: OpenSession; close: () => void }) {
   const { store, index, labels, context, runner } = session;
   const state = useSelector(store, (snapshot) => snapshot);
@@ -63,20 +90,16 @@ function OpenPalette({ session, close }: { session: OpenSession; close: () => vo
       labels,
       learningEnabled: index.learningEnabled,
       runner,
+      query: state.input.trim(),
+      scope: scopeOf(state.stack),
       dispatch: store.dispatch,
       close,
       now: Date.now,
     }),
-    [context, labels, index.learningEnabled, runner, store, close],
+    [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
-  const callbacks = usePaletteCallbacks({
-    store,
-    derived,
-    env,
-    pending,
-    stack: state.stack,
-    close,
-  });
+  useRestoredSearch(session, pending, close);
+  const callbacks = usePaletteCallbacks({ store, derived, env, pending, stack: state.stack, close });
 
   return (
     <LabelsProvider labels={labels}>

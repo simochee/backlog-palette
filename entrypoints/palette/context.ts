@@ -7,6 +7,8 @@ import { readCurrentTab } from '@/lib/tabs';
 /** 開いた瞬間のタブから読んだ文脈。鍵とスペースの選択はここだけを根拠にする（I7） */
 export type OpenContext = {
   origin: string;
+  /** フラグメントを含む完全な URL。検索状態の復元（palette.md §7.6）が読む */
+  href: string;
   /** スペースの識別子はホスト名（D-32） */
   spaceHost: string;
   pathname: string;
@@ -29,6 +31,7 @@ export async function readOpenContext(): Promise<OpenContext | undefined> {
   const info = parsePath(url.pathname);
   return {
     origin: url.origin,
+    href: url.href,
     spaceHost,
     pathname: url.pathname,
     projectKey: info !== undefined && 'projectKey' in info ? info.projectKey : undefined,

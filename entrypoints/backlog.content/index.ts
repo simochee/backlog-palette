@@ -3,6 +3,7 @@ import type { ContentScriptContext } from '#imports';
 import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/backlog/host';
 import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
+import { SHARE_FRAGMENT_KEY } from '@/lib/share';
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
@@ -82,7 +83,7 @@ function createPaletteFrameControl(
   };
 }
 
-type PaletteHost = { toggle: () => void; close: () => void };
+type PaletteHost = { open: () => void; toggle: () => void; close: () => void };
 
 function createPaletteHost(
   ctx: ContentScriptContext,
@@ -117,6 +118,7 @@ function createPaletteHost(
   });
 
   return {
+    open,
     toggle: () => {
       if (isOpen) {
         close();
@@ -126,6 +128,18 @@ function createPaletteHost(
     },
     close,
   };
+}
+
+/**
+ * 検索状態の共有 URL を開いたらパレットを開く（palette.md §7.6）。何を復元するかは
+ * iframe 側が自分で読んだタブ URL から決めるので、ここはフラグメントの有無だけを見る
+ */
+function openOnSharedSearch(ctx: ContentScriptContext, host: PaletteHost) {
+  const run = () => {
+    if (window.location.hash.includes(`${SHARE_FRAGMENT_KEY}=`)) host.open();
+  };
+  run();
+  ctx.addEventListener(window, 'wxt:locationchange', run);
 }
 
 /** URL と document.title だけから表示キャッシュに記録する。本文・コメントは読まない（surfaces.md §3） */
@@ -175,6 +189,7 @@ export default defineContentScript({
     ctx.addEventListener(window, 'wxt:locationchange', recordCurrentPage);
 
     setupConnectPage(ctx, browser.runtime.getURL('/connect.html'), extensionOrigin);
+    openOnSharedSearch(ctx, host);
 
     ctx.addEventListener(window, 'message', (event) => {
       // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する

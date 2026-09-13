@@ -75,6 +75,8 @@ export type Labels = {
     openExternal: string;
     moreExternal: (count: number) => string;
     copied: (subject: string) => string;
+    /** ⌘⇧C の対象。`copied` に渡して「検索 URL をコピーしました」にする */
+    searchUrl: string;
     copyIssueKey: string;
     copyIssueUrl: string;
     copyIssueTitle: string;

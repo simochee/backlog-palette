@@ -10,6 +10,7 @@ import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
 import { labelsFor, resolveLanguage } from './language.ts';
 import { emptySearchRunner, type SearchRunner } from './search.ts';
+import { type Restore, restoreFrom } from './share.ts';
 import { type ConnectedSpaces, readConnectedSpaces } from './spaces.ts';
 
 /** 1 回開いている間に変わらないもの。閉じて開き直すと作り直す */
@@ -20,9 +21,10 @@ export type OpenSession = {
   labels: Labels;
   store: PaletteStore;
   runner: SearchRunner;
+  /** 共有 URL で開いたときに復元する検索（palette.md §7.6） */
+  restore: Restore | undefined;
 };
 
-/** 開く要求は受けたが索引がまだ無い。この間の打鍵は sink が受け、開いたときに入力へ写す */
 export type OpeningPhase = { kind: 'opening' };
 export type OpenPhase = { kind: 'open'; session: OpenSession };
 export type Phase = OpeningPhase | OpenPhase | undefined;
@@ -53,7 +55,10 @@ function openWith(prepared: Prepared, typed: string): OpenSession {
     type: 'opened',
     stack: initialStackOf(context, connected.get(context.spaceHost)),
   });
-  if (typed !== '') store.dispatch({ type: 'inputChanged', value: typed });
+  const restore = restoreFrom(context.href, context.spaceHost);
+  // 復元した語は入力欄にも入れる。打ち直さずに絞り込みや再検索ができる
+  const typedOrRestored = restore?.query ?? typed;
+  if (typedOrRestored !== '') store.dispatch({ type: 'inputChanged', value: typedOrRestored });
   return {
     openedAt: now,
     context,
@@ -61,6 +66,7 @@ function openWith(prepared: Prepared, typed: string): OpenSession {
     labels,
     store,
     runner: emptySearchRunner,
+    restore,
   };
 }
 

@@ -5,7 +5,14 @@ import type { DerivedPalette, PaletteStore } from '@/lib/palette';
 import { activeCommand } from '@/lib/stack/stack';
 import type { Stack } from '@/lib/stack/types';
 
-import { type ActionEnv, cancelSearch, type Pending, performAction } from './actions.ts';
+import {
+  type ActionEnv,
+  cancelSearch,
+  copySearchUrl,
+  openPanel,
+  type Pending,
+  performAction,
+} from './actions.ts';
 
 type Input = {
   store: PaletteStore;
@@ -39,7 +46,7 @@ function useRowCallbacks({ store, derived, env, pending }: Input): RowCallbacks 
 
 /** presenter のコールバックを Store のアクションと行の動作に写す */
 export function usePaletteCallbacks(input: Input): PaletteCallbacks {
-  const { store, pending, stack, close } = input;
+  const { store, env, pending, stack, close } = input;
   const rows = useRowCallbacks(input);
 
   const onInputChange = useCallback(
@@ -64,8 +71,10 @@ export function usePaletteCallbacks(input: Input): PaletteCallbacks {
       onEscape,
       onSelectionChange: (id: string) => store.dispatch({ type: 'selected', id }),
       onBackspaceAtStart: () => store.dispatch({ type: 'backspacedAtStart' }),
+      onCopySearchUrl: () => void copySearchUrl(env, pending.current),
+      onOpenPanel: () => void openPanel(env),
       onDismiss: close,
     }),
-    [rows, onInputChange, onEscape, store, close],
+    [rows, onInputChange, onEscape, store, env, pending, close],
   );
 }

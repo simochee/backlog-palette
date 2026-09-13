@@ -72,6 +72,7 @@ export const ja: Labels = {
     openExternal: 'Backlog の課題検索を開く',
     moreExternal: (count) => `他 ${count} 件は Backlog の課題検索で`,
     copied: (subject) => `${subject} をコピーしました`,
+    searchUrl: '検索 URL',
     copyIssueKey: '課題キーをコピー',
     copyIssueUrl: '課題の URL をコピー',
     copyIssueTitle: '課題キーと件名をコピー',

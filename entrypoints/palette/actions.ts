@@ -1,19 +1,24 @@
-import { browser } from '#imports';
 import type { Labels } from '@/components/labels';
 import { apiKeyPageUrl } from '@/lib/connect/page';
 import type { PaletteAction, RowAction } from '@/lib/palette';
+import { buildShareUrl, searchState } from '@/lib/share';
 import type { Scope } from '@/lib/stack/types';
-import { navigate, readCurrentTab } from '@/lib/tabs';
+import { navigate } from '@/lib/tabs';
 
 import { recordNavigation } from './activity.ts';
 import type { OpenContext } from './context.ts';
+import { openPanelWith } from './panel.ts';
 import type { SearchRunner } from './search.ts';
+import { shareScopeOf } from './share.ts';
 
 export type ActionEnv = {
   context: OpenContext;
   labels: Labels;
   learningEnabled: boolean;
   runner: SearchRunner;
+  /** 入力の語と現在のスコープ。⌘→ と ⌘⇧C が対象にする */
+  query: string;
+  scope: Scope;
   dispatch: (action: PaletteAction) => void;
   close: () => void;
   now: () => number;
@@ -22,13 +27,33 @@ export type ActionEnv = {
 /** 走っている検索を 1 つだけ持つ。入力が変わったら捨てる（palette.md §7.4） */
 export type SearchHandle = { cancel: () => void };
 
-export function startSearch(query: string, scope: Scope, env: ActionEnv): SearchHandle {
+export type Pending = {
+  search: SearchHandle | undefined;
+  lastSearch: { query: string; scope: Scope } | undefined;
+};
+
+/** 検索の起動に要るのは実行役と dispatch だけ。復元（共有 URL）は行の動作を経ずにここへ来る */
+export type SearchEnv = Pick<ActionEnv, 'runner' | 'dispatch'>;
+
+export function startSearch(query: string, scope: Scope, env: SearchEnv): SearchHandle {
   env.dispatch({ type: 'searchStarted', query, scope });
   const cancel = env.runner.run(query, scope, (kind, outcome) => {
     if (outcome.ok) env.dispatch({ type: 'resultsArrived', kind, rows: outcome.rows });
     else env.dispatch({ type: 'searchFailed', kind, error: outcome.error });
   });
   return { cancel };
+}
+
+/** 走っている検索を捨てる。入力が変わったとき（§7.4）と、次の検索を始める前 */
+export function cancelSearch(pending: Pending): void {
+  pending.search?.cancel();
+  pending.search = undefined;
+}
+
+export function restartSearch(query: string, scope: Scope, env: SearchEnv, pending: Pending): void {
+  cancelSearch(pending);
+  pending.lastSearch = { query, scope };
+  pending.search = startSearch(query, scope, env);
 }
 
 async function go(url: string, newTab: boolean, env: ActionEnv) {
@@ -43,39 +68,25 @@ async function copy(text: string, subject: string, env: ActionEnv) {
   env.dispatch({ type: 'toasted', toast: { message: env.labels.rows.copied(subject) } });
 }
 
-/*
- * サイドパネルはユーザー操作の中でしか開けない。パレットの ↵ は拡張ページ内の操作なので通る。
- * Firefox は sidebarAction をスクリプトから開けず、そのときは panel 行を出さない（surfaces.md §5.5）
- */
-async function openPanel(env: ActionEnv) {
-  const tab = await readCurrentTab();
-  if (tab?.id !== undefined && 'sidePanel' in browser)
-    await browser.sidePanel.open({ tabId: tab.id });
-  env.close();
+/** `⌘⇧C`（palette.md §7.6）。フッターに出るのは検索結果があるときだけ */
+export async function copySearchUrl(env: ActionEnv, pending: Pending): Promise<void> {
+  const last = pending.lastSearch;
+  const scope = last === undefined ? undefined : shareScopeOf(last.scope);
+  if (last === undefined || scope === undefined) return;
+  const url = buildShareUrl(env.context.origin, searchState(last.query, scope));
+  await copy(url, env.labels.rows.searchUrl, env);
 }
 
-export type Pending = {
-  search: SearchHandle | undefined;
-  lastSearch: { query: string; scope: Scope } | undefined;
-};
-
-/** 行の ↵ で起きることを実行する（palette.md §5）。宛先の解決は derive が済ませている */
-/** 走っている検索を捨てる。入力が変わったとき（§7.4）と、次の検索を始める前 */
-export function cancelSearch(pending: Pending): void {
-  pending.search?.cancel();
-  pending.search = undefined;
-}
-
-function restartSearch(query: string, scope: Scope, env: ActionEnv, pending: Pending) {
-  cancelSearch(pending);
-  pending.lastSearch = { query, scope };
-  pending.search = startSearch(query, scope, env);
+/** `⌘→` と panel 行。渡せたらパレットを閉じる（surfaces.md §5.1） */
+export async function openPanel(env: ActionEnv): Promise<void> {
+  if (await openPanelWith(env.query, env.scope)) env.close();
 }
 
 function connectUrl(spaceId: string | undefined, env: ActionEnv): string {
   return apiKeyPageUrl(spaceId === undefined ? env.context.origin : `https://${spaceId}`);
 }
 
+/** 行の ↵ で起きることを実行する（palette.md §5）。宛先の解決は derive が済ませている */
 export function performAction(
   action: RowAction,
   newTab: boolean,
