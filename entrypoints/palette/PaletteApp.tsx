@@ -11,7 +11,8 @@ import { scopeOf } from '@/lib/stack/stack';
 import type { ActionEnv, Pending } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import { hostChannel } from './hostChannel.ts';
-import { type PaletteSession, usePaletteSession } from './session.ts';
+import type { PaletteSession } from './createSession.ts';
+import { usePaletteSession } from './session.ts';
 
 const TOAST_LIFETIME_MS = 2000;
 
