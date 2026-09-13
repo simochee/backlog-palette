@@ -129,6 +129,10 @@ jobs:
       - name: Build (chrome)
         run: pnpm build
 
+      # manifest の出し分けは Firefox ビルドの成果物を検査する
+      - name: Build (firefox)
+        run: pnpm build:firefox
+
       - name: E2E
         run: pnpm test:e2e
 
