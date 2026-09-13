@@ -53,10 +53,16 @@ export function navIndex(
   resolver: NavResolver,
 ): Pick<PaletteIndex, 'pagesFor' | 'issueUrl' | 'externalSearchUrl'> {
   return {
+    // [space / project] でもダッシュボードや全体検索は URL が組めるので候補に出す（§4）。
+    // 並びは project → space。見出しは §9 の「{プロジェクト} のページ」のまま
     pagesFor: (scope) => {
       if (scope.kind === 'root') return [];
       const context = contextOf(resolver, scope);
-      return context === undefined ? [] : pageEntriesFor(scope.kind, context, resolver.language);
+      if (context === undefined) return [];
+      const own = pageEntriesFor(scope.kind, context, resolver.language);
+      return scope.kind === 'project'
+        ? [...own, ...pageEntriesFor('space', context, resolver.language)]
+        : own;
     },
     issueUrl: (spaceId, key) => issueUrl(resolver.originOf(spaceId) ?? '', key),
     // 根では検索しない（D-20）ので、スコープが解決できないときの値は使われない

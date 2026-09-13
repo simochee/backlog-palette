@@ -19,6 +19,12 @@ describe('索引の URL とページ', () => {
     expect(pages.find((p) => p.id === 'board')?.title).toBe('ボード');
   });
 
+  it('プロジェクトのスコープでもスペースのページは URL が組めるので候補に出る（プロジェクトの後）', () => {
+    const ids = nav.pagesFor(project).map((p) => p.id);
+    expect(ids.indexOf('dashboard')).toBeGreaterThan(ids.indexOf('project-settings'));
+    expect(ids).toContain('all-issues');
+  });
+
   it('スペースのスコープではスペースのページだけ、根では何も出ない', () => {
     expect(nav.pagesFor(space).map((p) => p.id)).toEqual(['dashboard', 'all-issues']);
     expect(nav.pagesFor({ kind: 'root' })).toEqual([]);
