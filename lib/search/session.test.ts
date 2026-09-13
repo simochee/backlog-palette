@@ -32,7 +32,7 @@ describe('起動と到着', () => {
     expect(session.rows).toEqual([]);
   });
 
-  it('選択が先頭なら届いた行はそのまま並び、件名一致 → 更新日時の新しい順', () => {
+  it('選択が結果より上（検索行・プレースホルダ・notice）にあるなら届いた行はそのまま並び、件名一致 → 更新日時の新しい順', () => {
     const session = arrive(
       startSession('q', scope),
       'issue',
@@ -43,6 +43,20 @@ describe('起動と到着', () => {
     expect(session.kinds.issue).toEqual({ state: 'ready', count: 3 });
   });
 
+  it('先頭ヒットを選んでいるとき、後から届いた強い一致は上に入らず保留になる', () => {
+    const first = arrive(startSession('q', scope), 'issue', [row('a', 5), row('b', 4)]);
+    const second = arrive(first, 'wiki', [row('new', 9)], 0);
+    expect(ids(second)).toEqual(['a', 'b']);
+    expect(second.held.map((r) => r.id)).toEqual(['new']);
+  });
+
+  it('プレースホルダを選んでいるときの到着は並べ直してよい', () => {
+    const first = arrive(startSession('q', scope), 'issue', [row('a', 5)]);
+    expect(ids(arrive(first, 'wiki', [row('new', 9)]))).toEqual(['new', 'a']);
+  });
+});
+
+describe('保留と合流（I4）', () => {
   it('保留中の行は選択が先頭に戻るまで合流しない', () => {
     const first = arrive(
       startSession('q', scope),
@@ -72,13 +86,13 @@ describe('起動と到着', () => {
 
 describe('重複と上限', () => {
   it('同じ id が二度届いても重複しない', () => {
-    const first = arrive(startSession('q', scope), 'issue', [row('a', 1)], 0);
-    expect(ids(arrive(first, 'wiki', [row('a', 1)], 0))).toEqual(['a']);
+    const first = arrive(startSession('q', scope), 'issue', [row('a', 1)]);
+    expect(ids(arrive(first, 'wiki', [row('a', 1)]))).toEqual(['a']);
   });
 
   it('表示は 30 行で切れ、超えた分は件数として残る', () => {
     const many = Array.from({ length: 35 }, (_, i) => row(`r${i}`, i));
-    const session = arrive(startSession('q', scope), 'issue', many, 0);
+    const session = arrive(startSession('q', scope), 'issue', many);
     expect(session.rows).toHaveLength(RESULT_CAP);
     expect(session.overflow).toBe(5);
   });
@@ -86,24 +100,24 @@ describe('重複と上限', () => {
 
 describe('完了と障害', () => {
   it('全種別が揃うと完了になり、件数は種別の合計', () => {
-    let session = arrive(startSession('q', scope), 'issue', [row('a', 1)], 0);
-    session = arrive(session, 'wiki', [row('w', 1)], 0);
+    let session = arrive(startSession('q', scope), 'issue', [row('a', 1)]);
+    session = arrive(session, 'wiki', [row('w', 1)]);
     expect(isDone(session)).toBe(false);
-    session = arrive(session, 'document', [], 0);
+    session = arrive(session, 'document', []);
     expect(isDone(session)).toBe(true);
     expect(totalCount(session)).toBe(2);
   });
 
   it('全種別が揃って 0 件のときだけ空と判定する', () => {
-    let session = arrive(startSession('q', scope), 'issue', [], 0);
+    let session = arrive(startSession('q', scope), 'issue', []);
     expect(isEmpty(session)).toBe(false);
-    session = arrive(arrive(session, 'wiki', [], 0), 'document', [], 0);
+    session = arrive(arrive(session, 'wiki', []), 'document', [], 0);
     expect(isEmpty(session)).toBe(true);
   });
 
   it('1 種別の失敗は他の種別に影響せず、完了の判定には数える', () => {
     let session = fail(startSession('q', scope), 'wiki', { kind: 'unauthorized' });
-    session = arrive(arrive(session, 'issue', [row('a', 1)], 0), 'document', [], 0);
+    session = arrive(arrive(session, 'issue', [row('a', 1)]), 'document', [], 0);
     expect(isDone(session)).toBe(true);
     expect(ids(session)).toEqual(['a']);
   });

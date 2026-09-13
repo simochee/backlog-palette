@@ -31,12 +31,13 @@ export function searchStarted(state: PaletteState, query: string, scope: Scope):
   };
 }
 
-/** 選択が結果の何行目にあるか。プレースホルダ・notice・検索行なら先頭扱い */
-function selectedIndexIn(session: SearchSession, selectedId: string | undefined): number {
-  return Math.max(
-    0,
-    session.rows.findIndex((row) => resultRowId(row) === selectedId),
-  );
+/** 選択が結果の何行目にあるか。結果より上（検索行・プレースホルダ・notice）にいれば undefined */
+function selectedIndexIn(
+  session: SearchSession,
+  selectedId: string | undefined,
+): number | undefined {
+  const index = session.rows.findIndex((row) => resultRowId(row) === selectedId);
+  return index === -1 ? undefined : index;
 }
 
 export function resultsArrived(

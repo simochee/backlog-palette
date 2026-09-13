@@ -44,20 +44,21 @@ function withProgress(session: SearchSession, kind: SearchKind, progress: KindPr
 }
 
 /**
- * 種別単位の到着（§7.3）。選択行より上に入るはずの行は保留し、選択が先頭のときだけ
- * 全体を並べ直す（I4）。選択行より下は自由に並べ直してよい。読んでいる位置が動かなければよい
+ * 種別単位の到着（§7.3）。選択行より上に入るはずの行は保留する（I4）。全体を並べ直せるのは
+ * 選択が結果より上（検索行・プレースホルダ・notice）にあるとき（selectedIndex が undefined）だけで、
+ * 先頭ヒットを選んでいるときも上に入る行は保留する。選択行より下は自由に並べ直してよい
  */
 export function arrive(
   session: SearchSession,
   kind: SearchKind,
   incoming: readonly ResultRow[],
-  selectedIndex: number,
+  selectedIndex?: number,
 ): SearchSession {
   const progressed = withProgress(session, kind, { state: 'ready', count: incoming.length });
   const known = new Set([...session.rows, ...session.held].map((row) => row.id));
   const fresh = incoming.filter((row) => !known.has(row.id));
 
-  if (selectedIndex <= 0 || session.rows.length === 0) {
+  if (selectedIndex === undefined || session.rows.length === 0) {
     return capped(
       progressed,
       [...session.rows, ...session.held, ...fresh].toSorted(compareRows),

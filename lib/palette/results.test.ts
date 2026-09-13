@@ -78,6 +78,17 @@ describe('到着と保留（§7.3・I4）', () => {
     expect(results(view(first))?.rows.map((r) => r.code)).toEqual(['PROJ-1', 'PROJ-2']);
   });
 
+  it('先頭ヒットを選んでいるとき、後から届いた強い一致は上に入らず保留になる（I4）', () => {
+    const arrived = reduce(first, {
+      type: 'resultsArrived',
+      kind: 'wiki',
+      rows: [row('w1', 9, 'wiki')],
+    });
+    expect(arrived.selectedId).toBe(resultRowId(row('PROJ-1', 3)));
+    expect(arrived.session?.rows.map((r) => r.id)).toEqual(['PROJ-1', 'PROJ-2']);
+    expect(arrived.session?.held.map((r) => r.id)).toEqual(['w1']);
+  });
+
   it('選択が下にあるとき、上に入るべき行は保留され notice 行が先頭に出る', () => {
     const moved = reduce(first, { type: 'selected', id: resultRowId(row('PROJ-2', 2)) });
     const arrived = reduce(moved, {
