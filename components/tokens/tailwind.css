@@ -79,7 +79,6 @@
   --container-*: initial;
   --container-narrow: 400px;
   --container-compact: 560px;
-  --container-panel: 480px;
 
   --default-transition-duration: var(--bp-motion-fast);
 }

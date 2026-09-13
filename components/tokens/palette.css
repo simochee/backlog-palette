@@ -92,6 +92,7 @@
   --bp-width-options: 720px;
   --bp-offset-palette: 12vh;
   --bp-height-list-max: 60vh;
+  --bp-breakpoint-panel-compact: 480px;
 
   --bp-motion-fast: 120ms;
 }

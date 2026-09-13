@@ -79,6 +79,22 @@ export type Labels = {
     loading: string;
     statusLabel: string;
     clearFiltersRow: string;
+    fields: { space: string; project: string; type: string; status: string; assignee: string; updated: string };
+    options: {
+      all: string;
+      allSpaces: string;
+      notClosed: string;
+      me: string;
+      unassigned: string;
+      anyTime: string;
+      week: string;
+      month: string;
+      quarter: string;
+      issue: string;
+      wiki: string;
+      document: string;
+    };
+    authExpired: string;
   };
   connect: {
     title: string;
