@@ -1,5 +1,7 @@
 import { browser, defineBackground } from '#imports';
 import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
+import { onMessage } from '@/lib/messaging/background';
+import type { CurrentTab } from '@/lib/tabs/types';
 import { pruneDisplayCache } from '@/lib/visits/record';
 
 const PRUNE_DISPLAY_CACHE = 'prune-display-cache';
@@ -26,7 +28,40 @@ function readSidebarAction(): SidebarAction | undefined {
  * Service Worker は薄く保つ（tech-stack.md §2）。UI・検索・API 呼び出しは持たず、
  * インストール時の初期化と alarms、ツールバーのアイコンだけを受ける。
  */
+/*
+ * @webext-core/messaging は sender を chrome.runtime.MessageSender と型付けするが、
+ * WXT の browser 型にはグローバルの chrome 名前空間が無く解決できない。
+ * 型を当てにせず、実行時に形を確かめて読む。
+ */
+function readSenderTab(sender: unknown): CurrentTab | undefined {
+  if (typeof sender !== 'object' || sender === null) return undefined;
+  const tab: unknown = Reflect.get(sender, 'tab');
+  if (typeof tab !== 'object' || tab === null) return undefined;
+  const id: unknown = Reflect.get(tab, 'id');
+  const url: unknown = Reflect.get(tab, 'url');
+  return {
+    id: typeof id === 'number' ? id : undefined,
+    url: typeof url === 'string' ? url : undefined,
+  };
+}
+
+/** browser.tabs を持たないコンテキスト（Firefox の埋め込み iframe）からの委譲を受ける */
+function serveTabsDelegation() {
+  // 送り主の載っているタブは sender から読む。メッセージに載せた値は信じない（I7）
+  onMessage('readCurrentTab', (message) => readSenderTab(message.sender));
+  onMessage('navigate', async (message) => {
+    const tabId = readSenderTab(message.sender)?.id;
+    if (message.data.target === 'new' || tabId === undefined) {
+      await browser.tabs.create({ url: message.data.url });
+      return;
+    }
+    await browser.tabs.update(tabId, { url: message.data.url });
+  });
+}
+
 export default defineBackground(() => {
+  serveTabsDelegation();
+
   browser.runtime.onInstalled.addListener(() => {
     void browser.alarms.create(PRUNE_DISPLAY_CACHE, { periodInMinutes: 24 * 60 });
   });

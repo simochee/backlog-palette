@@ -37,6 +37,28 @@ test.describe('Firefox: パレットの注入と開閉', () => {
     expect(await tab.$eval('#page-input', (el) => (el as HTMLInputElement).value)).toBe('');
   });
 
+  /*
+   * Firefox の埋め込み iframe には browser.tabs が無く、background への委譲で
+   * タブ URL を読む（backlog-facts.md §5-16）。Chrome の tabs.spec と同じ検査で I7 の経路を固定する
+   */
+  test('パレットを開くと、iframe が background 経由で自分のタブ URL からスペースを決める', async ({
+    tab,
+    space,
+    paletteFrame,
+  }) => {
+    await tab.goto(space.url('/view/PROJ-123'));
+    const frame = await paletteFrame();
+
+    await tab.keyboard.down(HOTKEY_MODIFIER);
+    await tab.keyboard.press('k');
+    await tab.keyboard.up(HOTKEY_MODIFIER);
+
+    await frame.waitForFunction(
+      () => document.querySelector('input')?.placeholder === 'demo で検索',
+      { timeout: 5000 },
+    );
+  });
+
   test('Esc で閉じる', async ({ tab, space, paletteFrame }) => {
     await tab.goto(space.url('/view/PROJ-123'));
     await paletteFrame();
