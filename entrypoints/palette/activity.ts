@@ -48,12 +48,7 @@ async function recordQuery(query: string, target: string, now: number) {
  * M6 の語 → 対象）。学習オフのときは呼ばれない。行動ログには件名や語を書かず、対象の id と時刻だけ。
  * 語 → 対象の辞書だけが語を持つ
  */
-export async function recordNavigation(
-  url: string,
-  context: OpenContext,
-  now: number,
-  query = '',
-) {
+export async function recordNavigation(url: string, context: OpenContext, now: number, query = '') {
   const target = entityIdOfUrl(url);
   if (target === undefined) return;
   const log = await activity.getValue();

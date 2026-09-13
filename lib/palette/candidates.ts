@@ -174,8 +174,7 @@ export function matchAll(
       match: result,
       pinned: candidate.pinExact === true && result.strength === 'exact',
       context: candidate.context,
-      frecency:
-        (scores.get(candidate.activityId) ?? 0) + (learned.get(candidate.activityId) ?? 0),
+      frecency: (scores.get(candidate.activityId) ?? 0) + (learned.get(candidate.activityId) ?? 0),
       strong: candidate.stable && isStrong(result),
     });
   }
