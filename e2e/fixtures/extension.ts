@@ -10,6 +10,7 @@ import {
   type Worker,
 } from '@playwright/test';
 
+import { VALID_API_KEY } from './api.ts';
 import { type FakeSpace, HOSTS, startFakeSpace } from './space.ts';
 
 const EXTENSION_PATH = resolve(import.meta.dirname, '../../.output/chrome-mv3');
@@ -34,6 +35,7 @@ type ChromeStorage = {
   storage: {
     local: {
       get: (key: string) => Promise<Record<string, unknown>>;
+      set: (items: Record<string, unknown>) => Promise<void>;
       remove: (key: string) => Promise<void>;
     };
   };
@@ -47,6 +49,7 @@ const OWNED_KEYS = [
   'apiKeys',
   'spaces',
   'rateLimits',
+  'queryCache',
   'activity',
   'transitions',
   'settings',
@@ -61,6 +64,8 @@ export type ExtensionFixtures = {
   readDisplayCache: () => Promise<DisplayCacheRow[]>;
   /** storage.local の item を SW 経由で読む。無ければ undefined */
   readStorage: <T>(key: string) => Promise<T | undefined>;
+  /** 接続済みの状態を storage に直接置く。接続導線を通す E2E は connect.spec が持つ */
+  seedConnected: (spaces: readonly { host: string; name: string }[]) => Promise<void>;
 };
 
 export type WorkerFixtures = {
@@ -154,6 +159,27 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
         return stored[key] ?? [];
       }, DISPLAY_CACHE_KEY);
       return rows as DisplayCacheRow[];
+    });
+  },
+
+  seedConnected: async ({ serviceWorker }, use) => {
+    await use(async (list) => {
+      await serviceWorker.evaluate(
+        async (input) => {
+          const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+          await api.storage.local.set({
+            apiKeys: Object.fromEntries(input.list.map((s) => [s.host, input.key])),
+            spaces: input.list.map((s) => ({
+              host: s.host,
+              name: s.name,
+              spaceKey: s.host.split('.')[0],
+              projectCount: 0,
+              connectedAt: Date.now(),
+            })),
+          });
+        },
+        { list, key: VALID_API_KEY },
+      );
     });
   },
 

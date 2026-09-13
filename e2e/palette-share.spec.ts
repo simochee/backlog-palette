@@ -101,14 +101,18 @@ async function snapshot(page: Page, frame: FrameLocator): Promise<Snapshot> {
   return { url: page.url(), ...inner };
 }
 
-const KEY_OF: Record<string, string> = {
-  enter: 'Enter',
-  move: 'ArrowDown',
-  back: 'Backspace',
-  take: 'Tab',
-  modEnter: `${MOD}+Enter`,
-  toPanel: `${MOD}+ArrowRight`,
-  copyUrl: `${MOD}+Shift+C`,
+/*
+ * ↑↓ は端で止まる（循環しない、§6）ので、選択が末尾なら ↓ では何も起きないのが正しい。
+ * どちらかで動けば「移動が動作に繋がっている」と言える
+ */
+const KEYS_OF: Record<string, readonly string[]> = {
+  enter: ['Enter'],
+  move: ['ArrowDown', 'ArrowUp'],
+  back: ['Backspace'],
+  take: ['Tab'],
+  modEnter: [`${MOD}+Enter`],
+  toPanel: [`${MOD}+ArrowRight`],
+  copyUrl: [`${MOD}+Shift+C`],
 };
 
 /** フッターの並びが状態で変わるので、2 つの状態で回して出るキーを覆う */
@@ -126,9 +130,9 @@ const SITUATIONS = [
       await page.keyboard.press('Enter');
       /*
        * 結果が揃うまで選択はプレースホルダ行にあり、その行は動作を持たないので ↵ が
-       * フッターに出ない。0 件が確定して提案行へ移るまで待つ（D-19）
+       * フッターに出ない。結果（または 0 件の提案行）に移るまで待つ
        */
-      await expect(frame.getByText('一致する結果がありません')).toBeVisible();
+      await expect.poll(() => visibleHintIds(frame)).toContain('enter');
     },
   },
 ];
@@ -141,7 +145,13 @@ test.describe('フッターの通し検査（不変条件 I2 の実機版）', (
     test(`${situation.name}でフッターに出ている全キーを順に押すと、それぞれ結果が起きる`, async ({
       page,
       space,
+      seedConnected,
     }) => {
+      /*
+       * 接続済みで回す。未接続だと検索が 401 になり、検索行の ↵ は「同じ語で再検索して
+       * また 401」になって、押した結果が状態に現れない（振る舞いとしては正しい）
+       */
+      await seedConnected([{ host: 'demo.backlog.jp', name: 'デモスペース' }]);
       const url = space.url('/view/PROJ-123');
       const first = await openPalette(page, url);
       await situation.prepare(page, first);
@@ -154,17 +164,18 @@ test.describe('フッターの通し検査（不変条件 I2 の実機版）', (
         expect(await visibleHintIds(frame), `${id} が出ている状態を作れない`).toContain(id);
 
         const before = await snapshot(page, frame);
-        await page.keyboard.press(KEY_OF[id] ?? '');
         // 押した結果は 遷移（URL）・入力・スコープパス・選択・トースト・閉じる のどれかに現れる
+        const outcome = async () => {
+          if (await page.locator(PALETTE_FRAME).isHidden()) return 'closed';
+          const after = await snapshot(page, frame);
+          return JSON.stringify(after) === JSON.stringify(before) ? 'same' : 'changed';
+        };
+        for (const key of KEYS_OF[id] ?? []) {
+          await page.keyboard.press(key);
+          if ((await outcome()) !== 'same') break;
+        }
         await expect
-          .poll(
-            async () => {
-              if (await page.locator(PALETTE_FRAME).isHidden()) return 'closed';
-              const after = await snapshot(page, frame);
-              return JSON.stringify(after) === JSON.stringify(before) ? 'same' : 'changed';
-            },
-            { message: `${id} を押しても何も起きない`, timeout: 3000 },
-          )
+          .poll(outcome, { message: `${id} を押しても何も起きない`, timeout: 3000 })
           .not.toBe('same');
       }
     });

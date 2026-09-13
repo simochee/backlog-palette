@@ -18,7 +18,27 @@ export type FirefoxFixtures = {
   tab: Page;
   /** パレット iframe の中のフレーム。開くまで待つ */
   paletteFrame: () => Promise<Frame>;
+  /** 接続の貼り付けバーの中のフレーム。開くまで待つ */
+  connectFrame: () => Promise<Frame>;
 };
+
+/*
+ * BiDi は moz-extension:// のフレームの URL を about:blank と報告する。
+ * frame.url() では見つからないので、フレームの中で location.href を評価して探す。
+ */
+async function waitForExtensionFrame(tab: Page, file: string): Promise<Frame> {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    for (const frame of tab.frames()) {
+      if (frame === tab.mainFrame()) continue;
+      const href = await frame.evaluate(() => location.href).catch(() => '');
+      if (href.endsWith(`/${file}`)) return frame;
+    }
+    await new Promise((done) => {
+      setTimeout(done, 100);
+    });
+  }
+  throw new Error(`${file} の iframe が読み込まれない`);
+}
 
 export type FirefoxWorkerFixtures = {
   space: FakeSpace;
@@ -79,23 +99,11 @@ export const test = base.extend<FirefoxFixtures, FirefoxWorkerFixtures>({
   },
 
   paletteFrame: async ({ tab }, use) => {
-    await use(async () => {
-      /*
-       * BiDi は moz-extension:// のフレームの URL を about:blank と報告する。
-       * frame.url() では見つからないので、フレームの中で location.href を評価して探す。
-       */
-      for (let attempt = 0; attempt < 50; attempt += 1) {
-        for (const frame of tab.frames()) {
-          if (frame === tab.mainFrame()) continue;
-          const href = await frame.evaluate(() => location.href).catch(() => '');
-          if (href.endsWith('/palette.html')) return frame;
-        }
-        await new Promise((done) => {
-          setTimeout(done, 100);
-        });
-      }
-      throw new Error('palette iframe が読み込まれない');
-    });
+    await use(() => waitForExtensionFrame(tab, 'palette.html'));
+  },
+
+  connectFrame: async ({ tab }, use) => {
+    await use(() => waitForExtensionFrame(tab, 'connect.html'));
   },
 });
 
