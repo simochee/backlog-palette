@@ -126,7 +126,9 @@ async function searchIssues(
     .filter((issue) => plan.postFilter(issue))
     .flatMap((issue) => {
       const project = byId.get(issue.projectId);
-      return project === undefined ? [] : [toRow(issueEntry(host, issue, project), issue.updated, query)];
+      return project === undefined
+        ? []
+        : [toRow(issueEntry(host, issue, project), issue.updated, query)];
     });
 }
 
