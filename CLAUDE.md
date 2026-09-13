@@ -30,6 +30,7 @@ pnpm 12 は postinstall をデフォルトで実行しない。ネイティブ�
 | `pnpm build:storybook` | Storybook 静的ビルド |
 | `pnpm test` | story をテストとして実行 |
 | `pnpm test:watch` | 同上、監視モード |
+| `pnpm test:e2e` | 拡張を読み込んだ Chromium で E2E を実行。先に `pnpm build` が要る |
 | `pnpm lint` / `pnpm lint:fix` | oxlint。型検査を兼ねる |
 | `pnpm format` | oxfmt で整形 |
 
@@ -45,6 +46,7 @@ CI で検証することをローカルで繰り返さない。CI は非同期�
 - `pnpm build` / `pnpm build:firefox`
 - `pnpm build:storybook`
 - `pnpm test`
+- `pnpm test:e2e`
 
 ローカルで動かすのは、手元で見ないと分からないものだけ。`pnpm dev` と `pnpm storybook`
 の開発サーバがこれにあたる。

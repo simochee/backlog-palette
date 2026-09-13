@@ -30,6 +30,7 @@
     "build:storybook": "storybook build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test -c e2e",
     "postinstall": "wxt prepare"
   },
   "dependencies": {

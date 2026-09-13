@@ -48,6 +48,18 @@
   },
   "overrides": [
     {
+      "files": ["e2e/**/*.ts"],
+      "rules": {
+        // Playwright のフィクスチャは第 2 引数の `use` でテストに値を渡す。名前が
+        // React Hook の規約と重なるだけで、React とは無関係。
+        "react-hooks/rules-of-hooks": "off",
+
+        // 依存を持たない worker フィクスチャは第 1 引数を `{}` で受けるのが
+        // Playwright の書き方。分割代入の空パターン以外に宣言する手段が無い。
+        "eslint/no-empty-pattern": "off"
+      }
+    },
+    {
       "files": ["**/*.stories.tsx", "**/*.invariants.ts"],
       "rules": {
         // storybook の `fn()` はスパイの呼び出し記録を返す。戻り値を無視する void 型の
