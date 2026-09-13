@@ -2,6 +2,7 @@ import type { Labels } from '@/components/labels';
 import { isStrong, match, type MatchResult, type MatchTarget } from '@/lib/match/match';
 import type { NormalizedQuery } from '@/lib/query/normalize';
 import { frecencyByEntity } from '@/lib/rank/frecency';
+import { queryDictScores } from '@/lib/rank/queryDict';
 import { type RankContext, type Ranked, rankWithinSection } from '@/lib/rank/rank';
 import type { CommandSegment, Scope } from '@/lib/stack/types';
 
@@ -160,6 +161,8 @@ export function matchAll(
   index: PaletteIndex,
 ): Matched[] {
   const scores = frecencyByEntity(index.activity, index.now);
+  // この語で開いたことのある対象を、同じ強さ・同じ文脈の中で先に出す（M6 の学習）
+  const learned = queryDictScores(index.queryDict, query.folded, index.now);
   const ranked: Matched[] = [];
   for (const candidate of candidates) {
     const result: MatchResult | undefined =
@@ -171,7 +174,8 @@ export function matchAll(
       match: result,
       pinned: candidate.pinExact === true && result.strength === 'exact',
       context: candidate.context,
-      frecency: scores.get(candidate.activityId) ?? 0,
+      frecency:
+        (scores.get(candidate.activityId) ?? 0) + (learned.get(candidate.activityId) ?? 0),
       strong: candidate.stable && isStrong(result),
     });
   }

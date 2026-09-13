@@ -1,5 +1,5 @@
 import type { Badge } from '@/components/types';
-import type { ActivityEvent, TransitionEvent } from '@/lib/rank';
+import type { ActivityEvent, QueryDictEvent, TransitionEvent } from '@/lib/rank';
 import type { Scope } from '@/lib/stack/types';
 
 /**
@@ -69,6 +69,8 @@ export type PaletteIndex = {
   /** 行動ログ。entityId は `issue:PROJ-1` `project:1` `page:board` の形 */
   activity: readonly ActivityEvent[];
   transitions: readonly TransitionEvent[];
+  /** 語 → 開いた対象の学習（M6）。語は fold 済み。同じ強さの候補の中でだけ効く */
+  queryDict: readonly QueryDictEvent[];
   /** 現在ページの種別。遷移パターンの from */
   currentPageKind: string | undefined;
   /** 課題ページで開いたとき。コピー系コマンドの対象 */
