@@ -70,7 +70,14 @@ function OpenPalette({ session, close }: { session: PaletteSession; close: () =>
     }),
     [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
-  const callbacks = usePaletteCallbacks({ store, derived, env, pending, stack: state.stack, close });
+  const callbacks = usePaletteCallbacks({
+    store,
+    derived,
+    env,
+    pending,
+    stack: state.stack,
+    close,
+  });
 
   return (
     <LabelsProvider labels={labels}>
