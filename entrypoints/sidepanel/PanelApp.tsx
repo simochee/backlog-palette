@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { SidePanel } from '@/components/organisms/SidePanel';
@@ -8,6 +8,7 @@ import { searchHistory } from '@/lib/storage/palette-items';
 import { panelCallbacks } from './callbacks.ts';
 import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
 import { buildFilters } from './filters.ts';
+import { useHandoff } from './handoff.ts';
 import { rootRoute } from './route.ts';
 import { emptyPanelRunner } from './runner.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
@@ -67,14 +68,35 @@ function withDefaultScope(search: PanelSearch, context: PanelContext): PanelSear
   return { ...search, scope: { kind: 'space', spaceId: context.tabSpace } };
 }
 
+/** 入力・選択・トースト・URL の更新。パレットからの受け渡しは入力と URL の両方に写す */
+function usePanelState(initialQuery: string) {
+  const navigate = rootRoute.useNavigate();
+  const [input, setInput] = useState(initialQuery);
+  const [selectedId, setSelectedId] = useState<string>();
+  const [toast, showToast] = useToast();
+  const update = useCallback(
+    (next: PanelSearch) => void navigate({ to: '/', search: next }),
+    [navigate],
+  );
+  useHandoff(
+    useCallback(
+      (next: PanelSearch) => {
+        setInput(next.query);
+        update(next);
+      },
+      [update],
+    ),
+  );
+  return { input, setInput, selectedId, setSelectedId, toast, showToast, update };
+}
+
 function Panel({ context }: { context: PanelContext }) {
   // Register に載せていないので useSearch の型は付かない。スキーマで検証して型を得る
   const raw = panelSearchSchema.parse(rootRoute.useSearch());
-  const navigate = rootRoute.useNavigate();
   const search = useMemo(() => withDefaultScope(raw, context), [raw, context]);
-  const [input, setInput] = useState(search.query);
-  const [selectedId, setSelectedId] = useState<string>();
-  const [toast, showToast] = useToast();
+  const { input, setInput, selectedId, setSelectedId, toast, showToast, update } = usePanelState(
+    search.query,
+  );
   const recentQueries = useRecentQueries(search.scope);
   const { session, state } = usePanelSearch(
     search,
@@ -103,7 +125,7 @@ function Panel({ context }: { context: PanelContext }) {
     search,
     session,
     labels,
-    update: (next) => void navigate({ to: '/', search: next }),
+    update,
     setInput,
     setSelectedId,
     showToast,
