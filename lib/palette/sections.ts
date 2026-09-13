@@ -15,6 +15,8 @@ export type BuiltSection = {
   rows: readonly Built[];
   /** セクション自身の上限。無ければ全体の上限だけが効く */
   cap?: number;
+  /** 全体の上限 12 に数えない。検索結果は 30 行まで出す（§7.3）ので候補の枠を食わない */
+  uncapped?: boolean;
 };
 
 type Capped = { sections: SectionView[]; rows: Built[] };
@@ -34,8 +36,8 @@ export function capSections(sections: readonly BuiltSection[], labels: Labels): 
   let room = TOTAL_CAP;
   for (const section of sections) {
     if (section.rows.length === 0) continue;
-    const kept = truncate(section, room, labels);
-    room -= kept.rows.length;
+    const kept = section.uncapped === true ? section : truncate(section, room, labels);
+    if (section.uncapped !== true) room -= kept.rows.length;
     rows.push(...kept.rows);
     views.push({
       id: kept.id,

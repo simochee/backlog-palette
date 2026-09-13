@@ -13,8 +13,11 @@ function spaceOf(index: PaletteIndex, spaceId: string): SpaceEntry | undefined {
   return index.spaces.find((space) => space.id === spaceId);
 }
 
-/** 最近開いた: 表示キャッシュ + 行動ログ。頻度 × 直近性の順（§9） */
-function recentSection({ index, scope, labels }: Env): BuiltSection {
+/**
+ * 最近開いた: 課題・Wiki・ドキュメント・プロジェクトを 表示キャッシュ + 行動ログ から、頻度 × 直近性の順（§9）。
+ * ページ定義は入れない。ページは次のセクションが遷移パターンで並べる担当で、同じページを 2 度出さない
+ */
+function recentSection({ index, labels }: Env): BuiltSection {
   const scores = frecencyByEntity(index.activity, index.now);
   const sub = (context: string) => `${context} · ${labels.rows.recentSub}`;
   const rows: { built: Built; score: number }[] = [];
@@ -38,11 +41,6 @@ function recentSection({ index, scope, labels }: Env): BuiltSection {
         ),
         score,
       });
-  }
-  for (const page of index.pagesFor(scope)) {
-    const score = scores.get(entityId('page', page.id));
-    if (score !== undefined)
-      rows.push({ built: pageRow('recent', page, sub(labels.rows.pageSub)), score });
   }
 
   return {

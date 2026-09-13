@@ -44,12 +44,19 @@ function spaceOf(index: PaletteIndex, spaceId: string): SpaceEntry | undefined {
   return index.spaces.find((space) => space.id === spaceId);
 }
 
-function pageCandidates({ index, scope, labels }: Env, section: string): Candidate[] {
-  const owner = scope.kind === 'root' ? undefined : spaceOf(index, scope.spaceId);
-  const sub =
-    scope.kind === 'root'
-      ? labels.rows.commonPageSub
-      : `${owner?.label ?? ''} · ${labels.rows.pageSub}`;
+/** ページの補足は {プロジェクト名} · ページ（§5）。[space] ならスペース名、根なら共通ページの文言 */
+function pageSub({ index, scope, labels }: Env): string {
+  if (scope.kind === 'root') return labels.rows.commonPageSub;
+  const owner =
+    scope.kind === 'project'
+      ? index.projects.find((project) => project.id === scope.projectId)?.name
+      : spaceOf(index, scope.spaceId)?.label;
+  return `${owner ?? ''} · ${labels.rows.pageSub}`;
+}
+
+function pageCandidates(env: Env, section: string): Candidate[] {
+  const { index, scope } = env;
+  const sub = pageSub(env);
   return index.pagesFor(scope).map((page) => ({
     built: pageRow(section, page, sub),
     target: { text: page.title, aliases: page.aliases },
@@ -148,9 +155,9 @@ export function pageSectionCandidates(env: Env): Candidate[] {
   ];
 }
 
-/** 根の照合対象はスペース名と共通ページ名だけ（D-20） */
-export function rootCandidates(env: Env): Candidate[] {
-  return [...spaceCandidates(env, 'spaces'), ...pageCandidates(env, 'common')];
+/** 根の共通ページ（個人設定・API キー）。根の照合対象はこれとスペース名だけ（D-20） */
+export function commonPageCandidates(env: Env): Candidate[] {
+  return pageCandidates(env, 'common');
 }
 
 /** 照合して同じ強さの中だけ個人化で並べる。language は語が空なら全件を元の順で返す */

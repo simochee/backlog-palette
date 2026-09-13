@@ -5,11 +5,11 @@ import type { Scope } from '@/lib/stack/types';
 export const searchKinds = ['issue', 'wiki', 'document'] as const;
 export type SearchKind = (typeof searchKinds)[number];
 
+/** 行に閉じて出す障害（§7.5・I6）。この 3 つ以外の失敗は M4 の client がここへ写す */
 export type SearchError =
   | { kind: 'unauthorized' }
   | { kind: 'rateLimited'; retryAfterSeconds: number }
-  | { kind: 'offline' }
-  | { kind: 'failed' };
+  | { kind: 'offline' };
 
 export type KindProgress =
   | { state: 'loading' }
