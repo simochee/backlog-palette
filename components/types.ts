@@ -29,6 +29,7 @@ export type RowHint = 'enter' | 'modEnter' | 'descend' | 'complete' | 'stack';
 export type RowTone = 'default' | 'accent' | 'danger';
 
 export type RowView = {
+  /** セクションを横断して一意。同じ対象が複数のセクションに並ぶときは container が接頭辞で分ける（選択と ↑↓ は id で引く） */
   id: string;
   kind: RowKind;
   code?: string;

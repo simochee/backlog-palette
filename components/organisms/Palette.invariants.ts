@@ -156,6 +156,9 @@ export async function assertPaletteInvariants(target: Target) {
   const canvas = within(target.canvasElement);
   const input = canvas.getByRole<HTMLInputElement>('combobox');
   const rows = flattenRows(target.view.sections);
+  const ids = rows.map((row) => row.id);
+  // 重複した id は両方が選択扱いになり、↑↓ が最初の一致から数え直してループする
+  await expect(new Set(ids).size, `行 id が重複: ${ids.join(', ')}`).toBe(ids.length);
 
   await userEvent.click(input);
   input.setSelectionRange(input.value.length, input.value.length);

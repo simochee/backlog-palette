@@ -28,7 +28,7 @@ export type Badge = { label: string; tone: Tone };
 export type RowHint = 'enter' | 'modEnter' | 'descend' | 'complete' | 'stack';
 
 export type RowView = {
-  id: string;
+  id: string;                    // セクション横断で一意。同じ対象が複数セクションに並ぶなら接頭辞で分ける（選択・↑↓ は id で引く）
   kind: RowKind;
   code?: string;                 // 等幅の短い識別子（PROJ-123）
   title: string;                 // 1 行省略 + title 属性

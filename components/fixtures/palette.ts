@@ -99,7 +99,7 @@ export const resultRows = (): RowView[] => [
 export const loginPages = (labels: Labels): SectionView => ({
   id: 'pages',
   label: labels.sections.pages,
-  rows: [sampleIssues.login],
+  rows: [{ ...sampleIssues.login, id: `cache:${sampleIssues.login.id}` }],
 });
 
 /** S0 未接続で何も出せない */
