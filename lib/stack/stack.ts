@@ -45,9 +45,12 @@ export function scopeOf(stack: Stack): Scope {
   return { kind: 'project', spaceId: space.spaceId, projectId: project.projectId };
 }
 
-/** `space` 行で ⇥。スコープはこの 1 段に置き換わる。コマンド階層では積めない */
-export function pushSpace(stack: Stack, space: SpaceSegment): Stack {
-  if (activeCommand(stack) !== undefined) return stack;
+/**
+ * `space` 行で ⇥。スコープはこの 1 段に置き換わる。コマンド階層の引数行でも同じで、
+ * command は消える。「command の後には積めない」は command の上に積めないという意味で、
+ * ⇥ は実行せずに取り込む 1 つの意味（D-4）を引数行でも守る
+ */
+export function pushSpace(_stack: Stack, space: SpaceSegment): Stack {
   return withSegments([space]);
 }
 
@@ -55,8 +58,7 @@ export function pushSpace(stack: Stack, space: SpaceSegment): Stack {
  * `project` 行で ⇥。`project` の前には必ず `space` があるので、別スペースの
  * プロジェクトを積むときは `space` も一緒に置き換わる（§8）
  */
-export function pushProject(stack: Stack, space: SpaceSegment, project: ProjectSegment): Stack {
-  if (activeCommand(stack) !== undefined) return stack;
+export function pushProject(_stack: Stack, space: SpaceSegment, project: ProjectSegment): Stack {
   return withSegments([space, project]);
 }
 

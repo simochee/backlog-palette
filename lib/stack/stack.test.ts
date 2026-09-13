@@ -100,10 +100,15 @@ describe('コマンド階層', () => {
     });
   });
 
-  it('command の後に space / project は積めない', () => {
+  it('コマンド階層で space を ⇥ すると command は消えて [space] になる', () => {
     const stack = pushCommand(stackOf(nulab), switchSpace);
-    expect(pushSpace(stack, acme)).toBe(stack);
-    expect(pushProject(stack, acme, helpdesk)).toBe(stack);
+    expect(kinds(pushSpace(stack, acme))).toEqual(['space']);
+    expect(scopeOf(pushSpace(stack, acme))).toEqual({ kind: 'space', spaceId: 'acme' });
+  });
+
+  it('コマンド階層で project を積んでも command は消えて [space / project] になる', () => {
+    const stack = pushCommand(stackOf(nulab), switchSpace);
+    expect(kinds(pushProject(stack, acme, helpdesk))).toEqual(['space', 'project']);
   });
 
   it('command は 1 段しか積めない', () => {
