@@ -34,6 +34,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@tanstack/pacer": "0.22.0",
     "@tanstack/react-form": "1.33.5",
     "backlog-js": "0.20.1",
     "lucide-react": "1.45.0",
