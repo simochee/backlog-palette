@@ -23,9 +23,10 @@ pnpm install
 | `pnpm storybook` | Storybook を http://localhost:6006 で起動 |
 | `pnpm build:storybook` | Storybook を静的ビルド |
 | `pnpm test` | story をテストとして実行 |
-| `pnpm compile` | 型検査 (`tsc --noEmit`) |
+| `pnpm lint` | oxlint。型検査を兼ねる |
+| `pnpm format` | oxfmt で整形 |
 
-型検査・ビルド・テストは push のたびに CI が実行するので、手元で繰り返す必要はない。
+lint・型検査・ビルド・テストは push のたびに CI が実行するので、手元で繰り返す必要はない。
 
 Storybook は main への push で https://simochee.github.io/backlog-palette/ に公開される。
 

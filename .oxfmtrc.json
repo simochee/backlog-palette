@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "printWidth": 100,
+  "sortImports": true,
+
+  // 既定の並び順は devEngines を dependencies より後ろへ送る。Node と pnpm の
+  // バージョンはこのリポジトリの前提条件なので、先頭に置いたままにする。
+  "sortPackageJson": false,
+
+  // Markdown はこのリポジトリの読み物 (CLAUDE.md / README.md) であり、
+  // 整形対象に入れると linter 導入と無関係な差分が混ざる。
+  "ignorePatterns": ["**/*.md"]
+}

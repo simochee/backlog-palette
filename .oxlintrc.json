@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "react", "jsx-a11y"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error",
+    "pedantic": "error"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "rules": {
+    // tsconfig の `jsx: react-jsx` では JSX が自動ランタイムに変換されるため、
+    // React をスコープに入れる必要がない。
+    "react/react-in-jsx-scope": "off",
+
+    // Vite は public/ のファイルを絶対パスで参照する (`import wxtLogo from '/wxt.svg'`)。
+    "import/no-absolute-path": "off",
+
+    // default export と同名の named export を持つパッケージすべてに反応する。
+    // @storybook/addon-vitest/vitest-plugin のように公式が default import を案内している
+    // ケースまで叩くため、シグナルより誤検出が多い。
+    "import/no-named-as-default": "off",
+
+    // CSS は値を持たない副作用 import が正しい書き方。JS モジュールの取りこぼしは検出したいので
+    // ルールごと切らず、拡張子で絞る。
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+
+    // 既定値では `onClick={() => setCount(c => c + 1)}` まで禁止される。
+    // React の標準的な書き方なので、アロー省略記法だけ対象から外す。
+    "typescript/no-confusing-void-expression": ["error", { "ignoreArrowShorthand": true }],
+
+    // React の props 型に Readonly<> を付ける慣習はなく、@types/react 由来の型も
+    // readonly ではない。全 props が違反になり、シグナルが埋もれる。
+    "typescript/prefer-readonly-parameter-types": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.stories.tsx"],
+      "rules": {
+        // storybook の `fn()` はスパイの呼び出し記録を返す。戻り値を無視する void 型の
+        // props に渡すのが addon-vitest の想定する使い方で、誤用ではない。
+        "typescript/strict-void-return": "off"
+      }
+    }
+  ]
+}

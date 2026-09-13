@@ -30,14 +30,22 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - name: Install browser
-        run: pnpm exec playwright install --with-deps chromium
-
       # 前段が落ちても後続を走らせる。1 回の実行で失敗箇所が出揃わないと、
       # 直して push し直すたびに次の失敗を知ることになり往復が増える。
-      - name: Type check
+      # lint は型検査も兼ねる。最も速く最も落ちやすいので先頭に置く。
+      - name: Lint
         if: ${{ !cancelled() }}
-        run: pnpm compile
+        run: pnpm lint --format=github
+
+      - name: Format
+        if: ${{ !cancelled() }}
+        run: pnpm format:check
+
+      # ブラウザ本体の導入はテストだけが必要とする。lint より後ろに置いて、
+      # 導入が失敗しても lint の結果は得られるようにする。
+      - name: Install browser
+        if: ${{ !cancelled() }}
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build (chrome)
         if: ${{ !cancelled() }}
