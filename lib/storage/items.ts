@@ -1,3 +1,5 @@
+import type { PersistedClient } from '@tanstack/query-persist-client-core';
+
 import { storage } from '#imports';
 import type { SpaceRateRecord } from '@/lib/backlog/rateLimit';
 import type { ConnectedSpace } from '@/lib/connect/connectSpace';
@@ -49,5 +51,14 @@ export const rateLimits = storage.defineItem<Record<string, SpaceRateRecord>>('l
  */
 export const spaces = storage.defineItem<ConnectedSpace[]>('local:spaces', {
   fallback: [],
+  version: 1,
+});
+
+/**
+ * TanStack Query のキャッシュ（マスタ・担当課題）。パレット・サイドパネル・設定画面が
+ * 同じキャッシュを見るための persister の置き場所。検索の結果は載せない（lib/backlog/queryClient.ts）。
+ */
+export const queryCache = storage.defineItem<PersistedClient | null>('local:queryCache', {
+  fallback: null,
   version: 1,
 });
