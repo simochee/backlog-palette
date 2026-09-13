@@ -125,7 +125,7 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
   },
 
   readStorage: async ({ serviceWorker }, use) => {
-    await use(async <T,>(key: string) => {
+    await use(async <T>(key: string) => {
       const stored = await serviceWorker.evaluate(async (name) => {
         const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
         return (await api.storage.local.get(name))[name];

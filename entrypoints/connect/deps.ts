@@ -9,8 +9,8 @@ export const connectDeps: ConnectDeps = {
     createSpaceClient({ spaceHost, apiKey, rateLimiter: sharedRateLimiter }),
   saveApiKey,
   initializeRateLimit: sharedRateLimiter.initialize,
-  saveSpace: async (spaceHost, space) => {
-    const all = await spaces.getValue();
-    await spaces.setValue({ ...all, [spaceHost]: space });
+  saveSpace: async (space) => {
+    const others = (await spaces.getValue()).filter((known) => known.host !== space.host);
+    await spaces.setValue([...others, space]);
   },
 };

@@ -44,8 +44,11 @@ export const rateLimits = storage.defineItem<Record<string, SpaceRateRecord>>('l
   version: 1,
 });
 
-/** 接続済みスペースの記録。ホストごと。鍵は含まない（apiKeys が持つ） */
-export const spaces = storage.defineItem<Record<string, ConnectedSpace>>('local:spaces', {
-  fallback: {},
+/**
+ * 接続済みスペースの一覧。host が識別子で、同じ host は 1 件。鍵は含まない（apiKeys が持つ）。
+ * 配列なのは TanStack DB のコレクション（lib/storage/collection.ts、M2）が T[] の item を前提にするため。
+ */
+export const spaces = storage.defineItem<ConnectedSpace[]>('local:spaces', {
+  fallback: [],
   version: 1,
 });
