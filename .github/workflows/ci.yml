@@ -11,20 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # バージョンは package.json の devEngines が決めるので、ここは pnpm を起動できる
       # 状態を作るだけでよい。corepack や pnpm/action-setup はワークフロー側にも
       # バージョン指定を要求し、devEngines との二重管理になるため使わない。
       # Node も同様に devEngines 経由で取得されるため setup-node を置かない。
+      # --allow-scripts がないと npm 11.6 以降は pnpm の postinstall を実行しない。
       - name: Bootstrap pnpm
-        run: npm install --global pnpm@12
+        run: npm install --global --allow-scripts=pnpm pnpm@12
 
       - name: Locate pnpm store
         id: pnpm-store
         run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
