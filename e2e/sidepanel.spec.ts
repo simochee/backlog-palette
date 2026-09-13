@@ -24,7 +24,7 @@ test.describe('サイドパネル', () => {
     await page.goto(panelUrl(serviceWorker));
 
     const panel = page.getByRole('region', { name: '詳細検索' });
-    await expect(panel.getByRole('textbox', { name: '検索語' })).toBeVisible();
+    await expect(panel.getByRole('combobox', { name: '検索語' })).toBeVisible();
     for (const field of ['スペース', 'プロジェクト', '種別', 'ステータス', '担当者', '更新日']) {
       await expect(panel.getByRole('button', { name: new RegExp(`^${field}`, 'u') })).toBeVisible();
     }
@@ -41,13 +41,13 @@ test.describe('サイドパネル', () => {
     await page.getByRole('radio', { name: 'デモスペース' }).click();
     await expect(page).toHaveURL(/spaceId/u);
 
-    const input = page.getByRole('textbox', { name: '検索語' });
+    const input = page.getByRole('combobox', { name: '検索語' });
     await input.fill('決済');
     await input.press('Enter');
 
     await expect(page).toHaveURL(/%E6%B1%BA%E6%B8%88|決済/u);
-    await expect(page.getByRole('region', { name: '検索の進捗' })).toBeVisible();
-    await expect(page.getByText('一致する結果がありません', { exact: false })).toBeVisible();
+    await expect(page.getByRole('status', { name: '検索の進捗' })).toContainText('0 件');
+    await expect(page.getByRole('option', { name: '一致する結果がありません' })).toBeVisible();
   });
 
   test('入力欄が空のとき ↑ で直前の検索語が入る', async ({ page, serviceWorker }) => {
@@ -63,7 +63,7 @@ test.describe('サイドパネル', () => {
     await page.getByRole('radio', { name: 'デモスペース' }).click();
 
     await expect(page.getByText('リリース手順')).toBeVisible();
-    const input = page.getByRole('textbox', { name: '検索語' });
+    const input = page.getByRole('combobox', { name: '検索語' });
     await input.focus();
     await input.press('ArrowUp');
     await expect(input).toHaveValue('リリース手順');
