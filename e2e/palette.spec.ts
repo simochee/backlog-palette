@@ -66,8 +66,6 @@ test.describe('⌘K によるパレットの開閉', () => {
     await page.keyboard.press(HOTKEY);
     const input = page.frameLocator(PALETTE_FRAME).locator('input');
     await expect(page.locator(PALETTE_FRAME)).toBeVisible();
-    await page.keyboard.type('a');
-    await expect(input).toHaveValue('a');
 
     /*
      * IME の変換中を CDP で再現する。Playwright の keyboard には変換の概念が無く、
@@ -79,16 +77,19 @@ test.describe('⌘K によるパレットの開閉', () => {
       selectionStart: 3,
       selectionEnd: 3,
     });
-    await expect(input).toHaveValue('aぼーど');
+    await expect(input).toHaveValue('ぼーど');
 
+    // 変換中の Enter は確定に使われ、ボードへは遷移しない（I5）
     await page.keyboard.press('Enter');
     await expect(page.locator(PALETTE_FRAME)).toBeVisible();
-
-    await cdp.send('Input.insertText', { text: 'ぼーど' });
-    await expect(input).toHaveValue('aぼーど');
-    await page.keyboard.press('Enter');
-    await expect(page.locator(PALETTE_FRAME)).toBeHidden();
     expect(new URL(page.url()).pathname).toBe('/view/PROJ-123');
+
+    // 確定後の Enter で先頭行（ボード）が開く
+    await cdp.send('Input.insertText', { text: 'ぼーど' });
+    await expect(input).toHaveValue('ぼーど');
+    await page.keyboard.press('Enter');
+    await page.waitForURL('**/board/PROJ');
+    await expect(page.locator(PALETTE_FRAME)).toBeHidden();
   });
 });
 

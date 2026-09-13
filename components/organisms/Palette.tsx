@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { type RefObject, useEffect, useId, useRef } from 'react';
 
 import { type Labels, useLabels } from '@/components/labels';
 import { CandidateList, optionDomId } from '@/components/organisms/CandidateList';
@@ -28,6 +28,22 @@ export type PaletteProps = PaletteView &
     width?: number;
   };
 
+/*
+ * 入力欄はパレットが描かれている間ずっとフォーカスを持つ（仮想フォーカス、§6）。
+ * マウント時だけだと、埋め込み側がフレームへフォーカスを移したときに入力欄まで戻らず、
+ * 打鍵が document に落ちて消える
+ */
+function useKeepFocus(inputRef: RefObject<HTMLInputElement | null>) {
+  useEffect(() => {
+    const focus = () => inputRef.current?.focus();
+    focus();
+    window.addEventListener('focus', focus);
+    return () => {
+      window.removeEventListener('focus', focus);
+    };
+  }, [inputRef]);
+}
+
 export function Palette(props: PaletteProps) {
   const { sections, selectedId, footer } = props;
   const labels = useLabels(props.labels);
@@ -35,9 +51,7 @@ export function Palette(props: PaletteProps) {
   const listId = `${useId()}list`;
   const handleKeyDown = usePaletteKeyHandler(props, listId);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useKeepFocus(inputRef);
 
   return (
     <Overlay onDismiss={props.onDismiss}>

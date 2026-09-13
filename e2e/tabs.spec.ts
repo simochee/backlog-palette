@@ -8,7 +8,8 @@ test.describe('拡張ページからの tabs API', () => {
     await page.goto(space.url('/view/PROJ-123'));
     await page.keyboard.press(HOTKEY);
 
-    const input = page.frameLocator(PALETTE_FRAME).locator('input');
-    await expect(input).toHaveAttribute('placeholder', 'demo.backlog.jp で検索');
+    // スコープパスの先頭の段がタブ URL から決めたスペース。未接続なので表示名はホストのまま
+    const path = page.frameLocator(PALETTE_FRAME).locator('ol li').first();
+    await expect(path).toContainText('demo.backlog.jp');
   });
 });
