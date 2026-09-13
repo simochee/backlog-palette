@@ -313,6 +313,16 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 
 ---
 
+### 5.1 M3 の E2E で確かめたこと（● 2026-09-13、偽スペース + Chromium・Firefox）
+
+偽スペースを `--host-resolver-rules`（Chromium）と CONNECT プロキシ（Firefox）で `demo.backlog.jp` に見せ、ビルドした拡張を読み込んで確認した。
+
+| # | 確認したこと | 結果 | 含意 |
+|---|---|---|---|
+| 15 | 拡張オリジン（埋め込み iframe・Service Worker）からスペースへの `Backlog-API-Key` ヘッダ付き fetch | **Chrome ではプリフライトを受けない。** content script の `matches` がホスト権限として扱われ、ヘッダ付きでも単純リクエストとして届く。プリフライトが問題になるのは権限を持たないカスタムドメイン（`requirements/surfaces.md` §8）だけ | ヘッダ認証（T-2）は Chrome では成立する。`?apiKey=` への退避はカスタムドメインと Firefox のために残す |
+| 16 | Web ページに埋めた拡張 iframe から `tabs.getCurrent()` | **Chrome では自分のタブを返す。** iframe の中でタブ URL を読み、スペースを決められる | I7 の「拡張ページが自分でタブ URL を読む」は Chrome で成立 |
+| 16-F | 同じことを Firefox（Puppeteer の WebDriver BiDi で一時インストール）で | **Firefox では埋め込み iframe に `browser.tabs` が無い**（content script 相当の権限になる）。**fetch は CORS を受ける**（Chrome と違い `matches` のホスト権限が効かず、プリフライトを拒まれると NetworkError） | Firefox では iframe → background への委譲（`requirements/tech-stack.md` §5-16 の退避）が要る。tabs は `lib/tabs`、API の fetch は差し替え fetch（D-31）の 1 点で委譲する（D-33） |
+
 ## 6. 出典一覧
 
 | 種別 | 出典 |
