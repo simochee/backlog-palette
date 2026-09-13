@@ -21,6 +21,8 @@ pnpm 12 は postinstall をデフォルトで実行しない。ネイティブ�
 | `pnpm zip` / `pnpm zip:firefox` | ストア提出用 zip |
 | `pnpm storybook` | Storybook 起動 (http://localhost:6006) |
 | `pnpm build:storybook` | Storybook 静的ビルド |
+| `pnpm test` | story をテストとして実行 |
+| `pnpm test:watch` | 同上、監視モード |
 | `pnpm compile` | 型検査 (`tsc --noEmit`) |
 
 ## ローカルのクオリティゲート
@@ -33,6 +35,7 @@ CI で検証することをローカルで繰り返さない。CI は非同期�
 - `pnpm compile`
 - `pnpm build` / `pnpm build:firefox`
 - `pnpm build:storybook`
+- `pnpm test`
 
 ローカルで動かすのは、手元で見ないと分からないものだけ。`pnpm dev` と `pnpm storybook`
 の開発サーバがこれにあたる。
@@ -120,6 +123,17 @@ How / What / Why / Why not をそれぞれの置き場所に分ける。読み�
 （「期限切れの課題は一覧から除外される」。「filterIssues が false を返す」ではない）。
 実装を読まずに入力・出力・境界条件が分かる状態を目指す。
 仕様が固まっていないうちはテストを書かない。書けないことが What の未定義を示している。
+
+テストは story の play function として書く。`@storybook/addon-vitest` が story を
+そのまま vitest のテストとして実行するため、確認したい振る舞いごとに story を足す。
+play function を持たない story も、描画時に落ちないことのテストとして数えられる。
+
+振る舞いを述べる story には `name` を付けて仕様を日本語で書く。エクスポート名は
+識別子の制約に従い、読み手が見るのは `name` の方。
+
+testing-library は `storybook/test` から import する (`within`, `userEvent`, `expect`)。
+`@testing-library/dom` や `jest-dom` のマッチャはここに同梱されているので、
+個別にインストールしない。
 
 ### コミットログ — Why
 

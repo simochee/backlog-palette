@@ -34,6 +34,14 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+
       # 前段が落ちても後続を走らせる。1 回の実行で失敗箇所が出揃わないと、
       # 直して push し直すたびに次の失敗を知ることになり往復が増える。
       - name: Type check
@@ -51,3 +59,7 @@ jobs:
       - name: Build Storybook
         if: ${{ !cancelled() }}
         run: pnpm build:storybook
+
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: pnpm test

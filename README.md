@@ -22,9 +22,10 @@ pnpm install
 | `pnpm zip` / `pnpm zip:firefox` | ストア提出用 zip |
 | `pnpm storybook` | Storybook を http://localhost:6006 で起動 |
 | `pnpm build:storybook` | Storybook を静的ビルド |
+| `pnpm test` | story をテストとして実行 |
 | `pnpm compile` | 型検査 (`tsc --noEmit`) |
 
-型検査とビルドは push のたびに CI が実行するので、手元で繰り返す必要はない。
+型検査・ビルド・テストは push のたびに CI が実行するので、手元で繰り返す必要はない。
 
 ## 構成
 

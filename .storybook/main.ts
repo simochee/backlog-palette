@@ -21,7 +21,7 @@ const rejectExtensionApi: Plugin = {
 
 const config: StorybookConfig = {
   stories: ['../components/**/*.stories.@(ts|tsx)'],
-  addons: ['@storybook/addon-docs', '@storybook/addon-a11y'],
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-vitest'],
   framework: {
     name: '@storybook/react-vite',
     options: {},
