@@ -23,7 +23,7 @@ export const HOTKEY = process.platform === 'darwin' ? 'Meta+k' : 'Control+k';
 export type DisplayCacheRow = {
   url: string;
   kind: string;
-  spaceKey: string;
+  spaceHost: string;
   projectKey: string;
   key?: string;
   title?: string;

@@ -54,7 +54,7 @@ test.describe('Firefox: パレットの注入と開閉', () => {
     await tab.keyboard.up(HOTKEY_MODIFIER);
 
     await frame.waitForFunction(
-      () => document.querySelector('input')?.placeholder === 'demo で検索',
+      () => document.querySelector('input')?.placeholder === 'demo.backlog.jp で検索',
       { timeout: 5000 },
     );
   });
