@@ -16,27 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # バージョンは package.json の devEngines が決めるので、ここは pnpm を起動できる
-      # 状態を作るだけでよい。corepack や pnpm/action-setup はワークフロー側にも
-      # バージョン指定を要求し、devEngines との二重管理になるため使わない。
-      # Node も同様に devEngines 経由で取得されるため setup-node を置かない。
-      # --allow-scripts がないと npm 11.6 以降は pnpm の postinstall を実行しない。
-      - name: Bootstrap pnpm
-        run: npm install --global --allow-scripts=pnpm pnpm@12
-
-      - name: Locate pnpm store
-        id: pnpm-store
-        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/cache@v6
+      # version も runtime も指定しない。どちらも package.json の devEngines から
+      # 読まれるので、ここに書くとバージョンが二重管理になる。
+      # cache は pnpm store が対象で、ランタイム導入より前に復元される。
+      - uses: pnpm/setup@v2
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: pnpm-${{ runner.os }}-
+          cache: true
+          require-lockfile: true
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
+      # playwright が置くブラウザ本体は pnpm store の外にあり、
+      # pnpm/setup の cache では復元されない。
       - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
