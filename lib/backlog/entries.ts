@@ -41,7 +41,13 @@ export type IssueLike = {
   updatedUser: Named;
   updated: string;
 };
-export type WikiLike = { id: number; projectId: number; name: string; updatedUser: Named; updated: string };
+export type WikiLike = {
+  id: number;
+  projectId: number;
+  name: string;
+  updatedUser: Named;
+  updated: string;
+};
 export type DocumentLike = {
   id: string;
   projectId: number;
@@ -105,11 +111,7 @@ export function wikiEntry(host: string, wiki: WikiLike, project: ProjectRef): En
   };
 }
 
-export function documentEntry(
-  host: string,
-  document: DocumentLike,
-  project: ProjectRef,
-): Entry {
+export function documentEntry(host: string, document: DocumentLike, project: ProjectRef): Entry {
   return {
     kind: 'document',
     id: document.id,

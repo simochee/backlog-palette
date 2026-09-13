@@ -67,7 +67,13 @@ describe('バッジの色', () => {
 describe('Wiki とドキュメント', () => {
   it('Wiki は ID 指定の URL、ドキュメントはプロジェクトキー入りの URL を持つ', () => {
     const updated = '2026-09-10T00:00:00Z';
-    const wiki = { id: 5, projectId: 101, name: 'リリース手順', updatedUser: user('佐藤'), updated };
+    const wiki = {
+      id: 5,
+      projectId: 101,
+      name: 'リリース手順',
+      updatedUser: user('佐藤'),
+      updated,
+    };
     const document = {
       id: 'doc-a1B2c3',
       projectId: 101,

@@ -105,7 +105,13 @@ describe('キャッシュの寿命', () => {
       queryKey: ['backlog', HOST, 'projects'],
       staleTime: 24 * 60 * 60 * 1000,
     });
-    expect(queries.statuses(HOST, 101).queryKey).toEqual(['backlog', HOST, 'projects', 101, 'statuses']);
+    expect(queries.statuses(HOST, 101).queryKey).toEqual([
+      'backlog',
+      HOST,
+      'projects',
+      101,
+      'statuses',
+    ]);
     expect(queries.assignedIssues(HOST).staleTime).toBe(5 * 60 * 1000);
   });
 
