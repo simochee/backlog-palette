@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@tanstack/pacer": "0.22.0",
+    "@tanstack/query-core": "5.102.8",
     "@tanstack/react-form": "1.33.5",
     "@webext-core/messaging": "4.0.0",
     "backlog-js": "0.20.1",
