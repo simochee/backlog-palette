@@ -1,7 +1,7 @@
 import type { Labels } from '@/components/labels';
+import { resolveLanguage } from '@/lib/i18n/language';
 import type { CachedEntry, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
-import { resolveLanguage } from '@/lib/i18n/language';
 import { settings } from '@/lib/storage/palette-items';
 import { applyColorScheme } from '@/lib/theme/colorScheme';
 
@@ -73,4 +73,3 @@ export async function createSession(): Promise<PaletteSession | undefined> {
     assigned: assignedFor(context.spaceHost, connected.has(context.spaceHost)),
   };
 }
-

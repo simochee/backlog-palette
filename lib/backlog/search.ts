@@ -19,7 +19,6 @@ export type { SearchScope };
 export type SearchRow = ResultRow;
 import type { BacklogQueries, BacklogQuery, ClientFor } from './queries';
 
-
 /** 表示上限 30（palette.md §7.3）。それ以上は取らない */
 export const SEARCH_COUNT = 30;
 /** Wiki はプロジェクト単位。search 枠 150/分を意識して並列を絞る（backlog-facts.md §3.3） */
@@ -109,7 +108,9 @@ async function searchIssues(
     .filter((issue) => plan.postFilter(issue))
     .flatMap((issue) => {
       const project = byId.get(issue.projectId);
-      return project === undefined ? [] : [toRow(issueEntry(host, issue, project), issue.updated, query)];
+      return project === undefined
+        ? []
+        : [toRow(issueEntry(host, issue, project), issue.updated, query)];
     });
 }
 

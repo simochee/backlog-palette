@@ -21,5 +21,11 @@ export function setupBacklogQueries(): BacklogQuerySetup {
   const { restored } = persistToStorage(queryClient);
   const queries = createBacklogQueries(clientFor, queryClient);
   const search = createSearchQueries(clientFor, queryClient, queries);
-  return { queryClient, queries, search, runner: createSearchRunner(queryClient, search), restored };
+  return {
+    queryClient,
+    queries,
+    search,
+    runner: createSearchRunner(queryClient, search),
+    restored,
+  };
 }

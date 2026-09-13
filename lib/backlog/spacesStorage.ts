@@ -3,7 +3,10 @@ import { apiKeys, rateLimits, spaces } from '@/lib/storage/items';
 import type { SpaceStores } from './spaces';
 
 async function removeKeyOf<T>(
-  item: { getValue: () => Promise<Record<string, T>>; setValue: (v: Record<string, T>) => Promise<void> },
+  item: {
+    getValue: () => Promise<Record<string, T>>;
+    setValue: (v: Record<string, T>) => Promise<void>;
+  },
   host: string,
 ): Promise<void> {
   const { [host]: _removed, ...rest } = await item.getValue();
