@@ -17,17 +17,24 @@ function spaceOf(index: PaletteIndex, spaceId: string): SpaceEntry | undefined {
  * 最近開いた: 課題・Wiki・ドキュメント・プロジェクトを 表示キャッシュ + 行動ログ から、頻度 × 直近性の順（§9）。
  * ページ定義は入れない。ページは次のセクションが遷移パターンで並べる担当で、同じページを 2 度出さない
  */
-function recentSection({ index, labels }: Env): BuiltSection {
+/** スコープのスペースの中だけ（D-20・D-27）。根では最近開いたを出さないので、絞れないケースは無い */
+function inScope(scope: Scope, spaceId: string): boolean {
+  return scope.kind !== 'root' && scope.spaceId === spaceId;
+}
+
+function recentSection({ index, scope, labels }: Env): BuiltSection {
   const scores = frecencyByEntity(index.activity, index.now);
   const sub = (context: string) => `${context} · ${labels.rows.recentSub}`;
   const rows: { built: Built; score: number }[] = [];
 
   for (const entry of index.cache) {
+    if (!inScope(scope, entry.spaceId)) continue;
     const score = scores.get(entityId(entry.kind, entry.id));
     if (score !== undefined)
       rows.push({ built: entityRow('recent', entry, labels, sub(entry.projectName)), score });
   }
   for (const project of index.projects) {
+    if (!inScope(scope, project.spaceId)) continue;
     const score = scores.get(entityId('project', project.id));
     const space = spaceOf(index, project.spaceId);
     if (score !== undefined && space !== undefined)
@@ -85,7 +92,8 @@ function assignedSection({ index, labels }: Env): BuiltSection {
 
 /**
  * 空状態（§9）。表示キャッシュだけで即描画し、担当課題は届いた分だけ末尾に足す。
- * 未接続のスペースでは、出せるもの（ページ）の下に接続行を 1 つ。何も無ければ接続行だけ
+ * 未接続のスペースでも「最近開いた」は表示キャッシュと行動ログだけで出せる。API が要るのは
+ * 担当課題だけなので、それを除いた [recent, pages] の下に接続行を 1 つ。何も無ければ接続行だけ
  */
 export function emptySections(
   env: Env,
@@ -94,11 +102,11 @@ export function emptySections(
 ): BuiltSection[] {
   const { labels } = env;
   const pages = pagesSection(env, scopeLabel);
+  const recent = recentSection(env);
 
   if (current !== undefined && !current.connected)
-    return [pages, { id: 'connect', rows: [connectRow('connect', undefined, labels)] }];
+    return [recent, pages, { id: 'connect', rows: [connectRow('connect', undefined, labels)] }];
 
-  const recent = recentSection(env);
   const assigned = assignedSection(env);
   if (recent.rows.length === 0 && assigned.rows.length === 0)
     return [{ id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }, pages];
