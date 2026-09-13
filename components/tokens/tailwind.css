@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+@import './palette.css';
+
+/*
+ * Tailwind の既定パレット・書体・角丸・影を initial で消し、--bp-* を写したものだけを残す。
+ * ユーティリティ名で既定値を参照できないようにして、トークン以外の色・寸法が
+ * マークアップに紛れ込む経路を塞ぐ。inline なので出力は var(--bp-*) の直接参照になり、
+ * ダークは [data-color-scheme="dark"] でのトークン再定義だけで追従する。
+ */
+@theme inline {
+  --color-*: initial;
+  --color-page: var(--bp-surface-page);
+  --color-floating: var(--bp-surface-floating);
+  --color-sunken: var(--bp-surface-sunken);
+  --color-overlay: var(--bp-surface-overlay);
+  --color-control: var(--bp-surface-control);
+  --color-row-selected: var(--bp-row-selected);
+  --color-row-accent: var(--bp-row-accent);
+  --color-row-danger: var(--bp-row-danger);
+  --color-accent: var(--bp-accent);
+  --color-accent-strong: var(--bp-accent-strong);
+  --color-accent-text: var(--bp-accent-text);
+  --color-danger: var(--bp-danger);
+  --color-danger-text: var(--bp-danger-text);
+  --color-warning: var(--bp-warning);
+  --color-default: var(--bp-text-default);
+  --color-subtle: var(--bp-text-subtle);
+  --color-disabled: var(--bp-text-disabled);
+  --color-inverse: var(--bp-text-inverse);
+  --color-border: var(--bp-border-default);
+  --color-border-strong: var(--bp-border-strong);
+  --color-ring: var(--bp-focus-ring);
+  --color-kbd-bg: var(--bp-kbd-bg);
+  --color-kbd-border: var(--bp-kbd-border);
+  --color-kbd-text: var(--bp-kbd-text);
+  --color-marker-neutral-bg: var(--bp-marker-neutral-bg);
+  --color-marker-neutral-fg: var(--bp-marker-neutral-fg);
+  --color-marker-neutral-dot: var(--bp-marker-neutral-dot);
+  --color-marker-info-bg: var(--bp-marker-info-bg);
+  --color-marker-info-fg: var(--bp-marker-info-fg);
+  --color-marker-info-dot: var(--bp-marker-info-dot);
+  --color-marker-success-bg: var(--bp-marker-success-bg);
+  --color-marker-success-fg: var(--bp-marker-success-fg);
+  --color-marker-success-dot: var(--bp-marker-success-dot);
+  --color-marker-done-bg: var(--bp-marker-done-bg);
+  --color-marker-done-fg: var(--bp-marker-done-fg);
+  --color-marker-done-dot: var(--bp-marker-done-dot);
+  --color-marker-warning-bg: var(--bp-marker-warning-bg);
+  --color-marker-warning-fg: var(--bp-marker-warning-fg);
+  --color-marker-warning-dot: var(--bp-marker-warning-dot);
+  --color-marker-danger-bg: var(--bp-marker-danger-bg);
+  --color-marker-danger-fg: var(--bp-marker-danger-fg);
+  --color-marker-danger-dot: var(--bp-marker-danger-dot);
+
+  --font-*: initial;
+  --font-body: var(--bp-font-body);
+  --font-mono: var(--bp-font-mono);
+
+  --text-*: initial;
+  --text-xs: var(--bp-size-text-xs);
+  --text-xs--line-height: 1.4;
+  --text-sm: var(--bp-size-text-sm);
+  --text-sm--line-height: 1.4;
+  --text-md: var(--bp-size-text-md);
+  --text-md--line-height: 1.45;
+  --text-lg: var(--bp-size-text-lg);
+  --text-lg--line-height: 1.4;
+
+  --radius-*: initial;
+  --radius-inner: var(--bp-radius-inner);
+  --radius-control: var(--bp-radius-control);
+  --radius-surface: var(--bp-radius-surface);
+  --radius-pill: var(--bp-radius-pill);
+
+  --shadow-*: initial;
+  --shadow-floating: var(--bp-shadow-floating);
+
+  --spacing: var(--bp-space-1);
+
+  --container-*: initial;
+  --container-narrow: 400px;
+  --container-compact: 560px;
+
+  --default-transition-duration: var(--bp-motion-fast);
+}

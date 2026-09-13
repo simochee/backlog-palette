@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'wxt';
 
 export default defineConfig({
@@ -7,4 +8,8 @@ export default defineConfig({
     name: 'Backlog Palette',
     permissions: [],
   },
+  vite: () => ({
+    plugins: [tailwindcss()],
+    css: { transformer: 'lightningcss' },
+  }),
 });

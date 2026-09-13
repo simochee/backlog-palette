@@ -5,7 +5,7 @@ import { Button } from './Button';
 
 const meta = {
   component: Button,
-  args: { onClick: fn() },
+  args: { onClick: fn(), children: '接続' },
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -13,20 +13,61 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
-  args: { variant: 'primary', children: 'Open palette' },
+  name: 'primary',
+  args: { variant: 'primary' },
 };
 
 export const Secondary: Story = {
-  args: { variant: 'secondary', children: 'Cancel' },
+  name: 'secondary',
+  args: { variant: 'secondary' },
+};
+
+export const Ghost: Story = {
+  name: 'ghost',
+  args: { variant: 'ghost' },
+};
+
+export const Danger: Story = {
+  name: 'tone が danger',
+  args: { tone: 'danger', children: '削除' },
+  render: (args) => (
+    <div className="flex gap-2">
+      <Button {...args} variant="primary" />
+      <Button {...args} variant="secondary" />
+      <Button {...args} variant="ghost" />
+    </div>
+  ),
+};
+
+export const Pill: Story = {
+  name: 'pill の容れ物の中では pill',
+  args: { shape: 'pill' },
+  render: (args) => (
+    <div className="inline-flex items-center gap-3 rounded-pill border border-border bg-floating py-1.5 pr-1.5 pl-4">
+      <span className="text-sm text-subtle">容れ物</span>
+      <Button {...args} />
+    </div>
+  ),
+};
+
+export const Busy: Story = {
+  name: 'busy のときはスピナーが出て押せない',
+  args: { busy: true, children: '接続中…' },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(canvas.getByRole('button', { name: '接続中…' }));
+
+    await expect(args.onClick).not.toHaveBeenCalled();
+  },
 };
 
 export const ClickInvokesHandler: Story = {
   name: 'クリックすると onClick が呼ばれる',
-  args: { children: 'Open palette' },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Open palette' }));
+    await userEvent.click(canvas.getByRole('button', { name: '接続' }));
 
     await expect(args.onClick).toHaveBeenCalledTimes(1);
   },
@@ -34,11 +75,11 @@ export const ClickInvokesHandler: Story = {
 
 export const DisabledIgnoresClick: Story = {
   name: '無効なときはクリックしても onClick が呼ばれない',
-  args: { children: 'Open palette', disabled: true },
+  args: { disabled: true },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Open palette' }));
+    await userEvent.click(canvas.getByRole('button', { name: '接続' }));
 
     await expect(args.onClick).not.toHaveBeenCalled();
   },

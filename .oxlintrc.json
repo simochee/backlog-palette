@@ -35,15 +35,29 @@
 
     // React の props 型に Readonly<> を付ける慣習はなく、@types/react 由来の型も
     // readonly ではない。全 props が違反になり、シグナルが埋もれる。
-    "typescript/prefer-readonly-parameter-types": "off"
+    "typescript/prefer-readonly-parameter-types": "off",
+
+    // organisms の合成部品 (Palette / SidePanel) は 6〜7 個の部品と辞書・型を束ねるのが
+    // 役割で、既定の 10 では合成そのものが違反になる。
+    "import/max-dependencies": ["error", { "max": 15 }],
+
+    // 候補リストは role="listbox" / role="option" を div に付けて自前で描く (D-13)。
+    // 仮想フォーカス (aria-activedescendant) と行の中の複数要素 (バッジ・キー記号) は
+    // <select> / <option> では表現できない。トーストの role="status" は <output> で書く。
+    "jsx-a11y/prefer-tag-over-role": "off"
   },
   "overrides": [
     {
-      "files": ["**/*.stories.tsx"],
+      "files": ["**/*.stories.tsx", "**/*.invariants.ts"],
       "rules": {
         // storybook の `fn()` はスパイの呼び出し記録を返す。戻り値を無視する void 型の
         // props に渡すのが addon-vitest の想定する使い方で、誤用ではない。
-        "typescript/strict-void-return": "off"
+        "typescript/strict-void-return": "off",
+
+        // play function はキー操作を利用者と同じ順序で送る。行を ↓ で辿りながら
+        // Enter を検査するようなループは逐次でなければ意味がなく、Promise.all に
+        // 置き換えると操作の順序が消える。
+        "eslint/no-await-in-loop": "off"
       }
     }
   ]

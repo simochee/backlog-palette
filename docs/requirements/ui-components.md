@@ -28,14 +28,14 @@ export type Badge = { label: string; tone: Tone };
 export type RowHint = 'enter' | 'modEnter' | 'descend' | 'complete' | 'stack';
 
 export type RowView = {
-  id: string;
+  id: string;                    // セクション横断で一意。同じ対象が複数セクションに並ぶなら接頭辞で分ける（選択・↑↓ は id で引く）
   kind: RowKind;
   code?: string;                 // 等幅の短い識別子（PROJ-123）
   title: string;                 // 1 行省略 + title 属性
   sub?: string;                  // 補足。「·」区切りの平文。組み立ては呼び出し側
   marker?: Badge;                // 状態（ステータス相当）
   tag?: Badge;                   // 分類（課題種別相当）
-  space?: { label: string };     // 出自バッジ。全スペースのときだけ渡る
+  space?: { label: string; icon?: string };  // 出自バッジ。全スペースのときだけ渡る。label はスペース名、icon はアイコン画像の URL
   hints: readonly RowHint[];
   tone?: 'default' | 'accent' | 'danger';
   busy?: boolean;                // 検索中… のスピナー
@@ -52,6 +52,7 @@ export type PathSegmentView = {
   id: string;
   label: string;
   badge?: boolean;               // スペース・プロジェクトのバッジを添える
+  icon?: string;                 // バッジに使うアイコン画像。無ければ頭文字
   armed?: boolean;               // 削除待ち。取り消し線 + 警告色
   compact?: boolean;             // ラベルを畳んでバッジだけにする
 };
@@ -100,18 +101,19 @@ export type FilterField = {
   neutralValue?: string;         // 無条件を表す選択肢。value がこれと違えば「効いている」
 };
 
-export type SpaceProgress = {
+/** 検索の単位（種別）ごとの進捗。スペース横断はしない（D-20）ので単位はスペースではない */
+export type SearchProgress = {
   id: string; label: string;
   state: 'loading' | 'ready' | 'error';
   count?: number; message?: string;
-  action?: { label: string };    // 「再接続」。押下は onSpaceAction(id)
+  action?: { label: string };    // 「再接続」。押下は onProgressAction(id)
 };
 
 export type PanelView = {
   input: { value: string; placeholder: string };
   recentQueries: readonly string[];
   filters: readonly FilterField[];
-  spaces: readonly SpaceProgress[];
+  progress: readonly SearchProgress[];
   sections: readonly SectionView[];
   selectedId?: string;
   footer: readonly KeyHint[];
@@ -137,7 +139,7 @@ components/
   atoms/
     Kbd.tsx                      キー記号の並び。dim で薄く
     Badge.tsx                    marker / tag 用。tone で色、dot で先頭に点
-    SpaceBadge.tsx               頭文字 1〜2 文字の出自バッジ
+    SpaceBadge.tsx               出自バッジ。アイコン画像があれば画像、無ければ頭文字 1〜2 文字
     KindIcon.tsx                 RowKind → アイコン。写像はこのファイルだけが知る
     Spinner.tsx
     Button.tsx                   既存。tone に danger を足す
@@ -152,14 +154,14 @@ components/
     SettingRow.tsx               設定画面の 1 行（ラベル・説明・コントロール）
   organisms/
     CandidateList.tsx            SectionView[] を role="listbox" で描く。仮想フォーカス、selectedId は controlled
-    PaletteHeader.tsx            ScopePath + PaletteInput + esc ヒント + 削除待ちの予告
+    PaletteHeader.tsx            ScopePath + PaletteInput + esc ヒント（削除待ちの予告はこの位置に入れ替わる）
     PaletteFooter.tsx            KeyHints + Toast／銘
     Palette.tsx                  上 3 つを束ね、キー処理を 1 箇所に持つ。PaletteView とコールバックだけを受ける
     FilterBar.tsx                常設フィルターバー。単一選択のラジオとして描く。compact 形（surfaces §5.3）
-    StatusStrip.tsx              スペース単位の進捗・件数・エラー。リストの外に固定
+    StatusStrip.tsx              種別単位の進捗・件数・エラー。リストの外に固定
     RecentQueries.tsx            入力欄が空のときの最近の検索
     SidePanel.tsx                入力 + RecentQueries + FilterBar + StatusStrip + CandidateList。PanelView を受ける
-    ConnectSheet.tsx             API キーの貼り付けシート（surfaces §1）。OAuth の副ボタンつき
+    ConnectSheet.tsx             API キーの貼り付けバー（surfaces §1）。画面下部中央の横長。入力欄とボタンだけ
     SpaceList.tsx                設定画面の接続スペース一覧
     CustomDomainForm.tsx         カスタムドメインの追加（surfaces §8）
   templates/
@@ -190,7 +192,7 @@ type PaletteProps = PaletteView & {
 ```
 
 `SidePanel` も同じ形（`PanelView` + コールバック）。フィルターの変更は `onFilterChange(fieldId, optionId)`、
-ステータス帯の操作は `onSpaceAction(spaceId)`。行の動作・キー処理は `Palette` と同じ規則を共有する。
+ステータス帯の操作は `onProgressAction(id)`。行の動作・キー処理は `Palette` と同じ規則を共有する。
 
 キー処理（§palette 6・13）は `Palette` の 1 箇所に置く。`isComposing` の捨て方、`Tab` の既定動作の抑止、
 `Enter` の宛先を DOM から引き直す規則はここ。**molecules はキーを解釈しない。**
@@ -201,7 +203,7 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 `isComposing` の無視の 3 つを**キャプチャ段階で先回りして潰す**形になった（評価 §3）。
 本実装では `CandidateList` を自前で書く（`role="listbox"` / `role="option"` / `aria-activedescendant`、
 選択は controlled）。必要な挙動は 150 行程度で、外部ライブラリの内部状態と戦う箇所が無くなる。
-ダイアログ・スイッチ・セレクトのような**入力欄と競合しない部品**には react-aria-components を使ってよい。
+Popover・Switch・RadioGroup のような**入力欄と競合しない部品**には Radix Primitives を使う（D-17）。
 
 ---
 
@@ -218,7 +220,7 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 --bp-marker-{neutral|info|success|done|warning|danger}-{bg|fg|dot}
 --bp-font-body / --bp-font-mono
 --bp-size-text-{xs|sm|md} / --bp-size-header / --bp-size-footer / --bp-size-row
---bp-radius-{control|surface|pill}
+--bp-radius-{inner|control|surface|pill}   入れ子は同心円: 内側 = 外側 − 余白。surface の中に space-2 で置くものは inner。pill の中は pill
 --bp-space-{1..8}          4px 刻み
 --bp-shadow-floating
 --bp-width-palette         640px
@@ -226,6 +228,8 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 
 - ライトを `:root` / `[data-color-scheme="light"]` に、ダークを `[data-color-scheme="dark"]` に。**同一要素セレクタと子孫セレクタを併記**する（MVP でダークが効かなかった罠）
 - Storybook の toolbar に light / dark を持ち、全 story を両方で見る
+- 見た目は Tailwind CSS v4 で書く（D-18）。`--bp-*` を `@theme inline` で Tailwind のテーマに写し、部品はテーマ経由のユーティリティか
+  `h-(--bp-size-row)` のようなトークン参照だけを使う。幅の分岐は `--container-*` トークンを持つコンテナクエリ（`@max-narrow:` など）
 
 ---
 
@@ -234,7 +238,7 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 `components/fixtures/` に日本語の現実的なダミーを置く。目的は**長さと記号の混在**を再現すること。
 
 - プロジェクト名: `Webリニューアル` `モバイルアプリ v3` `社内ヘルプデスク`
-- スペース: `nulab` `acme` `beta`
+- スペース: `nulab` `acme` `beta`（表示名は `ヌーラボ` `Acme Inc.` `ベータ開発`。バッジに出るのは表示名とアイコン）
 - 課題キー: `PROJ-` `MOB-` `HELP-`
 - 長い件名（40 文字以上）を最低 1 件: `受託案件 請求フロー標準手順（2024 改訂）に基づく請求書テンプレートの差し替え依頼`
 - 人名: `田中 拓也` `佐藤 美咲` `山本 遼`
@@ -267,7 +271,7 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 |---|---|
 | `Kbd` | 単キー／複数キー／dim |
 | `Badge` | 6 つの tone が並ぶ／dot つき |
-| `SpaceBadge` | 英字キー／日本語ラベルは頭文字 1 文字 |
+| `SpaceBadge` | 英字キー／日本語ラベルは頭文字 1 文字／アイコン画像があれば画像 |
 | `KindIcon` | 全 RowKind が並ぶ（写像の抜けを描画で検出） |
 | `ResultRow` | 課題（コード + マーカー + タグ + バッジ）／ページ／プロジェクト（`⇥` のヒント）／コマンド `›`／検索行（アクセント）／未接続（危険色）／検索中（スピナー）／**長い件名は 1 行で省略され title 属性に全文を持つ**／**選択行は左端の罫とタイトルの太字で示される**／**ヒントが空なら何も描かれない**／幅 360 |
 | `SectionHeader` | 見出しだけ／補足つき |
@@ -280,12 +284,12 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 
 | 部品 | story（name） |
 |---|---|
-| `CandidateList` | 3 セクション／**↓ で選択が次の行へ移り末尾で止まる**／**↑ は先頭で止まる**／**セクション見出しは選択の対象にならない**／**クリックで onAction が呼ばれ、ホバーでは選択が動かない**／**selectedId が変わると aria-activedescendant が追従する** |
+| `CandidateList` | 3 セクション／**↓ で選択が次の行へ移り末尾で止まる**／**↑ は先頭で止まる**／**セクション見出しは選択の対象にならない**／**クリックで onAction が呼ばれ、ホバーは強調されるが選択は動かない**／**selectedId が変わると aria-activedescendant が追従する** |
 | `PaletteHeader` | 通常／削除待ちの予告つき／esc ラベルが「1 つ前に戻る」 |
 | `PaletteFooter` | ヒントのみ／トーストつき（ヒントは消えない） |
-| `ConnectSheet` | 入力待ち／送信中／エラー／完了／**Enter で接続が送信される**／**変換中の Enter では送信されない**／**空のまま接続は押せない**／**OAuth の副ボタンで onOAuth が呼ばれる** |
-| `FilterBar` | 条件なし／2 条件が効いている（強調）／compact／プロジェクトが「すべて」でステータスが組み込みだけ／**選択肢は 1 つだけ選べる**／**neutral に戻すと強調が消える**／**「条件をすべて外す」でスコープは変わらない** |
-| `StatusStrip` | 全部 ready（1 行に畳む）／読み込み中を含む／エラーと再接続ボタン／**再接続を押すと onSpaceAction が呼ばれる** |
+| `ConnectSheet` | 入力待ち（画面下部中央の横長）／送信中／エラー／完了／**Enter で接続が送信される**／**変換中の Enter では送信されない**／**空のまま接続は押せない** |
+| `FilterBar` | 条件なし／2 条件が効いている（強調）／compact／プロジェクトが「すべて」でステータスが組み込みだけ（スペースの項目に「全スペース」は無い、D-20）／**選択肢は 1 つだけ選べる**／**neutral に戻すと強調が消える**／**「条件をすべて外す」でスコープは変わらない** |
+| `StatusStrip` | 全部 ready（1 行に畳む）／読み込み中を含む／エラーと再接続ボタン／**再接続を押すと onProgressAction が呼ばれる** |
 | `RecentQueries` | 5 件／0 件（描かない）／**クリックで onPick が呼ばれる** |
 | `CustomDomainForm` | 空／入力中／追加済み一覧／**不正なホストでは追加できない** |
 | `SpaceList` | 接続済み 3 件／要再接続を含む／0 件の案内／**削除は 1 回目で確認になり 2 回目で onDisconnect が呼ばれる** |
@@ -303,12 +307,12 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | S3 | 課題キーを入力中（`PROJ-12`） | 直接ジャンプ行が先頭で選択されアクセント面を持つ／⌘↵ で newTab: true |
 | S4 | 自由テキスト（`ログイン`） | 検索行が先頭／強い一致がある入力では候補が先頭で検索行が 2 番目 |
 | S5 | 検索中 | 検索行の直下に検索中の行があり選択されている／見出しの補足に進捗が出る |
-| S6 | 検索結果あり（全スペース） | 行にスペースバッジが出る／保留通知行の Enter で onAction が呼ばれる |
+| S6 | 検索結果あり | 見出しの補足に種別ごとの件数／保留通知行の Enter で onAction が呼ばれる |
 | S7 | 検索 0 件 | 案内行 → 広げる提案（アクセント）→ 本体検索 の順 |
 | S8 | スコープ削除待ち | 右端の段が取り消し線／予告が出る／フッターの ⌫ ラベルが変わる |
-| S9 | コマンド階層（スペースを切り替え） | 引数の行だけが並ぶ／esc ラベルが「1 つ前に戻る」／Esc で onEscape |
-| S10 | 未接続スペースがある全スペース検索 | 末尾に接続行が 1 つ。バナーは無い |
-| S11 | 一部スペースが認証切れ | 末尾に再接続行。他の結果は出ている |
+| S9 | コマンド階層（`[space]` からスペースを切り替え） | 引数の行だけが並ぶ／esc ラベルが「1 つ前に戻る」／Esc で onEscape |
+| S10 | 根（スペースを外した後） | 検索行が無い／接続済みスペースは space 行、未接続は connect 行／共通ページのセクションが出る（D-20） |
+| S11 | 認証切れ | 結果は無く再接続行だけ。パレット全体はエラー画面にならない（I6） |
 | S12 | コピー直後 | フッター右端にトースト、ヒントは消えない |
 | S13 | `#もば` でプロジェクト行を選択中 | フッターの ⇥ ラベルが「スコープに積む」／Tab で onTake、Enter で onAction |
 | — | 狭い幅（360） | ↵ が残り、補足が隠れ、パスがバッジだけになる |
@@ -322,9 +326,9 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | # | 状態 | 固有の検査（name） |
 |---|---|---|
 | P1 | 初期（前回の語と最近の検索） | 入力欄が空で ↑ を押すと onInputChange に直前の語が渡る |
-| P2 | 結果あり（幅 380、compact） | 行にスペースバッジが出る／⇥ は補完だけで積む行が無い |
-| P3 | スペース単位の逐次到着 | ステータス帯に読み込み中とエラーが並び、結果の行は動かない |
-| P4 | 0 件 | 条件を外す提案が先頭 → スコープ → 本体検索 |
+| P2 | 結果あり（幅 380、compact） | ⇥ は補完だけで積む行が無い／スペースの項目は単一選択で「全スペース」が無い |
+| P3 | 種別単位の逐次到着 | ステータス帯に読み込み中とエラーが並び、結果の行は動かない |
+| P4 | 0 件 | 条件を外す提案が先頭 → プロジェクトを外す → 本体検索 |
 | P5 | フィルター変更直後 | onFilterChange が呼ばれ、結果は検索中の表示になる |
 
 ---

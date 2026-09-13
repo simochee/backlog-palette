@@ -1,0 +1,167 @@
+/*
+ * 役割で名前を付ける。--bp-marker-info が青である必要はない。
+ * ライトは :root と [data-color-scheme="light"] に、ダークは [data-color-scheme="dark"] に置く。
+ * 属性がルート以外の要素（iframe 内のラッパーなど）に付くことがあるため、
+ * ルート限定のセレクタにせず、属性を持つ要素とその子孫の両方に効く形で書く。
+ */
+:root,
+[data-color-scheme='light'] {
+  color-scheme: light;
+
+  --bp-surface-page: #eef0f3;
+  --bp-surface-floating: #ffffff;
+  --bp-surface-sunken: #f4f5f7;
+  --bp-surface-overlay: rgb(15 23 42 / 45%);
+  --bp-surface-control: #ffffff;
+
+  --bp-row-selected: #eaf0ff;
+  --bp-row-accent: #f0f6ff;
+  --bp-row-danger: #fff1f0;
+
+  --bp-accent: #2f6fed;
+  --bp-accent-strong: #1f57c9;
+  --bp-accent-text: #ffffff;
+  --bp-danger: #d93025;
+  --bp-danger-text: #ffffff;
+  --bp-warning: #b45309;
+
+  --bp-text-default: #1f2937;
+  --bp-text-subtle: #6b7280;
+  --bp-text-disabled: #9ca3af;
+  --bp-text-inverse: #ffffff;
+
+  --bp-border-default: #e5e7eb;
+  --bp-border-strong: #cbd5e1;
+  --bp-focus-ring: rgb(47 111 237 / 45%);
+
+  --bp-kbd-bg: #f3f4f6;
+  --bp-kbd-border: #d1d5db;
+  --bp-kbd-text: #374151;
+
+  --bp-marker-neutral-bg: #f1f5f9;
+  --bp-marker-neutral-fg: #475569;
+  --bp-marker-neutral-dot: #94a3b8;
+  --bp-marker-info-bg: #e0f2fe;
+  --bp-marker-info-fg: #0369a1;
+  --bp-marker-info-dot: #0ea5e9;
+  --bp-marker-success-bg: #dcfce7;
+  --bp-marker-success-fg: #15803d;
+  --bp-marker-success-dot: #22c55e;
+  --bp-marker-done-bg: #ede9fe;
+  --bp-marker-done-fg: #6d28d9;
+  --bp-marker-done-dot: #8b5cf6;
+  --bp-marker-warning-bg: #fef3c7;
+  --bp-marker-warning-fg: #b45309;
+  --bp-marker-warning-dot: #f59e0b;
+  --bp-marker-danger-bg: #fee2e2;
+  --bp-marker-danger-fg: #b91c1c;
+  --bp-marker-danger-dot: #ef4444;
+
+  --bp-shadow-floating: 0 16px 48px rgb(15 23 42 / 24%), 0 0 0 1px rgb(15 23 42 / 6%);
+
+  --bp-font-body:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Noto Sans JP', 'Yu Gothic UI', sans-serif;
+  --bp-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Noto Sans Mono', monospace;
+
+  --bp-size-text-xs: 11px;
+  --bp-size-text-sm: 12px;
+  --bp-size-text-md: 14px;
+  --bp-size-text-lg: 16px;
+  --bp-size-header: 52px;
+  --bp-size-footer: 34px;
+  --bp-size-row: 40px;
+  --bp-size-icon: 16px;
+  --bp-size-control: 32px;
+
+  /*
+   * 入れ子の角丸は同心円にする: 内側の半径 = 外側の半径 − 余白。
+   * surface (12px) の中に space-2 (8px) の余白で置くものは inner (4px)。
+   * pill の中に置くものは pill。外側の半径以上に内側へ寄っているものは自由。
+   */
+  --bp-radius-inner: 4px;
+  --bp-radius-control: 6px;
+  --bp-radius-surface: 12px;
+  --bp-radius-pill: 999px;
+
+  --bp-space-1: 4px;
+  --bp-space-2: 8px;
+  --bp-space-3: 12px;
+  --bp-space-4: 16px;
+  --bp-space-5: 20px;
+  --bp-space-6: 24px;
+  --bp-space-7: 28px;
+  --bp-space-8: 32px;
+
+  --bp-width-palette: 640px;
+  --bp-width-sheet: 560px;
+  --bp-width-options: 720px;
+  --bp-offset-palette: 12vh;
+  --bp-height-list-max: 60vh;
+  --bp-breakpoint-panel-compact: 480px;
+
+  --bp-motion-fast: 120ms;
+}
+
+:root[data-color-scheme='dark'],
+[data-color-scheme='dark'] {
+  color-scheme: dark;
+
+  --bp-surface-page: #111318;
+  --bp-surface-floating: #1c1f26;
+  --bp-surface-sunken: #14161c;
+  --bp-surface-overlay: rgb(0 0 0 / 55%);
+  --bp-surface-control: #23262f;
+
+  --bp-row-selected: #2a3550;
+  --bp-row-accent: #1f2a44;
+  --bp-row-danger: #3a1f1f;
+
+  --bp-accent: #6d9cff;
+  --bp-accent-strong: #8db1ff;
+  --bp-accent-text: #0b1220;
+  --bp-danger: #ff6b6b;
+  --bp-danger-text: #1a0a0a;
+  --bp-warning: #f4b45a;
+
+  --bp-text-default: #e5e7eb;
+  --bp-text-subtle: #9aa3b2;
+  --bp-text-disabled: #6b7280;
+  --bp-text-inverse: #111318;
+
+  --bp-border-default: #2c313c;
+  --bp-border-strong: #454c5a;
+  --bp-focus-ring: rgb(109 156 255 / 55%);
+
+  --bp-kbd-bg: #2a2e38;
+  --bp-kbd-border: #3d4350;
+  --bp-kbd-text: #d1d5db;
+
+  --bp-marker-neutral-bg: #2a2f3a;
+  --bp-marker-neutral-fg: #b6bfcc;
+  --bp-marker-neutral-dot: #7d879a;
+  --bp-marker-info-bg: #12324a;
+  --bp-marker-info-fg: #7dd3fc;
+  --bp-marker-info-dot: #38bdf8;
+  --bp-marker-success-bg: #123527;
+  --bp-marker-success-fg: #86efac;
+  --bp-marker-success-dot: #4ade80;
+  --bp-marker-done-bg: #2b2250;
+  --bp-marker-done-fg: #c4b5fd;
+  --bp-marker-done-dot: #a78bfa;
+  --bp-marker-warning-bg: #3d2c0f;
+  --bp-marker-warning-fg: #fcd34d;
+  --bp-marker-warning-dot: #fbbf24;
+  --bp-marker-danger-bg: #431a1a;
+  --bp-marker-danger-fg: #fca5a5;
+  --bp-marker-danger-dot: #f87171;
+
+  --bp-shadow-floating: 0 16px 48px rgb(0 0 0 / 60%), 0 0 0 1px rgb(255 255 255 / 8%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-color-scheme] {
+    --bp-motion-fast: 0ms;
+  }
+}
