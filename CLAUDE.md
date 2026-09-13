@@ -2,6 +2,13 @@
 
 WXT + React + Storybook で作るブラウザ拡張。
 
+## 要件
+
+要件は `docs/requirements/` にある。実装に入る前に `README.md` → `principles.md` → `palette.md` の
+順で読む。UI を書くときは `ui-components.md` の story カタログが仕様。
+Backlog の API・URL・ドメインの事実は `docs/backlog-facts.md` の台帳を見る。**再調査しない。**
+決めていないことは `docs/requirements/decisions.md` にあり、決めたらそこに理由を残す。
+
 ## 環境
 
 `package.json` の `devEngines` で Node 24.x (LTS) / pnpm 12.4.1 に固定している。
