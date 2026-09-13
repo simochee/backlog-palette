@@ -106,8 +106,9 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
     await use(worker);
   },
 
-  context: async ({ extensionBrowser, serviceWorker }, use) => {
+  context: async ({ extensionBrowser, serviceWorker, space }, use) => {
     await use(extensionBrowser);
+    space.api.reset();
     /*
      * 次のテストへ状態を持ち越さない。消すのは自分が書く item だけ。
      * storage.local.clear() は設定まで消し、2 件目以降のテストを壊す（mvp の罠）。
