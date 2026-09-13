@@ -1,7 +1,7 @@
 import type { Labels } from '@/components/labels';
+import { resolveLanguage } from '@/lib/i18n/language';
 import type { CachedEntry, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
-import { resolveLanguage } from '@/lib/i18n/language';
 import { settings } from '@/lib/storage/palette-items';
 import { applyColorScheme } from '@/lib/theme/colorScheme';
 
@@ -9,6 +9,7 @@ import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
 import { labelsFor } from './language.ts';
+import { revalidateInBackground } from './revalidate.ts';
 import type { SearchRunner } from './search.ts';
 import { type Restore, restoreFrom } from './share.ts';
 import { readConnectedSpaces } from './spaces.ts';
@@ -63,6 +64,8 @@ export async function createSession(): Promise<PaletteSession | undefined> {
     window.matchMedia('(prefers-color-scheme: dark)').matches,
   );
 
+  revalidateInBackground(index, context.spaceHost, connected.has(context.spaceHost));
+
   return {
     context,
     index,
@@ -73,4 +76,3 @@ export async function createSession(): Promise<PaletteSession | undefined> {
     assigned: assignedFor(context.spaceHost, connected.has(context.spaceHost)),
   };
 }
-

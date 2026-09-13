@@ -55,30 +55,57 @@ describe('再取得する課題の選び方', () => {
 });
 
 describe('再取得の結果の写し方', () => {
-  const entries = [issue('PROJ-2', '古い件名', 2), wiki, issue('PROJ-1', undefined, 1)];
+  const open = { id: 1, name: '未対応' };
+  const doing = { id: 2, name: '処理中' };
+  const entries = [
+    { ...issue('PROJ-2', '古い件名', 2), status: open, assignee: '田中' },
+    wiki,
+    issue('PROJ-1', undefined, 1),
+  ];
 
-  it('件名が変わった行だけ更新し、visitedAt と並びは動かさない', () => {
+  it('件名・ステータス・担当者が変わった行だけ更新し、visitedAt と並びは動かさない', () => {
     const { entries: next, changed } = applyRevalidated(entries, [
-      { spaceHost: DEMO, issueKey: 'PROJ-2', summary: '新しい件名' },
-      { spaceHost: DEMO, issueKey: 'PROJ-1', summary: '初めて分かった件名' },
+      {
+        spaceHost: DEMO,
+        issueKey: 'PROJ-2',
+        current: { summary: '新しい件名', status: doing, assignee: '鈴木' },
+      },
+      {
+        spaceHost: DEMO,
+        issueKey: 'PROJ-1',
+        current: { summary: '初めて分かった件名', status: open },
+      },
     ]);
 
     expect(changed).toBe(2);
     expect(next.map((e) => e.url)).toEqual(entries.map((e) => e.url));
     expect(next.map((e) => e.visitedAt)).toEqual([2, 5, 1]);
-    expect(next[0]?.title).toBe('新しい件名');
-    expect(next[2]?.title).toBe('初めて分かった件名');
+    expect(next[0]).toMatchObject({ title: '新しい件名', status: doing, assignee: '鈴木' });
+    expect(next[2]).toMatchObject({ title: '初めて分かった件名', status: open });
   });
 
-  it('件名が同じなら何も変えない', () => {
+  it('何も変わっていなければ何も変えない', () => {
     const { changed } = applyRevalidated(entries, [
-      { spaceHost: DEMO, issueKey: 'PROJ-2', summary: '古い件名' },
+      {
+        spaceHost: DEMO,
+        issueKey: 'PROJ-2',
+        current: { summary: '古い件名', status: open, assignee: '田中' },
+      },
     ]);
 
     expect(changed).toBe(0);
   });
+});
 
-  it('消えた課題（summary 無し）は残し、件名も触らない', () => {
+describe('再取得できなかった課題の扱い', () => {
+  const open = { id: 1, name: '未対応' };
+  const entries = [
+    { ...issue('PROJ-2', '古い件名', 2), status: open, assignee: '田中' },
+    wiki,
+    issue('PROJ-1', undefined, 1),
+  ];
+
+  it('消えた課題（current 無し）は残し、何も触らない', () => {
     const { entries: next, changed } = applyRevalidated(entries, [
       { spaceHost: DEMO, issueKey: 'PROJ-2' },
     ]);
@@ -90,7 +117,11 @@ describe('再取得の結果の写し方', () => {
 
   it('別スペースの同じキーには写さない', () => {
     const { changed } = applyRevalidated(entries, [
-      { spaceHost: 'other.backlog.com', issueKey: 'PROJ-2', summary: '別物' },
+      {
+        spaceHost: 'other.backlog.com',
+        issueKey: 'PROJ-2',
+        current: { summary: '別物', status: open },
+      },
     ]);
 
     expect(changed).toBe(0);
