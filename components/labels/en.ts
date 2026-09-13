@@ -123,6 +123,7 @@ export const en: Labels = {
     doneTitle: (space) => `Connected to ${space}`,
     close: 'Close',
     invalidKey: 'The key is not valid',
+    failed: 'Could not connect to this space',
   },
   options: {
     spacesTitle: 'Connected spaces',
