@@ -13,10 +13,7 @@ export function Spinner({ label, className }: SpinnerProps) {
       role={label === undefined ? undefined : 'status'}
       aria-label={label}
       aria-hidden={label === undefined ? true : undefined}
-      className={cn(
-        'size-(--bp-size-icon) shrink-0 animate-spin text-subtle motion-reduce:animate-none',
-        className,
-      )}
+      className={cn('size-(--bp-size-icon) shrink-0 animate-spin text-subtle', className)}
     />
   );
 }
