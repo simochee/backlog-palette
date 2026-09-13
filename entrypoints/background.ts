@@ -1,6 +1,7 @@
 import { browser, defineBackground } from '#imports';
 import { serializeResponse } from '@/lib/backlog/delegatedFetch';
-import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
+import { restoreCustomHosts } from '@/lib/backlog/customDomainsRegistry';
+import { isKnownSpaceOrigin } from '@/lib/backlog/spaceOrigins';
 import { onMessage } from '@/lib/messaging/background';
 import type { CurrentTab } from '@/lib/tabs/types';
 import { pruneDisplayCache } from '@/lib/visits/record';
@@ -67,7 +68,7 @@ function serveTabsDelegation() {
  */
 function serveFetchDelegation() {
   onMessage('fetchBacklog', async ({ data }) => {
-    if (!isBacklogSpaceOrigin(new URL(data.url).origin)) {
+    if (!(await isKnownSpaceOrigin(new URL(data.url).origin))) {
       throw new Error('Backlog のスペース以外には委譲しない');
     }
     const response = await fetch(data.url, {
@@ -79,30 +80,39 @@ function serveFetchDelegation() {
   });
 }
 
+/** Backlog のタブではサイドパネルを開く。それ以外のタブは設定画面（surfaces.md §4。設定画面は後続の PR） */
+async function openSurfaceFor(tab: { id?: number; url?: string }): Promise<void> {
+  if (tab.id === undefined || tab.url === undefined) return;
+  if (!(await isKnownSpaceOrigin(new URL(tab.url).origin))) {
+    await browser.runtime.openOptionsPage();
+    return;
+  }
+  const sidebarAction = readSidebarAction();
+  if (sidebarAction !== undefined) {
+    sidebarAction.toggle();
+    return;
+  }
+  await browser.sidePanel.open({ tabId: tab.id });
+}
+
 export default defineBackground(() => {
   serveTabsDelegation();
   serveFetchDelegation();
 
   browser.runtime.onInstalled.addListener(() => {
     void browser.alarms.create(PRUNE_DISPLAY_CACHE, { periodInMinutes: 24 * 60 });
+    void restoreCustomHosts();
+  });
+  // 動的登録は persistAcrossSessions だが、権限の変化や更新で外れることがある。起動ごとに揃える
+  browser.runtime.onStartup.addListener(() => {
+    void restoreCustomHosts();
   });
 
   browser.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === PRUNE_DISPLAY_CACHE) void pruneDisplayCache();
   });
 
-  // Backlog のタブではサイドパネルを開く。それ以外のタブは設定画面（surfaces.md §4）
   browser.action.onClicked.addListener((tab) => {
-    if (tab.id === undefined || tab.url === undefined) return;
-    if (!isBacklogSpaceOrigin(new URL(tab.url).origin)) {
-      void browser.runtime.openOptionsPage();
-      return;
-    }
-    const sidebarAction = readSidebarAction();
-    if (sidebarAction !== undefined) {
-      sidebarAction.toggle();
-      return;
-    }
-    void browser.sidePanel.open({ tabId: tab.id });
+    void openSurfaceFor(tab);
   });
 });
