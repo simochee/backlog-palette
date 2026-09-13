@@ -2,6 +2,7 @@ import type { Decorator, Preview } from '@storybook/react-vite';
 import { type ReactNode, useEffect } from 'react';
 
 import { en, ja, LabelsProvider } from '@/components/labels';
+
 import '@/components/tokens/tailwind.css';
 import './preview.css';
 
@@ -28,7 +29,11 @@ function StoryFrame({
 
   return (
     <LabelsProvider labels={locale === 'en' ? en : ja}>
-      <div data-color-scheme={theme} className="@container font-body text-default" style={{ width }}>
+      <div
+        data-color-scheme={theme}
+        className="@container font-body text-default"
+        style={{ width }}
+      >
         {children}
       </div>
     </LabelsProvider>

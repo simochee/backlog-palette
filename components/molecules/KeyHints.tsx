@@ -64,7 +64,10 @@ export function KeyHints({ hints }: KeyHintsProps) {
   }, [hints, available]);
 
   return (
-    <div ref={containerRef} className="relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
+    >
       {visible.map((hint) => (
         <HintItem key={hint.id} hint={hint} />
       ))}

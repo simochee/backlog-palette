@@ -2,7 +2,7 @@ type SpaceBadgeProps = {
   label: string;
 };
 
-const asciiWord = /^[\x20-\x7e]+$/u;
+const asciiWord = /^[\x20-\x7E]+$/u;
 
 export function initialsOf(label: string): { first: string; second?: string } {
   const chars = Array.from(label.trim());

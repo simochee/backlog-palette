@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 
-import { ja } from '@/components/labels';
 import { projects, spaces } from '@/components/fixtures/domain';
+import { ja } from '@/components/labels';
 import type { PathSegmentView } from '@/components/types';
 
 import { ScopePath } from './ScopePath';

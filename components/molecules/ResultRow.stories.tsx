@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 
-import { ja } from '@/components/labels';
 import { longSummary, projects, spaces } from '@/components/fixtures/domain';
 import {
   commandRow,
@@ -14,6 +13,7 @@ import {
   searchRow,
   searchingRow,
 } from '@/components/fixtures/rows';
+import { ja } from '@/components/labels';
 
 import { ResultRow } from './ResultRow';
 
