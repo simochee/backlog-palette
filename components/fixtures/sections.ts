@@ -1,8 +1,11 @@
 import type { Labels } from '@/components/labels';
-import type { SectionView } from '@/components/types';
+import type { RowView, SectionView } from '@/components/types';
 
 import { projects } from './domain';
 import { commandRow, descendCommandRow, pageRow, projectRow, sampleIssues } from './rows';
+
+/** 同じ対象がページやコマンドのセクションにも並ぶので、行 id はセクション内で一意にする */
+const recent = (row: RowView, sub: string): RowView => ({ ...row, id: `recent:${row.id}`, sub });
 
 export function recentSection(labels: Labels): SectionView {
   return {
@@ -10,16 +13,13 @@ export function recentSection(labels: Labels): SectionView {
     label: labels.sections.recent,
     meta: labels.sections.learned,
     rows: [
-      { ...sampleIssues.payment, sub: `${projects.web.name} · ${labels.rows.recentSub}` },
-      pageRow(
-        'board',
-        'ボード',
-        labels,
-        projects.web,
+      recent(sampleIssues.payment, `${projects.web.name} · ${labels.rows.recentSub}`),
+      recent(
+        pageRow('board', 'ボード', labels, projects.web),
         `${projects.web.name} · ${labels.rows.recentSub}`,
       ),
-      { ...sampleIssues.pushNotice, sub: `${projects.mobile.name} · ${labels.rows.recentSub}` },
-      { ...projectRow(projects.helpdesk), sub: `プロジェクト · HELP · ${labels.rows.recentSub}` },
+      recent(sampleIssues.pushNotice, `${projects.mobile.name} · ${labels.rows.recentSub}`),
+      recent(projectRow(projects.helpdesk), `プロジェクト · HELP · ${labels.rows.recentSub}`),
     ],
   };
 }

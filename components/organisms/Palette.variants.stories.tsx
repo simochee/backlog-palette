@@ -1,13 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 
-import { hintLabel, options, s1, s6, spaces } from '@/components/fixtures';
+import { hintLabel, options, paletteCallbacks, s1, s6, spaces } from '@/components/fixtures';
 import { en, ja, type Labels, LabelsProvider } from '@/components/labels';
 import type { PaletteView } from '@/components/types';
 
 import { Palette } from './Palette';
 import { StatefulPalette } from './Palette.harness';
-import { paletteCallbacks } from './Palette.stories';
 
 const meta = {
   title: 'organisms/Palette/variants',
@@ -62,12 +61,12 @@ export const EnglishS1: Story = {
 };
 
 export const EnglishS6: Story = {
-  name: 'English — S6（ラベル長の違いでフッターが溢れないこと）',
+  name: 'English — S6（ラベルが長くても ↵ は残り、溢れた分は priority 順に落ちる）',
   args: { ...s6(en), labels: en },
   globals: { locale: 'en' },
   play: async ({ canvasElement }) => {
     await expect(hintLabel(canvasElement, 'enter')).toContain(en.keys.open);
-    await expect(hintLabel(canvasElement, 'copyUrl')).toContain(en.keys.copyUrl);
+    await expect(hintLabel(canvasElement, 'move')).toContain(en.keys.move);
   },
 };
 

@@ -160,6 +160,14 @@ export async function assertPaletteInvariants(target: Target) {
   await userEvent.click(input);
   input.setSelectionRange(input.value.length, input.value.length);
 
+  // 状態固有の検査がキーを送った後でも同じ前提から始めるため、選択を view の初期位置へ戻す
+  const initialIndex = Math.max(
+    0,
+    rows.findIndex((row) => row.id === target.view.selectedId),
+  );
+  await pressAll('ArrowUp', rows.length);
+  await pressAll('ArrowDown', initialIndex);
+
   await assertFooterKeys(input, rows, target);
   await assertRowEnter(rows, target);
   await assertTabKeepsFocus(input);

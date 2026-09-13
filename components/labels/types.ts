@@ -70,6 +70,7 @@ export type Labels = {
     switchSpace: string;
   };
   panel: {
+    title: string;
     inputLabel: string;
     placeholder: string;
     recent: string;

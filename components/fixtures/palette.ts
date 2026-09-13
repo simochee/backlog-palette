@@ -75,7 +75,7 @@ export const resultRows = (labels: Labels): RowView[] => [
   crossSpace(sampleIssues.invoice, spaces.acme.label),
   crossSpace(
     pageRow(
-      'login-history',
+      'result:login-history',
       'ログイン履歴',
       labels,
       projects.web,

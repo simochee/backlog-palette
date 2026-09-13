@@ -68,6 +68,7 @@ export const en: Labels = {
     switchSpace: 'Switch space',
   },
   panel: {
+    title: 'Advanced search',
     inputLabel: 'Search',
     placeholder: 'Type and press Enter to search',
     recent: 'Recent',

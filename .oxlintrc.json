@@ -37,6 +37,10 @@
     // readonly ではない。全 props が違反になり、シグナルが埋もれる。
     "typescript/prefer-readonly-parameter-types": "off",
 
+    // organisms の合成部品 (Palette / SidePanel) は 6〜7 個の部品と辞書・型を束ねるのが
+    // 役割で、既定の 10 では合成そのものが違反になる。
+    "import/max-dependencies": ["error", { "max": 15 }],
+
     // 候補リストは role="listbox" / role="option" を div に付けて自前で描く (D-13)。
     // 仮想フォーカス (aria-activedescendant) と行の中の複数要素 (バッジ・キー記号) は
     // <select> / <option> では表現できない。トーストの role="status" は <output> で書く。

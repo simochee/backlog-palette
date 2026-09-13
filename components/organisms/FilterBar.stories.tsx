@@ -68,7 +68,9 @@ export const SingleChoice: Story = {
     await expect(within(group).getAllByRole('radio')).toHaveLength(4);
     await expect(within(document.body).getByText(ja.panel.singleChoice)).toBeVisible();
 
-    await userEvent.click(within(group).getByRole('radio', { name: ja.panel.options.wiki }));
+    await userEvent.click(
+      within(group).getByRole('radio', { name: new RegExp(`^${ja.panel.options.wiki}`, 'u') }),
+    );
 
     await expect(args.onChange).toHaveBeenCalledTimes(1);
     await expect(args.onChange).toHaveBeenCalledWith('type', 'wiki');

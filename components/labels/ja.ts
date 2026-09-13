@@ -68,6 +68,7 @@ export const ja: Labels = {
     switchSpace: 'スペースを切り替え',
   },
   panel: {
+    title: '詳細検索',
     inputLabel: '検索語',
     placeholder: '語を入力して Enter で検索',
     recent: '最近',
