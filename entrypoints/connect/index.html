@@ -1,10 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Default Popup Title</title>
-    <meta name="manifest.type" content="browser_action" />
+    <title>Backlog Palette</title>
+    <style>
+      /* ページに重ねる iframe なので、バー以外は透ける */
+      html,
+      body {
+        margin: 0;
+        background: transparent;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

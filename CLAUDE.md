@@ -30,7 +30,7 @@ pnpm 12 は postinstall をデフォルトで実行しない。ネイティブ�
 | `pnpm build:storybook` | Storybook 静的ビルド |
 | `pnpm test` | story をテストとして実行 |
 | `pnpm test:watch` | 同上、監視モード |
-| `pnpm test:e2e` | 拡張を読み込んだ Chromium で E2E を実行。先に `pnpm build` が要る |
+| `pnpm test:e2e` | 拡張を読み込んだ Chromium と Firefox で E2E を実行。先に `pnpm build` と `pnpm build:firefox`、初回は `pnpm exec puppeteer browsers install firefox` が要る |
 | `pnpm lint` / `pnpm lint:fix` | oxlint。型検査を兼ねる |
 | `pnpm format` | oxfmt で整形 |
 

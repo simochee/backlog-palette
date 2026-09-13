@@ -38,7 +38,16 @@ export function isBacklogSpaceOrigin(origin: string, customHosts: readonly strin
   return customHosts.some((host) => origin === `https://${host}`);
 }
 
-/** origin からスペースキーを読む。スペースの origin でなければ undefined */
+/**
+ * スペースの識別子はホスト名（D-32）。`demo.backlog.jp` と `demo.backlog.com` は
+ * 別のスペースなので、サブドメインだけを切り出したキーでは区別できない。
+ * スペースの origin でなければ undefined
+ */
+export function spaceHostOf(origin: string): string | undefined {
+  return SPACE_ORIGIN.test(origin) ? new URL(origin).hostname : undefined;
+}
+
+/** 表示用の短い名前（サブドメイン）。識別には使わない */
 export function spaceKeyOf(origin: string): string | undefined {
   return SPACE_ORIGIN.exec(origin)?.[1];
 }

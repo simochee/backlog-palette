@@ -17,7 +17,7 @@
 
 ---
 
-## 1. 決定（2026-09-13、全 16 件を確認済み。M1 着手時に D-17〜D-20 を追加）
+## 1. 決定（2026-09-13、全 16 件を確認済み。M1 着手時に D-17〜D-20、M3 着手時に D-21〜D-23 を追加）
 
 各項目の「別案」は退けた理由とともに残す。覆すときは §3 に記録する。
 
@@ -150,6 +150,93 @@
   進捗の帯はスペース別ではなく**種別別**（課題・Wiki・ドキュメント）。検索状態の URL（§7.6）はスペースの URL に載るので影響しない
 - 未確認: スペース設定への共通ページを出すかは admin かどうかで変わりうる。M3 の実機確認で決める（`backlog-facts.md` に追記する）
 
+### D-21. Backlog 本体のテキスト入力にフォーカスがあるときは `⌘K` を捕捉しない（仮の境界）
+
+- **状況**: `commands` を使わない（D-10）ので、`⌘K` は content script の keydown で捕捉する。Backlog 本体のエディタや
+  `⌘K` を使う画面との境界は実機で確認するまで決められない（未決 #4、`milestones.md` M3 の人の工程）
+- **仮の決定**: フォーカスが `input`（ボタン・チェックボックス等の非テキスト型を除く）・`textarea`・`contenteditable` に
+  あるときは捕捉せず、ページに `⌘K` を通す。それ以外の場所では捕捉する。変換中（`isComposing`）は場所を問わず捕捉しない（I5）
+- **推奨**: 実機確認の結果、Backlog のエディタが `⌘K` にリンク挿入などを割り当てていれば仮の境界をそのまま採る。
+  割り当てが無ければ**テキスト入力でも捕捉する**方へ広げる。P1（覚えるのは `⌘K` だけ）は「どこで押しても開く」ことを
+  含み、入力欄にいるときだけ効かない例外は 3 番目の想定ユーザーを迷わせる
+- 退けた案: 捕捉しない領域をセレクタで列挙する（Backlog の DOM に依存し、本体の更新で壊れる）。`commands` に
+  戻す（D-10 で退けた理由がそのまま残る）
+- 判定の実装は `lib/hotkey/paletteHotkey.ts` の `isTextEntryTarget`。E2E「テキスト入力にフォーカスがあるとき `⌘K` は
+  ページに届く」がこの境界を固定している。境界を動かすときは E2E も一緒に動かす
+
+### D-22. ツールバーのアイコンに popup を持たない
+
+- **決定**: `action.default_popup` を置かず、クリックは Service Worker の `action.onClicked` が受けて
+  Backlog のタブならサイドパネル（Firefox はサイドバー）、それ以外は設定画面を開く（`surfaces.md` §4）。
+  WXT の雛形にあった `entrypoints/popup/` は消す
+- 理由: popup を置くと `action.onClicked` が発火しなくなり、§4 の「押した場所で振る舞いを変える」経路が作れない。
+  パレットは `⌘K`、詳細検索はサイドパネル、設定は設定画面と面が決まっていて、popup に載せる内容が無い
+- 退けた案: popup にミニパレットや設定へのリンクを置く。Backlog 外で `⌘K` を使わせないという D-10 の判断と
+  同じ理由で、Backlog 外での起動経路を増やさない
+
+### D-23. Firefox のアドオン ID は `backlog-palette@simochee.github.io`
+
+- **決定**: `browser_specific_settings.gecko.id` を上記に固定する。AMO の必須項目で、一度公開すると
+  変えられない（変えると別のアドオンになり、既存の利用者に更新が届かない）
+- 理由: リポジトリの公開先（GitHub Pages のホスト）を持ち主として使えば、他者と衝突せず、後から所有を示せる
+- 退けた案: GUID 形式（`{…}`）。衝突はしないが所有者が読めない。ストア提出時に別 ID を求められたら §3 に記録して差し替える
+
+### D-31. API キーは backlog-js のヘッダ認証で送り、fetch の差し替えで観測と退避を行う
+
+- **決定**: `backlog-js` 0.20.1 は `apiKey` を渡すと `Backlog-API-Key` **ヘッダ**で送る（`?apiKey=` は付けない）ので、
+  そのまま使う。ラッパー `lib/backlog/client.ts` は `fetch` を差し替えて、撃つ前にレート枠を取り（`acquire`）、
+  応答の `X-RateLimit-*` を残数に反映する。ヘッダが CORS のプリフライトを通らないと実機で分かったとき
+  （`backlog-facts.md` §5-15）の退避は、同じ差し替え fetch がヘッダをクエリへ移す形で `API_KEY_TRANSPORT` の
+  定数 1 つで切り替える
+- 理由: リクエストを自前で組むと backlog-js のパスとパラメータの知識を二重に持つことになる。fetch はもともと
+  注入できる口で、観測（ヘッダ読み）と退避（クエリ移し）の両方を 1 箇所に閉じられる
+- 退けた案: リクエストを自前で組む（backlog-js を型だけに使う）。エンドポイントの追加ごとにパスを書く手間が増え、
+  公式クライアントを採った理由（T-4）が薄れる
+- 退けた案: backlog-js の `request()` を直接呼んで Response を受ける。`get<T>()` などの型付きメソッドを捨てることになる
+- 起票: 2026-09-13、M4 PR 1
+
+### D-32. スペースの識別子はホスト名
+
+- **決定**: 鍵・レート状態・Query のキー・クライアントの単位は `demo.backlog.jp` のような**ホスト**で持つ。
+  スペースキー（`demo`）は表示や URL の解釈に使うが、識別子にはしない
+- 理由: スペースキーは `.jp` と `.com` で重なりうるうえ、Enterprise のカスタムドメイン（`surfaces.md` §8）には無い。
+  API のベース URL に要るのもホストで、鍵はホストに対して発行される
+- 含意: `lib/stack/types.ts` の `Scope.spaceId`（M2）とパレットの配線（M5）で、この値にホストを入れる。
+  接続済みスペースの一覧はホストの集合で、表示名は `GET /space` の `name` を Query のキャッシュから引く
+- 退けた案: スペースキー。短く読みやすいが上の 2 点で一意にならない
+- 起票: 2026-09-13、M4 PR 1
+
+### D-33. Firefox の埋め込み iframe では fetch を background に委譲する
+
+- **状況**: Firefox では Web ページに埋めた拡張 iframe で `browser.tabs` が undefined になり、fetch は CORS を受ける
+  （matches のホスト権限が効かない。B の Firefox スパイク、● 2026-09-13）。`tech-stack.md` §5-16 の退避が Firefox で要る
+- **決定**: 委譲点は D-31 の差し替え fetch に渡す `fetchImpl` の 1 箇所（`lib/backlog/platformFetch.ts`）。`browser.tabs` が
+  無いコンテキストだけ `runtime.sendMessage` で background に `{ url, method, headers, body }` を送り、background が fetch して
+  `{ status, statusText, headers, body }`（`X-RateLimit-*` を含む）を返す。Chrome・サイドパネル・設定画面は直接撃つ。
+  レート制御は storage 共有なのでページ側のまま動く
+- メッセージは `@webext-core/messaging` 4.0.0。protocol は `lib/messaging/background.ts`（B の tabs 委譲と同じ場所）。
+  background 側のハンドラは Backlog のスペースの origin だけを受け、任意 URL の中継にしない
+- 鍵は background に**渡さない**設計だが、差し替え fetch はヘッダに鍵を載せた Request を送るので結果として鍵が background を
+  通る。background は拡張オリジンの内側（I7 の境界内）なので許容する。background ではリクエストの内容をログに出さない
+- 退けた案: Firefox でも常に background 経由にする。Chrome で不要な往復が増え、T-2（拡張ページから直接）の判断を崩す
+- 退けた案: 環境判定を `navigator.userAgent` で行う。権限の有無が本質で、`browser.tabs` の有無がそれを直接表す
+- 起票: 2026-09-13、リードの裁定。E2E は Chrome では通れないので、B の Firefox E2E（Puppeteer BiDi）に接続導線を足す
+
+### D-34. 拡張 iframe の web_accessible_resources は https 全体に開き、検出は use_dynamic_url で防ぐ
+
+- **状況**: カスタムドメイン（`surfaces.md` §8）は利用者が設定画面で足すので、content script は
+  `scripting.registerContentScripts` で動的に登録できる。しかし `web_accessible_resources.matches` は
+  manifest の静的な値で、実行時に足せない。静的な 3 ドメインだけに絞ると、カスタムドメインのページで
+  パレットと貼り付けバーの iframe が読めない
+- **決定**: `matches` を `https://*/*` にする。ページ側からの拡張の検出は `use_dynamic_url: true` が防ぐ
+  （URL がセッションごとに変わり推測できない）。content script が注入されるページは静的な matches と
+  動的登録で絞られたままなので、iframe を作る側は変わらない
+- 退けた案: カスタムドメインの iframe だけ別の仕組み（ページ側 DOM）で出す。鍵がページのコンテキストを
+  通る（§1.1 の禁止事項）
+- 退けた案: 任意のホスト権限（`optional_host_permissions`）で `matches` も広がることを期待する。仕様上、
+  web_accessible_resources の matches は権限とは別で、実行時に変わらない
+- 起票: 2026-09-13、M4 PR 5
+
 ## 2. 決定済み（MVP から継承。理由は `mvp:docs/implementation-plan.md` §3・§19）
 
 | 決定 | 要点 |
@@ -190,6 +277,13 @@
 | 2026-09-13 | OAuth の UI | 出さない | 目視。API キーだけで足り、使う場面が無い。認可フローは SW に残してよい |
 | 2026-09-13 | 接続シートの形 | 画面下部中央の横長バー。入力欄とボタンだけ | 目視。パレットから遷移してくるので説明は要らない |
 | 2026-09-13 | スペース横断の検索 | しない（D-20）。複数登録と切り替えはする | 技術的制約。API がスペースごとに別で横断して引けない。根は切り替え先のスペースと共通ページ |
+| 2026-09-13 | テキスト入力フォーカス時の `⌘K` | 捕捉しない（D-21、仮） | 人の判断が要る。Backlog 本体のエディタとの境界は実機確認まで決められない。推奨は確認後に捕捉する側へ広げる |
+| 2026-09-13 | ツールバーの popup | 持たない（D-22） | popup があると `action.onClicked` が発火せず、押した場所で面を変える §4 の経路が作れない |
+| 2026-09-13 | Firefox のアドオン ID | `backlog-palette@simochee.github.io`（D-23） | 公開後に変えられない値。公開先のホストを持ち主にする |
+| 2026-09-13 | API キーの送り方 | backlog-js のヘッダ認証 + fetch 差し替え（D-31） | 観測と退避を 1 箇所に。自前リクエストは知識の二重化 |
+| 2026-09-13 | スペースの識別子 | ホスト名（D-32） | スペースキーは .jp/.com で重なり、カスタムドメインに無い |
+| 2026-09-13 | Firefox の埋め込み iframe からの fetch | background に委譲（D-33） | tabs が無く CORS を受ける。委譲点は fetchImpl の 1 箇所 |
+| 2026-09-13 | 拡張 iframe の web_accessible_resources | `https://*/*` + use_dynamic_url（D-34） | matches は実行時に変えられず、カスタムドメインで iframe が読めない |
 
 ---
 

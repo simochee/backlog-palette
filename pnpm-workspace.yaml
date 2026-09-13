@@ -1,2 +1,5 @@
 allowBuilds:
   esbuild: true
+  # postinstall は Chrome を落としに行く。E2E が使うのは Firefox だけで、
+  # `pnpm exec puppeteer browsers install firefox` で明示的に入れる。
+  puppeteer: false
