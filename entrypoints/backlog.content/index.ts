@@ -6,6 +6,7 @@ import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/w
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
+import { setupConnectPage } from './connect.ts';
 import { summaryFromTitle } from './title.ts';
 
 /*
@@ -168,6 +169,8 @@ export default defineContentScript({
 
     recordCurrentPage();
     ctx.addEventListener(window, 'wxt:locationchange', recordCurrentPage);
+
+    setupConnectPage(ctx, browser.runtime.getURL('/connect.html'), extensionOrigin);
 
     ctx.addEventListener(window, 'message', (event) => {
       // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する

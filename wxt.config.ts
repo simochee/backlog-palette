@@ -19,7 +19,7 @@ export default defineConfig({
     action: { default_title: 'Backlog Palette' },
     web_accessible_resources: [
       {
-        resources: ['palette.html'],
+        resources: ['palette.html', 'connect.html'],
         matches: [...BACKLOG_SPACE_MATCHES],
         // 拡張のインストール有無をページ側から検出されないようにする
         use_dynamic_url: true,
