@@ -39,8 +39,7 @@ function parseIssueKey(input: string, context: ParseContext): QueryIntent | unde
   if (found?.[1] === undefined || found[2] === undefined) return undefined;
 
   const projectKey = found[1].toUpperCase();
-  const confirmed =
-    isUppercase(found[1]) || (context.knownProjectKeys?.has(projectKey) ?? false);
+  const confirmed = isUppercase(found[1]) || (context.knownProjectKeys?.has(projectKey) ?? false);
   if (!confirmed) return undefined;
 
   const number = Number(found[2]);

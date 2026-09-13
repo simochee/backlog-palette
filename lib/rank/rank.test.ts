@@ -49,7 +49,6 @@ describe('セクション内の並び', () => {
       ]),
     ).toEqual(['fresh', 'popular']);
   });
-
 });
 
 describe('同点の中の個人化', () => {
