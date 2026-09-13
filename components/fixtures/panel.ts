@@ -7,9 +7,9 @@ import type {
   SpaceProgress,
 } from '@/components/types';
 
-import { projects, spaces, statuses } from './domain';
+import { projects, type SpaceFixture, spaces, statuses } from './domain';
 import { deriveFooter } from './footer';
-import { externalRow, hintRow, pageRow, sampleIssues, searchingRow, widenRow } from './rows';
+import { externalRow, hintRow, sampleIssues, searchingRow, widenRow } from './rows';
 
 type FilterOverrides = Partial<
   Record<'space' | 'project' | 'type' | 'status' | 'assignee' | 'updated', string>
@@ -139,22 +139,21 @@ export const mixedProgress = (labels: Labels): SpaceProgress[] => [
   },
 ];
 
-const crossSpace = (row: RowView, space: string): RowView => ({ ...row, space: { label: space } });
+const crossSpace = (row: RowView, space: SpaceFixture): RowView => ({
+  ...row,
+  space: { label: space.label, icon: space.icon },
+});
 
-export const paymentResults = (labels: Labels): RowView[] => [
-  crossSpace(sampleIssues.payment, spaces.nulab.label),
-  crossSpace(sampleIssues.password, spaces.nulab.label),
-  crossSpace(sampleIssues.invoice, spaces.acme.label),
-  crossSpace(
-    pageRow('billing', '請求設定', labels, projects.web, `スペース設定 · ${labels.rows.pageSub}`),
-    spaces.nulab.label,
-  ),
+export const paymentResults = (): RowView[] => [
+  crossSpace(sampleIssues.payment, spaces.nulab),
+  crossSpace(sampleIssues.password, spaces.nulab),
+  crossSpace(sampleIssues.invoice, spaces.acme),
   {
     id: 'wiki:payment-spec',
     kind: 'wiki',
     title: '決済まわりの仕様メモ',
     sub: `${projects.web.name} · 最終更新 田中 拓也`,
-    space: { label: spaces.nulab.label },
+    space: { label: spaces.nulab.label, icon: spaces.nulab.icon },
     hints: ['enter', 'modEnter', 'complete'],
   },
 ];
@@ -200,7 +199,7 @@ export const p2 = (labels: Labels): PanelView =>
     filters: filters(labels, { type: 'issue' }),
     spaces: allReady,
     hasResults: true,
-    sections: [{ id: 'results', rows: paymentResults(labels) }],
+    sections: [{ id: 'results', rows: paymentResults() }],
   });
 
 /** P3 スペース単位の逐次到着 */
@@ -212,7 +211,7 @@ export const p3 = (labels: Labels): PanelView =>
     sections: [
       {
         id: 'results',
-        rows: paymentResults(labels).filter((row) => row.space?.label === spaces.nulab.label),
+        rows: paymentResults().filter((row) => row.space?.label === spaces.nulab.label),
       },
     ],
   });

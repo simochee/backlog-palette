@@ -8,7 +8,12 @@ import type { PathSegmentView } from '@/components/types';
 import { ScopePath } from './ScopePath';
 
 const root: PathSegmentView = { id: 'root', label: ja.palette.rootScope };
-const space: PathSegmentView = { id: 'space', label: spaces.nulab.label, badge: true };
+const space: PathSegmentView = {
+  id: 'space',
+  label: spaces.nulab.label,
+  badge: true,
+  icon: spaces.nulab.icon,
+};
 const project: PathSegmentView = { id: 'project', label: projects.web.name, badge: true };
 const command: PathSegmentView = { id: 'command', label: ja.rows.switchSpace };
 
@@ -58,7 +63,7 @@ export const Narrow: Story = {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByText(spaces.nulab.label)).not.toBeVisible();
-    await expect(canvas.getByLabelText(spaces.nulab.label)).toBeVisible();
+    await expect(canvas.getByRole('img', { name: spaces.nulab.label })).toBeVisible();
     await expect(canvas.getByText(projects.web.name)).toBeVisible();
   },
 };

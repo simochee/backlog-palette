@@ -20,6 +20,17 @@ export const AsciiKey: Story = {
   },
 };
 
+export const WithIcon: Story = {
+  name: 'アイコン画像があれば画像',
+  args: {
+    label: 'ヌーラボ',
+    icon: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><rect width="20" height="20" rx="4" fill="#42ce9f"/><text x="10" y="14" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#fff">N</text></svg>')}`,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('img', { name: 'ヌーラボ' })).toBeVisible();
+  },
+};
+
 export const JapaneseLabel: Story = {
   name: '日本語ラベルは頭文字 1 文字',
   args: { label: 'ヌーラボ' },

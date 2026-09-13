@@ -1,11 +1,29 @@
 /**
  * 日本語の現実的なダミー。目的は長さと記号の混在を再現すること（ui-components.md §4）。
  */
+const spaceIcon = (letter: string, color: string) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><rect width="20" height="20" rx="4" fill="${color}"/><text x="10" y="14" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#fff">${letter}</text></svg>`,
+  )}`;
+
+/** label は表示名（スペース名）。キーは利用者の語彙ではないので UI に出さない。icon は API のスペース画像の代わり */
 export const spaces = {
-  nulab: { id: 'nulab', label: 'nulab', host: 'nulab.backlog.com' },
-  acme: { id: 'acme', label: 'acme', host: 'acme.backlog.jp' },
-  beta: { id: 'beta', label: 'beta', host: 'beta.backlogtool.com' },
+  nulab: {
+    id: 'nulab',
+    label: 'ヌーラボ',
+    host: 'nulab.backlog.com',
+    icon: spaceIcon('N', '#42ce9f'),
+  },
+  acme: {
+    id: 'acme',
+    label: 'Acme Inc.',
+    host: 'acme.backlog.jp',
+    icon: spaceIcon('A', '#5b8def'),
+  },
+  beta: { id: 'beta', label: 'ベータ開発', host: 'beta.backlogtool.com', icon: undefined },
 } as const;
+
+export type SpaceFixture = (typeof spaces)[keyof typeof spaces];
 
 export const projects = {
   web: { key: 'PROJ', name: 'Webリニューアル', space: spaces.nulab },

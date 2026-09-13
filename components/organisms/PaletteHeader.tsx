@@ -47,16 +47,19 @@ export function PaletteHeader({
           aria-controls={listId}
           aria-activedescendant={activeDescendant}
         />
-        <span className="flex shrink-0 items-center gap-1 text-xs text-subtle">
-          <Kbd keys={['esc']} dim />
-          <span className="@max-narrow:hidden">{escLabel}</span>
-        </span>
+        {armedNotice === undefined ? (
+          <span className="flex shrink-0 items-center gap-1 text-xs text-subtle">
+            <Kbd keys={['esc']} dim />
+            <span className="@max-narrow:hidden">{escLabel}</span>
+          </span>
+        ) : (
+          // 予告は esc ヒントの位置に入れ替えて出す。行を足すと高さが変わりレイアウトシフトになる
+          <output className="flex shrink-0 items-center gap-1 text-xs text-warning">
+            <Kbd keys={['⌫']} />
+            <span>{armedNotice}</span>
+          </output>
+        )}
       </div>
-      {armedNotice !== undefined && (
-        <p role="status" className="-mt-1.5 px-3 pb-2 text-xs text-warning">
-          {armedNotice}
-        </p>
-      )}
     </div>
   );
 }

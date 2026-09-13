@@ -22,9 +22,9 @@ const hintSymbols: Partial<Record<RowHint, string>> = {
 };
 
 const surface: Record<RowTone, (selected: boolean) => string> = {
-  default: (selected) => (selected ? 'bg-row-selected' : ''),
-  accent: () => 'bg-row-accent',
-  danger: () => 'bg-row-danger',
+  default: (selected) => (selected ? 'bg-row-selected' : 'hover:bg-sunken'),
+  accent: (selected) => (selected ? 'bg-row-accent' : 'bg-row-accent hover:brightness-95'),
+  danger: (selected) => (selected ? 'bg-row-danger' : 'bg-row-danger hover:brightness-95'),
 };
 
 function RowBody({ row, selected, tone }: { row: RowView; selected: boolean; tone: RowTone }) {
@@ -101,7 +101,7 @@ export function ResultRow({ row, selected, optionId, onClick }: ResultRowProps) 
     >
       {row.busy === true ? <Spinner /> : <KindIcon kind={row.kind} className="text-subtle" />}
       <RowBody row={row} selected={selected} tone={tone} />
-      {row.space !== undefined && <SpaceBadge label={row.space.label} />}
+      {row.space !== undefined && <SpaceBadge label={row.space.label} icon={row.space.icon} />}
       <RowHints hints={row.hints} selected={selected} />
     </div>
   );

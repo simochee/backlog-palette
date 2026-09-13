@@ -150,8 +150,8 @@ export const S6: Story = {
   args: s6(ja),
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByLabelText(spaces.nulab.label).length).toBeGreaterThan(0);
-    await expect(canvas.getAllByLabelText(spaces.acme.label).length).toBeGreaterThan(0);
+    await expect(canvas.getAllByTitle(spaces.nulab.label).length).toBeGreaterThan(0);
+    await expect(canvas.getAllByTitle(spaces.acme.label).length).toBeGreaterThan(0);
 
     const rows = flattenRows(args.sections);
     const noticeIndex = rows.findIndex((row) => row.id === 'notice');

@@ -47,19 +47,25 @@ export function assignedSection(labels: Labels): SectionView {
   };
 }
 
-export function commandsSection(labels: Labels, issueKey?: string): SectionView {
+type CommandsOptions = {
+  issueKey?: string;
+  /** 「スペースを切り替え」はスコープが [space] のときだけ（palette.md §4） */
+  atSpaceScope?: boolean;
+};
+
+export function commandsSection(labels: Labels, options: CommandsOptions = {}): SectionView {
   const copy =
-    issueKey === undefined
+    options.issueKey === undefined
       ? []
       : [
-          commandRow('copy-key', labels.rows.copyIssueKey, issueKey),
-          commandRow('copy-url', labels.rows.copyIssueUrl, issueKey),
-          commandRow('copy-title', labels.rows.copyIssueTitle, issueKey),
-          commandRow('copy-md', labels.rows.copyIssueMarkdown, issueKey),
+          commandRow('copy-key', labels.rows.copyIssueKey, options.issueKey),
+          commandRow('copy-url', labels.rows.copyIssueUrl, options.issueKey),
+          commandRow('copy-title', labels.rows.copyIssueTitle, options.issueKey),
+          commandRow('copy-md', labels.rows.copyIssueMarkdown, options.issueKey),
         ];
-  return {
-    id: 'commands',
-    label: labels.sections.commands,
-    rows: [...copy, descendCommandRow('switch-space', labels.rows.switchSpace)],
-  };
+  const switchSpace =
+    options.atSpaceScope === true
+      ? [descendCommandRow('switch-space', labels.rows.switchSpace)]
+      : [];
+  return { id: 'commands', label: labels.sections.commands, rows: [...copy, ...switchSpace] };
 }

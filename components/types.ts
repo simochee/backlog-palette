@@ -36,7 +36,7 @@ export type RowView = {
   sub?: string;
   marker?: Badge;
   tag?: Badge;
-  space?: { label: string };
+  space?: { label: string; icon?: string };
   hints: readonly RowHint[];
   tone?: RowTone;
   busy?: boolean;
@@ -53,6 +53,7 @@ export type PathSegmentView = {
   id: string;
   label: string;
   badge?: boolean;
+  icon?: string;
   armed?: boolean;
   compact?: boolean;
 };
@@ -121,6 +122,6 @@ export type SpaceItemView = {
   host: string;
   projectCount: number;
   lastSyncedAt: string;
-  method: 'apiKey' | 'oauth';
+  icon?: string;
   state: 'connected' | 'needsReconnect';
 };

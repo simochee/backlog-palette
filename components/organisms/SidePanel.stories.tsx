@@ -62,7 +62,7 @@ export const P2: Story = {
   ],
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByLabelText(spaces.nulab.label).length).toBeGreaterThan(0);
+    await expect(canvas.getAllByTitle(spaces.nulab.label).length).toBeGreaterThan(0);
     const hints = args.sections.flatMap((section) => section.rows.flatMap((row) => row.hints));
     await expect(hints).not.toContain('stack');
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.complete);

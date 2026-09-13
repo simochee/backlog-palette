@@ -31,7 +31,7 @@ const argumentRow = (space: (typeof spaces)[keyof typeof spaces]): RowView => {
 
 /** S6 検索結果あり（全スペース） */
 export const s6 = (labels: Labels): PaletteView => {
-  const rows = resultRows(labels);
+  const rows = resultRows();
   return view(labels, {
     path: rootPath(labels),
     input: 'ログイン',
@@ -93,7 +93,7 @@ export const s8 = (labels: Labels): PaletteView =>
 /** S9 コマンド階層（スペースを切り替え） */
 export const s9 = (labels: Labels): PaletteView =>
   view(labels, {
-    path: [...projectPath, { id: 'command', label: labels.rows.switchSpace }],
+    path: [...spacePath, { id: 'command', label: labels.rows.switchSpace }],
     escLabel: labels.palette.escBack,
     sections: [
       {
@@ -105,7 +105,7 @@ export const s9 = (labels: Labels): PaletteView =>
 
 /** S10 未接続スペースがある全スペース検索 */
 export const s10 = (labels: Labels): PaletteView => {
-  const rows = resultRows(labels);
+  const rows = resultRows();
   return view(labels, {
     path: rootPath(labels),
     input: 'ログイン',
@@ -131,7 +131,7 @@ export const s10 = (labels: Labels): PaletteView => {
 
 /** S11 一部スペースが認証切れ */
 export const s11 = (labels: Labels): PaletteView => {
-  const rows = resultRows(labels).filter((row) => row.space?.label !== spaces.acme.label);
+  const rows = resultRows().filter((row) => row.space?.label !== spaces.acme.label);
   return view(labels, {
     path: rootPath(labels),
     input: 'ログイン',
@@ -165,7 +165,7 @@ export const s12 = (labels: Labels): PaletteView =>
   view(labels, {
     path: projectPath,
     selectedId: 'command:copy-key',
-    sections: [commandsSection(labels, 'PROJ-142'), recentSection(labels)],
+    sections: [commandsSection(labels, { issueKey: 'PROJ-142' }), recentSection(labels)],
     toast: { message: labels.rows.copied('PROJ-142') },
   });
 

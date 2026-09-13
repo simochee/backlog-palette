@@ -1,7 +1,7 @@
 import type { Labels } from '@/components/labels';
 import type { PaletteView, PathSegmentView, RowView, SectionView } from '@/components/types';
 
-import { projects, spaces } from './domain';
+import { projects, type SpaceFixture, spaces } from './domain';
 import { deriveFooter } from './footer';
 import {
   connectRow,
@@ -17,9 +17,13 @@ import { assignedSection, pagesSection, recentSection } from './sections';
 export const rootPath = (labels: Labels): PathSegmentView[] => [
   { id: 'root', label: labels.palette.rootScope },
 ];
-export const spacePath: PathSegmentView[] = [
-  { id: 'space', label: spaces.nulab.label, badge: true },
-];
+export const spaceSegment = (space: SpaceFixture): PathSegmentView => ({
+  id: `space:${space.id}`,
+  label: space.label,
+  badge: true,
+  icon: space.icon,
+});
+export const spacePath: PathSegmentView[] = [spaceSegment(spaces.nulab)];
 export const projectPath: PathSegmentView[] = [
   ...spacePath,
   { id: 'project', label: projects.web.name, badge: true },
@@ -64,53 +68,44 @@ export function view(labels: Labels, partial: StatePartial): PaletteView {
   };
 }
 
-export const crossSpace = (row: RowView, space: string): RowView => ({
+export const crossSpace = (row: RowView, space: SpaceFixture): RowView => ({
   ...row,
-  space: { label: space },
+  space: { label: space.label, icon: space.icon },
 });
 
-export const resultRows = (labels: Labels): RowView[] => [
-  crossSpace(sampleIssues.login, spaces.nulab.label),
-  crossSpace(sampleIssues.password, spaces.nulab.label),
-  crossSpace(sampleIssues.invoice, spaces.acme.label),
-  crossSpace(
-    pageRow(
-      'result:login-history',
-      'ログイン履歴',
-      labels,
-      projects.web,
-      `スペース設定 · ${labels.rows.pageSub}`,
-    ),
-    spaces.nulab.label,
-  ),
+export const resultRows = (): RowView[] => [
+  crossSpace(sampleIssues.login, spaces.nulab),
+  crossSpace(sampleIssues.password, spaces.nulab),
+  crossSpace(sampleIssues.invoice, spaces.acme),
+  {
+    id: 'document:login-flow',
+    kind: 'document',
+    title: 'ログインフロー改修 要件',
+    sub: `${projects.web.name} · 最終更新 山本 遼`,
+    space: { label: spaces.nulab.label, icon: spaces.nulab.icon },
+    hints: ['enter', 'modEnter', 'complete'],
+  },
   {
     id: 'wiki:login-spec',
     kind: 'wiki',
     title: 'ログイン仕様メモ',
     sub: `${projects.web.name} · 最終更新 佐藤 美咲`,
-    space: { label: spaces.nulab.label },
+    space: { label: spaces.nulab.label, icon: spaces.nulab.icon },
     hints: ['enter', 'modEnter', 'complete'],
   },
 ];
 
+/** 「ログイン」に前方一致するページは無い。表示キャッシュにある課題が弱い一致として並ぶ */
 export const loginPages = (labels: Labels): SectionView => ({
   id: 'pages',
   label: labels.sections.pages,
-  rows: [
-    pageRow(
-      'login-history',
-      'ログイン履歴',
-      labels,
-      projects.web,
-      `スペース設定 · ${labels.rows.pageSub}`,
-    ),
-  ],
+  rows: [sampleIssues.login],
 });
 
 /** S0 未接続で何も出せない */
 export const s0 = (labels: Labels): PaletteView =>
   view(labels, {
-    path: [{ id: 'space', label: spaces.beta.label, badge: true }],
+    path: [spaceSegment(spaces.beta)],
     sections: [{ id: 'connect', rows: [connectRow(undefined, labels)] }],
   });
 

@@ -1,5 +1,6 @@
 type SpaceBadgeProps = {
   label: string;
+  icon?: string;
 };
 
 const asciiWord = /^[\u0020-\u007E]+$/u;
@@ -15,7 +16,19 @@ export function initialsOf(label: string): { first: string; second?: string } {
   };
 }
 
-export function SpaceBadge({ label }: SpaceBadgeProps) {
+/** スペースのアイコン画像があれば画像、無ければ頭文字。ラベルは表示名（キーではない） */
+export function SpaceBadge({ label, icon }: SpaceBadgeProps) {
+  if (icon !== undefined) {
+    return (
+      <img
+        src={icon}
+        alt={label}
+        title={label}
+        className="size-5 shrink-0 rounded-control border border-border object-cover"
+      />
+    );
+  }
+
   const { first, second } = initialsOf(label);
   return (
     <span

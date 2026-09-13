@@ -22,7 +22,7 @@ export function ScopePath({ segments }: ScopePathProps) {
               segment.armed === true && 'text-warning',
             )}
           >
-            {segment.badge === true && <SpaceBadge label={segment.label} />}
+            {segment.badge === true && <SpaceBadge label={segment.label} icon={segment.icon} />}
             <span
               className={cn(
                 'max-w-40 truncate',
