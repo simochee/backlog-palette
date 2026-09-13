@@ -63,7 +63,6 @@ describe('ローマ字のかな読み替え', () => {
     expect(normalize('fairu').kana).toBe('ふぁいる');
     expect(normalize('wiki').kana).toBe('うぃき');
   });
-
 });
 
 describe('かな読み替えの境界', () => {
