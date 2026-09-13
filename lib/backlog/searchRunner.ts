@@ -1,9 +1,11 @@
 import type { QueryClient } from '@tanstack/query-core';
 
+import type { Scope } from '@/lib/stack/types';
+
 import type { EntityKind } from './entries';
 import { type ApiFailure, toApiFailure } from './failure';
 import { defaultConditions, kindsFor, type SearchConditions } from './filters';
-import type { SearchQueries, SearchRow, SearchScope } from './search';
+import type { SearchQueries, SearchRow } from './search';
 
 export type KindOutcome =
   | { ok: true; rows: readonly SearchRow[] }
@@ -19,7 +21,7 @@ export type ReportKind = (kind: EntityKind, outcome: KindOutcome) => void;
 export type SearchRunner = {
   run: (
     query: string,
-    scope: SearchScope | { kind: 'root' },
+    scope: Scope,
     report: ReportKind,
     conditions?: SearchConditions,
   ) => () => void;
