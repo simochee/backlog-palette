@@ -9,7 +9,7 @@ export const spaceItems: SpaceItemView[] = [
     host: spaces.nulab.host,
     projectCount: 12,
     lastSyncedAt: '3 分前',
-    method: 'apiKey',
+    icon: spaces.nulab.icon,
     state: 'connected',
   },
   {
@@ -18,7 +18,7 @@ export const spaceItems: SpaceItemView[] = [
     host: spaces.acme.host,
     projectCount: 4,
     lastSyncedAt: '昨日',
-    method: 'oauth',
+    icon: spaces.acme.icon,
     state: 'connected',
   },
   {
@@ -27,7 +27,6 @@ export const spaceItems: SpaceItemView[] = [
     host: spaces.beta.host,
     projectCount: 1,
     lastSyncedAt: '2 週間前',
-    method: 'apiKey',
     state: 'connected',
   },
 ];
@@ -40,7 +39,7 @@ export const spaceItemsWithExpired: SpaceItemView[] = spaceItems.map((space) =>
         host: space.host,
         projectCount: space.projectCount,
         lastSyncedAt: space.lastSyncedAt,
-        method: space.method,
+        icon: space.icon,
         state: 'needsReconnect',
       }
     : space,

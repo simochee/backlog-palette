@@ -29,7 +29,7 @@ function SpaceItem({
   const needsReconnect = space.state === 'needsReconnect';
   return (
     <li className="flex flex-wrap items-center gap-3 py-3">
-      <SpaceBadge label={space.label} />
+      <SpaceBadge label={space.label} icon={space.icon} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">{space.label}</span>
@@ -41,7 +41,7 @@ function SpaceItem({
         </div>
         <p className="truncate text-sm text-subtle">
           {space.host} · {labels.options.projects(space.projectCount)} ·{' '}
-          {labels.options.lastSync(space.lastSyncedAt)} · {labels.options.method[space.method]}
+          {labels.options.lastSync(space.lastSyncedAt)}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">

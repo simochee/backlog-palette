@@ -8,7 +8,17 @@ import { ConnectSheet } from './ConnectSheet';
 
 const meta = {
   component: ConnectSheet,
-  args: { state: { kind: 'idle' }, onSubmit: fn(), onOAuth: fn(), onClose: fn() },
+  args: { state: { kind: 'idle' }, onSubmit: fn(), onClose: fn() },
+  parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <div className="relative h-screen bg-page">
+        <div className="absolute inset-x-0 bottom-6 flex justify-center px-4">
+          <Story />
+        </div>
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof ConnectSheet>;
 
 export default meta;
@@ -16,7 +26,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Idle: Story = {
-  name: '入力待ち',
+  name: '入力待ち（画面下部中央の横長）',
 };
 
 export const Submitting: Story = {
@@ -76,14 +86,5 @@ export const EmptyCannotSubmit: Story = {
     await userEvent.type(canvas.getByLabelText(ja.connect.inputLabel), '{Enter}');
 
     await expect(args.onSubmit).not.toHaveBeenCalled();
-  },
-};
-
-export const OAuthButton: Story = {
-  name: 'OAuth の副ボタンで onOAuth が呼ばれる',
-  play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: ja.connect.oauth }));
-
-    await expect(args.onOAuth).toHaveBeenCalledTimes(1);
   },
 };

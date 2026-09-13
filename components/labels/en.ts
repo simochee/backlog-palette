@@ -105,18 +105,11 @@ export const en: Labels = {
   },
   connect: {
     title: 'Connect to Backlog Palette',
-    steps: [
-      'Issue an API key on this page (the memo is prefilled with Backlog Palette)',
-      'Copy the key, paste it below and press Connect',
-    ],
     inputLabel: 'API key',
-    placeholder: 'Paste your API key',
+    placeholder: 'Paste the API key you issued and connect',
     submit: 'Connect',
     submitting: 'Connecting…',
-    note: 'The key stays on this device and is never sent anywhere else',
-    oauth: 'Connect with OAuth',
     doneTitle: (space) => `Connected to ${space}`,
-    doneHint: 'Press ⌘K to search this space',
     close: 'Close',
     invalidKey: 'The key is not valid',
   },
@@ -130,7 +123,6 @@ export const en: Labels = {
     lastSync: (when) => `Last synced ${when}`,
     connected: 'Connected',
     needsReconnect: 'Reconnect needed',
-    method: { apiKey: 'API key', oauth: 'OAuth' },
     customDomain: {
       title: 'Add an Enterprise custom domain',
       description: 'Once added, ⌘K also works on Backlog under that domain',

@@ -107,15 +107,11 @@ export type Labels = {
   };
   connect: {
     title: string;
-    steps: readonly [string, string];
     inputLabel: string;
     placeholder: string;
     submit: string;
     submitting: string;
-    note: string;
-    oauth: string;
     doneTitle: (space: string) => string;
-    doneHint: string;
     close: string;
     invalidKey: string;
   };
@@ -129,7 +125,6 @@ export type Labels = {
     lastSync: (when: string) => string;
     connected: string;
     needsReconnect: string;
-    method: { apiKey: string; oauth: string };
     customDomain: {
       title: string;
       description: string;

@@ -105,18 +105,11 @@ export const ja: Labels = {
   },
   connect: {
     title: 'Backlog Palette に接続',
-    steps: [
-      'このページで API キーを発行します（メモ欄に Backlog Palette と入っています）',
-      '表示されたキーをコピーして下に貼り付け、接続を押します',
-    ],
     inputLabel: 'API キー',
-    placeholder: 'API キーを貼り付け',
+    placeholder: '発行した API キーを貼り付けて接続',
     submit: '接続',
     submitting: '接続中…',
-    note: 'キーは端末内にのみ保存され、外部へは送信されません',
-    oauth: 'OAuth で接続',
     doneTitle: (space) => `${space} に接続しました`,
-    doneHint: '⌘K でこのスペースを検索できます',
     close: '閉じる',
     invalidKey: 'キーが正しくありません',
   },
@@ -130,7 +123,6 @@ export const ja: Labels = {
     lastSync: (when) => `最終同期 ${when}`,
     connected: '接続済み',
     needsReconnect: '要再接続',
-    method: { apiKey: 'API キー', oauth: 'OAuth' },
     customDomain: {
       title: 'Enterprise のカスタムドメインを追加',
       description: 'ホストを追加すると、そのドメインの Backlog でも ⌘K が効くようになります',
