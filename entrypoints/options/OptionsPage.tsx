@@ -6,6 +6,7 @@ import { OptionsLayout } from '@/components/templates/OptionsLayout';
 
 import { AboutSection } from './AboutSection.tsx';
 import { ShortcutsSection } from './ShortcutsSection.tsx';
+import { SpacesSection } from './SpacesSection.tsx';
 import { text } from './text.ts';
 
 /*
@@ -24,6 +25,7 @@ export function OptionsPage() {
     <OptionsLayout
       title={labels.brand}
       sections={[
+        { id: 'spaces', title: labels.options.spacesTitle, children: <SpacesSection /> },
         { id: 'shortcuts', title: text.shortcuts.title, children: <ShortcutsSection /> },
         { id: 'about', title: text.about.title, children: <AboutSection /> },
       ]}
