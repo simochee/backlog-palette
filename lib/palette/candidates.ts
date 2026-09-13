@@ -44,12 +44,19 @@ function spaceOf(index: PaletteIndex, spaceId: string): SpaceEntry | undefined {
   return index.spaces.find((space) => space.id === spaceId);
 }
 
-function pageCandidates({ index, scope, labels }: Env, section: string): Candidate[] {
-  const owner = scope.kind === 'root' ? undefined : spaceOf(index, scope.spaceId);
-  const sub =
-    scope.kind === 'root'
-      ? labels.rows.commonPageSub
-      : `${owner?.label ?? ''} · ${labels.rows.pageSub}`;
+/** ページの補足は {プロジェクト名} · ページ（§5）。[space] ならスペース名、根なら共通ページの文言 */
+function pageSub({ index, scope, labels }: Env): string {
+  if (scope.kind === 'root') return labels.rows.commonPageSub;
+  const owner =
+    scope.kind === 'project'
+      ? index.projects.find((project) => project.id === scope.projectId)?.name
+      : spaceOf(index, scope.spaceId)?.label;
+  return `${owner ?? ''} · ${labels.rows.pageSub}`;
+}
+
+function pageCandidates(env: Env, section: string): Candidate[] {
+  const { index, scope } = env;
+  const sub = pageSub(env);
   return index.pagesFor(scope).map((page) => ({
     built: pageRow(section, page, sub),
     target: { text: page.title, aliases: page.aliases },
