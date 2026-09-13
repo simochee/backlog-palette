@@ -36,11 +36,31 @@ async function seed(serviceWorker: Worker, items: object) {
 }
 
 /*
+ * 前のテスト（palette-share.spec の ⌘→）が開いた本物のサイドパネルは worker の間ずっと
+ * 残り、その watch が panelRequest を先に消費してしまう。enabled を一度落として閉じる。
+ * タブで開く sidepanel.html には影響しない
+ */
+async function closeRealSidePanel(serviceWorker: Worker) {
+  type ChromeSidePanel = {
+    sidePanel: { setOptions: (options: { enabled: boolean }) => Promise<void> };
+  };
+  await serviceWorker.evaluate(async () => {
+    const api = (globalThis as unknown as { chrome: ChromeSidePanel }).chrome;
+    await api.sidePanel.setOptions({ enabled: false });
+    await api.sidePanel.setOptions({ enabled: true });
+  });
+}
+
+/*
  * ⌘→ は panelRequest を書いてから sidePanel.open() を呼ぶ。開いた本物のパネルは Playwright
  * から触れないので、書く側は palette-share.spec（⌘→ → panelRequest の中身）が、受け取る側は
  * ここが検査する。境界は panelRequest の形で、両方が同じ形を前提にしている
  */
 test.describe('パレットからサイドパネルへの引き渡し（surfaces.md §5.1）', () => {
+  test.beforeEach(async ({ serviceWorker }) => {
+    await closeRealSidePanel(serviceWorker);
+  });
+
   test('⌘→ が書いた語とスコープでパネルが検索を起動し、受け渡しは消える', async ({
     page,
     serviceWorker,
