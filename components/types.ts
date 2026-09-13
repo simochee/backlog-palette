@@ -1,20 +1,23 @@
-export type RowKind =
-  | 'page'
-  | 'issue'
-  | 'wiki'
-  | 'document'
-  | 'project'
-  | 'space'
-  | 'command'
-  | 'search'
-  | 'panel'
-  | 'connect'
-  | 'status'
-  | 'notice'
-  | 'external'
-  | 'hint';
+export const rowKinds = [
+  'page',
+  'issue',
+  'wiki',
+  'document',
+  'project',
+  'space',
+  'command',
+  'search',
+  'panel',
+  'connect',
+  'status',
+  'notice',
+  'external',
+  'hint',
+] as const;
+export type RowKind = (typeof rowKinds)[number];
 
-export type Tone = 'neutral' | 'info' | 'success' | 'done' | 'warning' | 'danger';
+export const tones = ['neutral', 'info', 'success', 'done', 'warning', 'danger'] as const;
+export type Tone = (typeof tones)[number];
 export type Badge = { label: string; tone: Tone };
 
 /**
