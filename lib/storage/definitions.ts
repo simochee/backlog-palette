@@ -15,7 +15,7 @@ import type {
  * collections.ts が行い、テストは偽の item を渡す
  */
 
-/** 表示キャッシュの 1 件。形は M3 の lib/storage/items.ts の DisplayCacheEntry と同じ（URL が単位） */
+/** 表示キャッシュの 1 件。形は lib/storage/items.ts の DisplayCacheEntry（version 2）と同じ（URL が単位） */
 export const displayCacheSchema = z.object({
   url: z.url(),
   kind: z.enum(['issue', 'project', 'wiki', 'document']),
@@ -24,6 +24,9 @@ export const displayCacheSchema = z.object({
   projectKey: z.string().min(1),
   key: z.string().optional(),
   title: z.string().optional(),
+  /** 課題の再検証（D-14）で分かった今の状態。version 2 で足された */
+  status: z.object({ id: z.number().int(), name: z.string() }).optional(),
+  assignee: z.string().optional(),
   visitedAt: z.number(),
 });
 
