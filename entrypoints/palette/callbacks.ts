@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 
 import type { PaletteCallbacks } from '@/components/organisms/Palette';
 import type { DerivedPalette, PaletteStore } from '@/lib/palette';
+import { EXTERNAL_ROW_ID, MORE_EXTERNAL_ROW_ID } from '@/lib/search/ids';
 import { activeCommand } from '@/lib/stack/stack';
 import type { Stack } from '@/lib/stack/types';
 
@@ -13,6 +14,7 @@ import {
   type Pending,
   performAction,
 } from './actions.ts';
+import { paletteTelemetry, track } from './telemetry.ts';
 
 type Input = {
   store: PaletteStore;
@@ -30,7 +32,10 @@ function useRowCallbacks({ store, derived, env, pending }: Input): RowCallbacks 
   const onAction = useCallback(
     (id: string, opts: { newTab: boolean }) => {
       const action = derived.actions.get(id);
-      if (action !== undefined) void performAction(action, opts.newTab, env, pending);
+      if (action === undefined) return;
+      if (id === EXTERNAL_ROW_ID || id === MORE_EXTERNAL_ROW_ID)
+        track({ type: 'externalSearchOpened' });
+      void performAction(action, opts.newTab, env, pending);
     },
     [derived.actions, env, pending],
   );
@@ -53,6 +58,7 @@ export function usePaletteCallbacks(input: Input): PaletteCallbacks {
     (value: string) => {
       // 入力が変わったら走っている検索は捨てる（palette.md §7.4）
       cancelSearch(pending);
+      paletteTelemetry.typed();
       store.dispatch({ type: 'inputChanged', value });
     },
     [store, pending],

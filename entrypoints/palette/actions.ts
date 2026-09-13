@@ -1,6 +1,7 @@
 import type { Labels } from '@/components/labels';
 import { apiKeyPageUrl } from '@/lib/connect/page';
 import type { PaletteAction, RowAction } from '@/lib/palette';
+import { searchKinds } from '@/lib/search';
 import { buildShareUrl, searchState } from '@/lib/share';
 import type { Scope } from '@/lib/stack/types';
 import { navigate } from '@/lib/tabs';
@@ -10,6 +11,7 @@ import type { OpenContext } from './context.ts';
 import { openPanelWith } from './panel.ts';
 import type { SearchRunner } from './search.ts';
 import { shareScopeOf } from './share.ts';
+import { paletteTelemetry, track } from './telemetry.ts';
 
 export type ActionEnv = {
   context: OpenContext;
@@ -37,9 +39,17 @@ export type SearchEnv = Pick<ActionEnv, 'runner' | 'dispatch'>;
 
 export function startSearch(query: string, scope: Scope, env: SearchEnv): SearchHandle {
   env.dispatch({ type: 'searchStarted', query, scope });
+  track({ type: 'searchStarted' });
+  // 0 件率（surfaces.md §10）。全種別が届いて 1 件も無かったときだけ数える
+  let settled = 0;
+  let found = 0;
   const cancel = env.runner.run(query, scope, (kind, outcome) => {
-    if (outcome.ok) env.dispatch({ type: 'resultsArrived', kind, rows: outcome.rows });
-    else env.dispatch({ type: 'searchFailed', kind, error: outcome.error });
+    settled += 1;
+    if (outcome.ok) {
+      found += outcome.rows.length;
+      env.dispatch({ type: 'resultsArrived', kind, rows: outcome.rows });
+    } else env.dispatch({ type: 'searchFailed', kind, error: outcome.error });
+    if (settled === searchKinds.length && found === 0) track({ type: 'searchEmpty' });
   });
   return { cancel };
 }
@@ -57,6 +67,7 @@ export function restartSearch(query: string, scope: Scope, env: SearchEnv, pendi
 }
 
 async function go(url: string, newTab: boolean, env: ActionEnv) {
+  paletteTelemetry.navigated(env.query === '');
   if (env.learningEnabled) await recordNavigation(url, env.context, env.now(), env.query);
   await navigate(url, newTab ? 'new' : 'current');
   env.close();
@@ -74,11 +85,13 @@ export async function copySearchUrl(env: ActionEnv, pending: Pending): Promise<v
   const scope = last === undefined ? undefined : shareScopeOf(last.scope);
   if (last === undefined || scope === undefined) return;
   const url = buildShareUrl(env.context.origin, searchState(last.query, scope));
+  track({ type: 'searchUrlCopied' });
   await copy(url, env.labels.rows.searchUrl, env);
 }
 
 /** `⌘→` と panel 行。渡せたらパレットを閉じる（surfaces.md §5.1） */
 export async function openPanel(env: ActionEnv): Promise<void> {
+  track({ type: 'panelHandedOff' });
   if (await openPanelWith(env.query, env.scope)) env.close();
 }
 

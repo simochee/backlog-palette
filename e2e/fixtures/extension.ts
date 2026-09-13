@@ -56,6 +56,7 @@ export const OWNED_KEYS = [
   'settings',
   'panelRequest',
   'searchHistory',
+  'telemetry',
 ];
 
 export type ExtensionFixtures = {
