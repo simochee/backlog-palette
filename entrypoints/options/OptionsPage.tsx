@@ -1,34 +1,26 @@
 import { useParams } from '@tanstack/react-router';
-import { useEffect } from 'react';
 
-import { useLabels } from '@/components/labels';
-import { OptionsLayout } from '@/components/templates/OptionsLayout';
+import { settings as settingsItem } from '@/lib/storage/palette-items';
 
-import { AboutSection } from './AboutSection.tsx';
-import { ShortcutsSection } from './ShortcutsSection.tsx';
-import { SpacesSection } from './SpacesSection.tsx';
-import { text } from './text.ts';
+import { OptionsSections } from './OptionsSections.tsx';
+import { useStorageItem } from './useStorageItem.ts';
 
 /*
  * ルートはセクションを指すだけで、描くのは常に全セクション（1 カラムの読み物、surfaces.md §2）。
  * URL で場所を共有できるように、ルートが変わったらそのセクションまでスクロールする。
+ * 保存ボタンは無く、変えた項目をその場で settings に書き戻す。
  */
 export function OptionsPage() {
   const { section } = useParams({ from: '/$section' });
-  const labels = useLabels();
+  const settings = useStorageItem(settingsItem);
 
-  useEffect(() => {
-    document.querySelector(`#options-${section}`)?.scrollIntoView({ block: 'start' });
-  }, [section]);
-
+  // 読み込み前に fallback の既定値で描くと、切り替えた直後に一瞬戻って見える
+  if (settings === undefined) return null;
   return (
-    <OptionsLayout
-      title={labels.brand}
-      sections={[
-        { id: 'spaces', title: labels.options.spacesTitle, children: <SpacesSection /> },
-        { id: 'shortcuts', title: text.shortcuts.title, children: <ShortcutsSection /> },
-        { id: 'about', title: text.about.title, children: <AboutSection /> },
-      ]}
+    <OptionsSections
+      section={section}
+      settings={settings}
+      onChange={(patch) => void settingsItem.setValue({ ...settings, ...patch })}
     />
   );
 }

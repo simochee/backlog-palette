@@ -152,6 +152,7 @@ components/
     KeyHints.tsx                 フッターのヒント列。priority で溢れを落とす
     Toast.tsx                    role="status" の 1 行
     SettingRow.tsx               設定画面の 1 行（ラベル・説明・コントロール）
+    ChoiceGroup.tsx              設定画面の「1 つだけ選ぶ」コントロール（配色・言語）。Radix RadioGroup を横並びで
   organisms/
     CandidateList.tsx            SectionView[] を role="listbox" で描く。仮想フォーカス、selectedId は controlled
     PaletteHeader.tsx            ScopePath + PaletteInput + esc ヒント（削除待ちの予告はこの位置に入れ替わる）
@@ -288,6 +289,7 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | `PaletteHeader` | 通常／削除待ちの予告つき／esc ラベルが「1 つ前に戻る」 |
 | `PaletteFooter` | ヒントのみ／トーストつき（ヒントは消えない） |
 | `ConnectSheet` | 入力待ち（画面下部中央の横長）／送信中／エラー／完了／**Enter で接続が送信される**／**変換中の Enter では送信されない**／**空のまま接続は押せない** |
+| `ChoiceGroup` | 3 択／無効／**別の選択肢を押すとその id で onChange**／**→ で次の選択肢に移る**／radiogroup として読み上げられ選択中の 1 つだけが checked |
 | `FilterBar` | 条件なし／2 条件が効いている（強調）／compact／プロジェクトが「すべて」でステータスが組み込みだけ（スペースの項目に「全スペース」は無い、D-20）／**選択肢は 1 つだけ選べる**／**neutral に戻すと強調が消える**／**「条件をすべて外す」でスコープは変わらない** |
 | `StatusStrip` | 全部 ready（1 行に畳む）／読み込み中を含む／エラーと再接続ボタン／**再接続を押すと onProgressAction が呼ばれる** |
 | `RecentQueries` | 5 件／0 件（描かない）／**クリックで onPick が呼ばれる** |
