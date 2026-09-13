@@ -43,7 +43,7 @@ function OptionList({
         {field.options.map((option) => (
           <label
             key={option.id}
-            className="flex cursor-pointer items-center gap-2 rounded-control px-2 py-1.5 text-sm hover:bg-sunken"
+            className="flex cursor-pointer items-center gap-2 rounded-inner px-2 py-1.5 text-sm hover:bg-sunken"
           >
             <RadioGroup.Item
               value={option.id}

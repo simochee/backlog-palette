@@ -219,7 +219,7 @@ Popover・Switch・RadioGroup のような**入力欄と競合しない部品**�
 --bp-marker-{neutral|info|success|done|warning|danger}-{bg|fg|dot}
 --bp-font-body / --bp-font-mono
 --bp-size-text-{xs|sm|md} / --bp-size-header / --bp-size-footer / --bp-size-row
---bp-radius-{control|surface|pill}
+--bp-radius-{inner|control|surface|pill}   入れ子は同心円: 内側 = 外側 − 余白。surface の中に space-2 で置くものは inner。pill の中は pill
 --bp-space-{1..8}          4px 刻み
 --bp-shadow-floating
 --bp-width-palette         640px

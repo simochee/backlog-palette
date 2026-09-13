@@ -67,6 +67,7 @@
   --text-lg--line-height: 1.4;
 
   --radius-*: initial;
+  --radius-inner: var(--bp-radius-inner);
   --radius-control: var(--bp-radius-control);
   --radius-surface: var(--bp-radius-surface);
   --radius-pill: var(--bp-radius-pill);

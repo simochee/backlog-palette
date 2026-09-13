@@ -39,6 +39,17 @@ export const Danger: Story = {
   ),
 };
 
+export const Pill: Story = {
+  name: 'pill の容れ物の中では pill',
+  args: { shape: 'pill' },
+  render: (args) => (
+    <div className="inline-flex items-center gap-3 rounded-pill border border-border bg-floating py-1.5 pr-1.5 pl-4">
+      <span className="text-sm text-subtle">容れ物</span>
+      <Button {...args} />
+    </div>
+  ),
+};
+
 export const Busy: Story = {
   name: 'busy のときはスピナーが出て押せない',
   args: { busy: true, children: '接続中…' },

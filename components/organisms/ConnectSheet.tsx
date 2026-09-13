@@ -47,7 +47,7 @@ function DoneBar({
       <p className="min-w-0 flex-1 truncate text-md font-medium">
         {labels.connect.doneTitle(spaceLabel)}
       </p>
-      <Button variant="secondary" onClick={onClose}>
+      <Button variant="secondary" shape="pill" onClick={onClose}>
         {labels.connect.close}
       </Button>
     </>
@@ -134,7 +134,7 @@ function ConnectForm({
       )}
       <form.Subscribe selector={(formState) => formState.values.apiKey.trim() === ''}>
         {(empty) => (
-          <Button type="submit" busy={submitting} disabled={empty}>
+          <Button type="submit" shape="pill" busy={submitting} disabled={empty}>
             {submitting ? labels.connect.submitting : labels.connect.submit}
           </Button>
         )}

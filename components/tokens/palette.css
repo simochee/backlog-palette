@@ -74,6 +74,12 @@
   --bp-size-icon: 16px;
   --bp-size-control: 32px;
 
+  /*
+   * 入れ子の角丸は同心円にする: 内側の半径 = 外側の半径 − 余白。
+   * surface (12px) の中に space-2 (8px) の余白で置くものは inner (4px)。
+   * pill の中に置くものは pill。外側の半径以上に内側へ寄っているものは自由。
+   */
+  --bp-radius-inner: 4px;
   --bp-radius-control: 6px;
   --bp-radius-surface: 12px;
   --bp-radius-pill: 999px;
