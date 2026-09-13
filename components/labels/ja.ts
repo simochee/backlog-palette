@@ -113,6 +113,7 @@ export const ja: Labels = {
       wiki: 'Wiki',
       document: 'ドキュメント',
     },
+    failed: '取得できませんでした',
     authExpired: '認証切れ',
   },
   connect: {

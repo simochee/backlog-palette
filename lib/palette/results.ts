@@ -63,7 +63,9 @@ export function progressMeta(session: SearchSession, labels: Labels): string {
           ? String(progress.count)
           : progress.state === 'loading'
             ? labels.panel.loading
-            : labels.panel.reconnect;
+            : progress.error.kind === 'unauthorized'
+              ? labels.panel.reconnect
+              : labels.panel.failed;
       return `${kindLabel(kind, labels)} ${value}`;
     })
     .join(' · ');
