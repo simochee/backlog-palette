@@ -1,8 +1,9 @@
-import { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 
 import { hostChannel } from './hostChannel.ts';
+import { resolveSpaceFromTab } from './space.ts';
 
 /*
  * 表示・非表示は content script が iframe ごと切り替えるので、iframe の中では
@@ -56,17 +57,33 @@ function usePaletteKeys() {
   }, []);
 }
 
+/** open のたびにタブ URL からスペースを決め直す。タブの URL は開いている間に変わりうる */
+function useSpaceOfTab(): string | undefined {
+  const [space, setSpace] = useState<string>();
+  useEffect(
+    () =>
+      hostChannel.subscribe((message) => {
+        if (message.t !== 'open') return;
+        void resolveSpaceFromTab().then(setSpace);
+      }),
+    [],
+  );
+  return space;
+}
+
 /** M5 までの暫定。components/ の部品は使わず、入力欄 1 つだけを置く */
 export function Palette() {
   const inputRef = useRef<HTMLInputElement>(null);
   useOpenResetsInput(inputRef);
   usePaletteKeys();
+  const space = useSpaceOfTab();
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'start center' }}>
       <input
         ref={inputRef}
         aria-label="Backlog Palette"
+        placeholder={space === undefined ? '' : `${space} で検索`}
         style={{ marginTop: '15vh', width: 640 }}
       />
     </div>

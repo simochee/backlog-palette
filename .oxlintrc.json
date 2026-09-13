@@ -60,7 +60,14 @@
 
         // describe のコールバックは同じ場面のテストを並べる箱で、行数は
         // テストの数に比例する。分割しても構造は増えない。
-        "eslint/max-lines-per-function": "off"
+        "eslint/max-lines-per-function": "off",
+
+        // E2E はプロセスの境界をまたぐ。Service Worker で評価した値や、ビルド成果物の
+        // JSON は型で証明できず、テストが期待する形を宣言する以外に読む手段が無い。
+        "typescript/no-unsafe-type-assertion": "off",
+
+        // ブラウザの状態を待つポーリングは逐次でなければ意味が無い。
+        "eslint/no-await-in-loop": "off"
       }
     },
     {

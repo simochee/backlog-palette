@@ -3,6 +3,11 @@ import type { ContentScriptContext } from '#imports';
 import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/backlog/host';
 import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
+import { readVisitedPage } from '@/lib/visits/page';
+import { recordVisit } from '@/lib/visits/record';
+
+import { setupConnectPage } from './connect.ts';
+import { summaryFromTitle } from './title.ts';
 
 /*
  * WXT の createIframeUi を使わない。'overlay' は wrapper に width:0 / height:0 を
@@ -119,6 +124,14 @@ function createPaletteHost(
   };
 }
 
+/** URL と document.title だけから表示キャッシュに記録する。本文・コメントは読まない（surfaces.md §3） */
+function recordCurrentPage() {
+  const page = readVisitedPage(window.location.href);
+  if (page === undefined) return;
+  const title = summaryFromTitle(document.title);
+  void recordVisit({ ...page, ...(title === undefined ? {} : { title }), visitedAt: Date.now() });
+}
+
 export default defineContentScript({
   matches: [...BACKLOG_SPACE_MATCHES],
   excludeMatches: [...NOT_A_SPACE_MATCHES],
@@ -153,6 +166,11 @@ export default defineContentScript({
       },
       { capture: true },
     );
+
+    recordCurrentPage();
+    ctx.addEventListener(window, 'wxt:locationchange', recordCurrentPage);
+
+    setupConnectPage(ctx, browser.runtime.getURL('/connect.html'), extensionOrigin);
 
     ctx.addEventListener(window, 'message', (event) => {
       // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する
