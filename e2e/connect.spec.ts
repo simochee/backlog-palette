@@ -48,9 +48,16 @@ test.describe('API キーで接続する導線', () => {
     // 鍵はヘッダで送られ、URL には載らない
     const paths = space.api.requests.map((r) => r.path);
     expect(paths).toEqual(
-      expect.arrayContaining(['/api/v2/users/myself', '/api/v2/space', '/api/v2/rateLimit', '/api/v2/projects']),
+      expect.arrayContaining([
+        '/api/v2/users/myself',
+        '/api/v2/space',
+        '/api/v2/rateLimit',
+        '/api/v2/projects',
+      ]),
     );
-    expect(space.api.requests.every((r) => r.headerKey === VALID_API_KEY && r.queryKey === undefined)).toBe(true);
+    expect(
+      space.api.requests.every((r) => r.headerKey === VALID_API_KEY && r.queryKey === undefined),
+    ).toBe(true);
 
     await frame.getByRole('button', { name: '閉じる' }).click();
     await expect(page.locator(CONNECT_FRAME)).toHaveCount(0);

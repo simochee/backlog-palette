@@ -41,7 +41,10 @@ function json(body: unknown, init: ResponseInit = {}): Response {
 
 const myself = { id: 1, userId: 'ryoya', name: '田村' };
 
-function client(fetch: typeof globalThis.fetch, extra: Partial<Parameters<typeof createSpaceClient>[0]> = {}) {
+function client(
+  fetch: typeof globalThis.fetch,
+  extra: Partial<Parameters<typeof createSpaceClient>[0]> = {},
+) {
   return createSpaceClient({
     spaceHost: HOST,
     apiKey: API_KEY,
@@ -131,7 +134,6 @@ describe('失敗の分類', () => {
 
     expect(failure).toEqual({ kind: 'rateLimited', retryAfterSeconds: 25 });
   });
-
 });
 
 describe('失敗の分類（応答以外）', () => {
@@ -146,12 +148,15 @@ describe('失敗の分類（応答以外）', () => {
     const { fetch } = fakeFetch(() => json([]));
 
     return expect(
-      client(fetch, { rateLimiter }).getIssues({ projectId: [1] }).catch(toApiFailure),
+      client(fetch, { rateLimiter })
+        .getIssues({ projectId: [1] })
+        .catch(toApiFailure),
     ).resolves.toMatchObject({ kind: 'rateLimited' });
   });
 
   it('ネットワーク断は offline になる', async () => {
-    const fetch = (() => Promise.reject(new TypeError('Failed to fetch'))) as typeof globalThis.fetch;
+    const fetch = (() =>
+      Promise.reject(new TypeError('Failed to fetch'))) as typeof globalThis.fetch;
 
     const failure = await client(fetch).getMyself().catch(toApiFailure);
 

@@ -81,7 +81,6 @@ describe('acquire', () => {
     expect(failure).toBeInstanceOf(RateLimitExceededError);
     expect(failure).toMatchObject({ retryAfterSeconds: 60 });
   });
-
 });
 
 describe('acquire の共有', () => {

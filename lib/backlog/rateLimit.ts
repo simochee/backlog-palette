@@ -106,7 +106,8 @@ function blockedUntilOf(
   if (observation.status === 429) {
     return observation.reset === undefined ? now + RATE_WINDOW_MS : observation.reset * 1000;
   }
-  if (current?.blockedUntil !== undefined && current.blockedUntil > now) return current.blockedUntil;
+  if (current?.blockedUntil !== undefined && current.blockedUntil > now)
+    return current.blockedUntil;
   return undefined;
 }
 
@@ -147,7 +148,10 @@ function syncGate(gate: Gate, record: BucketRecord): Gate {
    * インスタンスは計算役という向きにするため。isExceeded / status は古くなるが、
    * 読むのは getMsUntilNextWindow だけで、それは executionTimes から計算される。
    */
-  gate.store.setState((state) => ({ ...state, executionTimes: record.firedAt.toSorted((a, b) => a - b) }));
+  gate.store.setState((state) => ({
+    ...state,
+    executionTimes: record.firedAt.toSorted((a, b) => a - b),
+  }));
   return gate;
 }
 

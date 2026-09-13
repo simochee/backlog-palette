@@ -44,7 +44,12 @@ describe('接続の手順', () => {
 
     expect(result).toEqual({
       ok: true,
-      space: { name: 'デモスペース', spaceKey: 'demo', projectCount: 2, connectedAt: 1_700_000_000_000 },
+      space: {
+        name: 'デモスペース',
+        spaceKey: 'demo',
+        projectCount: 2,
+        connectedAt: 1_700_000_000_000,
+      },
     });
     expect(d.createClient).toHaveBeenCalledWith(HOST, 'key');
     expect(d.saveApiKey).toHaveBeenCalledWith(HOST, 'key');
@@ -63,7 +68,9 @@ describe('接続の手順', () => {
   });
 
   it('初期化に失敗しても保存した鍵は残り、失敗を返す', async () => {
-    const d = deps(fakeApi({ getProjects: () => Promise.reject(new TypeError('Failed to fetch')) }));
+    const d = deps(
+      fakeApi({ getProjects: () => Promise.reject(new TypeError('Failed to fetch')) }),
+    );
 
     const result = await connectSpace(HOST, 'key', d);
 
