@@ -5,6 +5,7 @@ import { apiKeyPageUrl } from '@/lib/connect/page';
 import { resultRowId, type SearchSession } from '@/lib/search';
 import { buildShareUrl, type SearchState } from '@/lib/share';
 import { navigate as openUrl } from '@/lib/tabs';
+import { track } from '@/lib/telemetry/track';
 
 import { applyFilter, clearConditions } from './filters.ts';
 import type { PanelSearch } from './searchParams.ts';
@@ -29,7 +30,10 @@ export function panelCallbacks(env: CallbackEnv): SidePanelCallbacks {
     onInputChange: env.setInput,
     onSelectionChange: env.setSelectedId,
     onSearch: (query) => update({ ...search, query }),
-    onFilterChange: (fieldId, optionId) => update(applyFilter(search, fieldId, optionId)),
+    onFilterChange: (fieldId, optionId) => {
+      track({ type: 'panelFilterChanged' });
+      update(applyFilter(search, fieldId, optionId));
+    },
     onClearFilters: () => update(clearConditions(search)),
     onAction: (id, { newTab }) => {
       if (id === CLEAR_FILTERS_ROW_ID) {

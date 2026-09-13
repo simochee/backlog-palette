@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { arrive, fail, resultRowId, type SearchSession, startSession } from '@/lib/search';
 import { type SearchState, searchState } from '@/lib/share';
+import { track } from '@/lib/telemetry/track';
 
 import { recordSearch } from './context.ts';
 import type { PanelSearchRunner } from './runner.ts';
@@ -42,6 +43,7 @@ export function usePanelSearch(
     if (!canRun(search)) return noop;
     const { query, scope, conditions } = search;
     if (learningEnabled) void recordSearch(query, scope, Date.now());
+    track({ type: 'panelSearchStarted' });
     const cancel = runner.run(
       query,
       scope,

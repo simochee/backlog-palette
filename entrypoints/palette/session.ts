@@ -6,6 +6,7 @@ import { createPaletteStore, type PaletteStore } from '@/lib/palette';
 import { type Pending, restartSearch } from './actions.ts';
 import { createSession, type PaletteSession } from './createSession.ts';
 import { handOffToPanel } from './panel.ts';
+import { paletteTelemetry } from './telemetry.ts';
 
 type OpenArgs = {
   session: PaletteSession;
@@ -89,6 +90,7 @@ export function usePaletteSession(channel: HostChannel) {
         return;
       }
       setOpenedAt(Date.now());
+      paletteTelemetry.opened();
       /*
        * 用意済みなら同期で開く。await を挟むと、その間に打たれた文字が入力欄に入った後で
        * open が届き、状態のリセットで消える
