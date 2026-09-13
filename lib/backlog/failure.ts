@@ -1,16 +1,11 @@
 import { Error as BacklogErrors } from 'backlog-js';
 
+import type { SearchError } from '@/lib/search/types';
+
 import { RateLimitExceededError, readRateObservation } from './rateLimit';
 
-/**
- * API 呼び出しの失敗を行に閉じるための分類（I6、palette.md §7.5）。
- * lib/search/types.ts の SearchError と同じ形で、そのまま渡せる。
- */
-export type ApiFailure =
-  | { kind: 'unauthorized' }
-  | { kind: 'rateLimited'; retryAfterSeconds: number }
-  | { kind: 'offline' }
-  | { kind: 'failed' };
+/** API 呼び出しの失敗を行に閉じるための分類（I6、palette.md §7.5）。検索の SearchError と同じ */
+export type ApiFailure = SearchError;
 
 function secondsUntilReset(response: Response, now: number): number {
   const { reset } = readRateObservation(response);

@@ -1,25 +1,13 @@
 import type { Option } from 'backlog-js';
 
+import { defaultConditions, type SearchConditions } from '@/lib/share';
+
 import type { EntityKind, IssueLike } from './entries';
 import { expandNotClosed, type StatusesByProject, unionStatusIds } from './statuses';
 
-/**
- * サイドパネルのフィルターバー（surfaces.md §5.3）。lib/share/schema.ts（M2）の
- * SearchConditions と同じ形で、合流後はそちらの型をそのまま満たす。
- */
-export type SearchConditions = {
-  type: 'all' | EntityKind;
-  status: { kind: 'all' } | { kind: 'notClosed' } | { kind: 'status'; statusId: number };
-  assignee: 'all' | 'me' | 'unassigned';
-  updated: 'any' | 'week' | 'month' | 'quarter';
-};
-
-export const defaultConditions: SearchConditions = {
-  type: 'all',
-  status: { kind: 'all' },
-  assignee: 'all',
-  updated: 'any',
-};
+/** サイドパネルのフィルターバー（surfaces.md §5.3）の条件。形は lib/share の zod スキーマが持つ */
+export type { SearchConditions };
+export { defaultConditions };
 
 export const searchKinds: readonly EntityKind[] = ['issue', 'wiki', 'document'];
 

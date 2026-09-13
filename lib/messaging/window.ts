@@ -10,6 +10,8 @@ import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
 /** ページ由来のヒント。スコープの初期値と並びにだけ使い、鍵やスペースの選択には使わない（I7） */
 export type PageContext = {
   origin: string;
+  /** 用意済みの文脈が今のページのものかを見分けるためだけに使う。スコープの決定には使わない */
+  pathname?: string;
   spaceKey?: string;
   projectKey?: string;
   issueKey?: string;

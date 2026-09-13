@@ -1,27 +1,11 @@
 import type { Badge, Tone } from '@/components/types';
+import type { CachedEntry, EntityKind } from '@/lib/palette/model';
 
 import { CLOSED_STATUS_ID } from './statuses';
 
-export type EntityKind = 'issue' | 'wiki' | 'document';
-
-/**
- * パレットの行に載せる 1 件。lib/palette/model.ts（M2）の CachedEntry と同じ形で、
- * 合流後はそちらの型をそのまま満たす。spaceId はホスト（D-32）。
- */
-export type Entry = {
-  kind: EntityKind;
-  id: string;
-  key?: string;
-  title: string;
-  spaceId: string;
-  projectId: string;
-  projectName: string;
-  assignee?: string;
-  updatedBy?: string;
-  status?: Badge;
-  type?: Badge;
-  url: string;
-};
+/** パレットの行に載せる 1 件（lib/palette/model.ts）。spaceId はホスト（D-32） */
+export type Entry = CachedEntry;
+export type { EntityKind };
 
 /** マスタとして持つプロジェクトの要約。GET /projects の応答から要る項目だけを残す */
 export type ProjectRef = { id: number; projectKey: string; name: string; useWiki: boolean };

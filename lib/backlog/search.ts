@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/query-core';
 
-import type { Badge } from '@/components/types';
+import type { ResultRow } from '@/lib/search/types';
+import type { SearchScope } from '@/lib/share';
 
 import { mapWithConcurrency } from './concurrency';
 import {
@@ -12,30 +13,11 @@ import {
   wikiEntry,
 } from './entries';
 import { defaultConditions, planIssueSearch, type SearchConditions } from './filters';
+
+/** 検索の範囲は lib/share の SearchScope（根を含まない、D-20）。行は lib/search の ResultRow */
+export type { SearchScope };
+export type SearchRow = ResultRow;
 import type { BacklogQueries, BacklogQuery, ClientFor } from './queries';
-
-/** 検索の範囲。根では検索しない（D-20）。lib/stack/types.ts（M2）の Scope から root を除いた形 */
-export type SearchScope =
-  | { kind: 'space'; spaceId: string }
-  | { kind: 'project'; spaceId: string; projectId: string };
-
-/** lib/search/types.ts（M2）の ResultRow と同じ形。合流後はそちらの型をそのまま満たす */
-export type SearchRow = {
-  kind: EntityKind;
-  id: string;
-  key?: string;
-  title: string;
-  projectName: string;
-  assignee?: string;
-  updatedBy?: string;
-  status?: Badge;
-  type?: Badge;
-  url: string;
-  /** エポックミリ秒。並びは 一致の強さ → 更新日時の新しい順（palette.md §7.3） */
-  updatedAt: number;
-  /** 語が件名に一致したか。本文だけの一致より先に並べる */
-  titleMatched: boolean;
-};
 
 /** 表示上限 30（palette.md §7.3）。それ以上は取らない */
 export const SEARCH_COUNT = 30;

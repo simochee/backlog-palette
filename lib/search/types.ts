@@ -5,11 +5,15 @@ import type { Scope } from '@/lib/stack/types';
 export const searchKinds = ['issue', 'wiki', 'document'] as const;
 export type SearchKind = (typeof searchKinds)[number];
 
-/** 行に閉じて出す障害（§7.5・I6）。この 3 つ以外の失敗は M4 の client がここへ写す */
+/**
+ * 行に閉じて出す障害（§7.5・I6）。unauthorized / rateLimited / offline は専用の行や補足を持つ。
+ * failed（5xx など）は種別が届かなかったものとして扱い、他の種別と 0 件時の提案行に任せる
+ */
 export type SearchError =
   | { kind: 'unauthorized' }
   | { kind: 'rateLimited'; retryAfterSeconds: number }
-  | { kind: 'offline' };
+  | { kind: 'offline' }
+  | { kind: 'failed' };
 
 export type KindProgress =
   | { state: 'loading' }

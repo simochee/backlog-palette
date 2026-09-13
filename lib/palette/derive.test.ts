@@ -65,7 +65,19 @@ describe('空状態（§9）', () => {
 });
 
 describe('未接続と根（§9・D-20）', () => {
-  it('未接続のスペースではページの下に接続行が 1 つ出る', () => {
+  it('未接続のスペースでも最近開いたは表示キャッシュから出て、その下に接続行が 1 つ出る', () => {
+    const stack: Stack = stackOf({ kind: 'space', spaceId: 'nulab', label: nulab.label });
+    const d = run({ stack }, { spaces: [{ ...nulab, connected: false }, acme, beta] });
+    expect(sectionIds(d)).toEqual(['recent', 'pages', 'connect']);
+  });
+
+  it('最近開いたはスコープのスペースの中だけで、別スペースで開いたものは出ない（D-27）', () => {
+    const d = run({});
+    expect(titles(d, 'recent')).not.toContain('社内ヘルプデスク');
+    expect(titles(d, 'recent')).toContain('決済フローのエラーハンドリングを見直す');
+  });
+
+  it('未接続のスペースで出せるものがページだけならページの下に接続行が 1 つ出る', () => {
     const stack: Stack = stackOf({ kind: 'space', spaceId: 'beta', label: beta.label });
     const d = run({ stack });
     expect(sectionIds(d)).toEqual(['pages', 'connect']);

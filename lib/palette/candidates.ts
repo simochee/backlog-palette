@@ -2,6 +2,7 @@ import type { Labels } from '@/components/labels';
 import { isStrong, match, type MatchResult, type MatchTarget } from '@/lib/match/match';
 import type { NormalizedQuery } from '@/lib/query/normalize';
 import { frecencyByEntity } from '@/lib/rank/frecency';
+import { queryDictScores } from '@/lib/rank/queryDict';
 import { type RankContext, type Ranked, rankWithinSection } from '@/lib/rank/rank';
 import type { CommandSegment, Scope } from '@/lib/stack/types';
 
@@ -44,19 +45,17 @@ function spaceOf(index: PaletteIndex, spaceId: string): SpaceEntry | undefined {
   return index.spaces.find((space) => space.id === spaceId);
 }
 
-/** ページの補足は {プロジェクト名} · ページ（§5）。[space] ならスペース名、根なら共通ページの文言 */
-function pageSub({ index, scope, labels }: Env): string {
-  if (scope.kind === 'root') return labels.rows.commonPageSub;
-  const owner =
-    scope.kind === 'project'
-      ? index.projects.find((project) => project.id === scope.projectId)?.name
-      : spaceOf(index, scope.spaceId)?.label;
-  return `${owner ?? ''} · ${labels.rows.pageSub}`;
-}
-
-function pageCandidates(env: Env, section: string): Candidate[] {
-  const { index, scope } = env;
-  const sub = pageSub(env);
+function pageCandidates({ index, scope, labels }: Env, section: string): Candidate[] {
+  const ownerLabel =
+    scope.kind === 'root'
+      ? undefined
+      : scope.kind === 'project'
+        ? index.projects.find((project) => project.id === scope.projectId)?.name
+        : spaceOf(index, scope.spaceId)?.label;
+  const sub =
+    scope.kind === 'root'
+      ? labels.rows.commonPageSub
+      : `${ownerLabel ?? ''} · ${labels.rows.pageSub}`;
   return index.pagesFor(scope).map((page) => ({
     built: pageRow(section, page, sub),
     target: { text: page.title, aliases: page.aliases },
@@ -167,6 +166,8 @@ export function matchAll(
   index: PaletteIndex,
 ): Matched[] {
   const scores = frecencyByEntity(index.activity, index.now);
+  // この語で開いたことのある対象を、同じ強さ・同じ文脈の中で先に出す（M6 の学習）
+  const learned = queryDictScores(index.queryDict, query.folded, index.now);
   const ranked: Matched[] = [];
   for (const candidate of candidates) {
     const result: MatchResult | undefined =
@@ -178,7 +179,8 @@ export function matchAll(
       match: result,
       pinned: candidate.pinExact === true && result.strength === 'exact',
       context: candidate.context,
-      frecency: scores.get(candidate.activityId) ?? 0,
+      personalScore:
+        (scores.get(candidate.activityId) ?? 0) + (learned.get(candidate.activityId) ?? 0),
       strong: candidate.stable && isStrong(result),
     });
   }

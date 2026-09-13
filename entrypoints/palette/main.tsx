@@ -1,13 +1,16 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { Palette } from './Palette.tsx';
+import '@/components/tokens/tailwind.css';
+import './palette.css';
+
+import { PaletteApp } from './PaletteApp.tsx';
 
 const root = document.querySelector('#root');
 if (root === null) throw new Error('#root が無い');
 
 createRoot(root).render(
   <StrictMode>
-    <Palette />
+    <PaletteApp />
   </StrictMode>,
 );

@@ -72,6 +72,7 @@ export const en: Labels = {
     openExternal: 'Open Backlog issue search',
     moreExternal: (count) => `${count} more in Backlog issue search`,
     copied: (subject) => `Copied ${subject}`,
+    searchUrl: 'the search URL',
     copyIssueKey: 'Copy issue key',
     copyIssueUrl: 'Copy issue URL',
     copyIssueTitle: 'Copy key and summary',
@@ -112,6 +113,7 @@ export const en: Labels = {
       wiki: 'Wiki',
       document: 'Documents',
     },
+    failed: 'Could not load',
     authExpired: 'Signed out',
   },
   connect: {

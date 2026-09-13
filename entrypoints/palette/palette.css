@@ -1,0 +1,9 @@
+/*
+ * iframe はビューポート全面を覆う。ページ側の見た目に重なる前提なので、
+ * ドキュメント自身は透明にして暗転は Overlay（components/templates）に任せる（P7）
+ */
+html,
+body {
+  margin: 0;
+  background: transparent;
+}
