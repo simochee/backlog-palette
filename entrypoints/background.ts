@@ -83,7 +83,10 @@ function serveFetchDelegation() {
 /** Backlog のタブではサイドパネルを開く。それ以外のタブは設定画面（surfaces.md §4。設定画面は後続の PR） */
 async function openSurfaceFor(tab: { id?: number; url?: string }): Promise<void> {
   if (tab.id === undefined || tab.url === undefined) return;
-  if (!(await isKnownSpaceOrigin(new URL(tab.url).origin))) return;
+  if (!(await isKnownSpaceOrigin(new URL(tab.url).origin))) {
+    await browser.runtime.openOptionsPage();
+    return;
+  }
   const sidebarAction = readSidebarAction();
   if (sidebarAction !== undefined) {
     sidebarAction.toggle();

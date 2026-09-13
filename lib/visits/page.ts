@@ -1,4 +1,4 @@
-import { spaceKeyOf } from '@/lib/backlog/host';
+import { spaceHostOf } from '@/lib/backlog/host';
 import type { DisplayCacheEntry, VisitedKind } from '@/lib/storage/items';
 
 type PagePattern = {
@@ -39,8 +39,8 @@ export type VisitedPage = Omit<DisplayCacheEntry, 'title' | 'visitedAt'>;
 
 export function readVisitedPage(href: string): VisitedPage | undefined {
   const url = new URL(href);
-  const spaceKey = spaceKeyOf(url.origin);
-  if (spaceKey === undefined) return undefined;
+  const spaceHost = spaceHostOf(url.origin);
+  if (spaceHost === undefined) return undefined;
 
   for (const { kind, pattern, readKey } of PAGES) {
     const match = pattern.exec(url.pathname);
@@ -50,7 +50,7 @@ export function readVisitedPage(href: string): VisitedPage | undefined {
     return {
       url: url.origin + url.pathname,
       kind,
-      spaceKey,
+      spaceHost,
       projectKey: projectKey.toUpperCase(),
       ...(readKey === undefined || raw === undefined ? {} : { key: readKey(raw) }),
     };

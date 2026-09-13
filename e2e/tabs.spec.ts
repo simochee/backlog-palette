@@ -9,6 +9,6 @@ test.describe('拡張ページからの tabs API', () => {
     await page.keyboard.press(HOTKEY);
 
     const input = page.frameLocator(PALETTE_FRAME).locator('input');
-    await expect(input).toHaveAttribute('placeholder', 'demo で検索');
+    await expect(input).toHaveAttribute('placeholder', 'demo.backlog.jp で検索');
   });
 });
