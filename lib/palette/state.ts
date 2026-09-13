@@ -1,7 +1,7 @@
 import type { ToastView } from '@/components/types';
-import type { SearchSession } from '@/lib/search/types';
+import type { ResultRow, SearchError, SearchKind, SearchSession } from '@/lib/search/types';
 import { emptyStack } from '@/lib/stack/stack';
-import type { CommandSegment, ProjectSegment, SpaceSegment, Stack } from '@/lib/stack/types';
+import type { CommandSegment, ProjectSegment, Scope, SpaceSegment, Stack } from '@/lib/stack/types';
 
 /** palette.md §2 の状態モデル。スコープ・セクション・フッターはここから導き、別に持たない */
 export type PaletteState = {
@@ -41,4 +41,11 @@ export type PaletteAction =
   /** 上のどれでもないキー。削除待ちとトーストを消す */
   | { type: 'keyPressed' }
   | { type: 'toasted'; toast: ToastView }
-  | { type: 'toastExpired' };
+  | { type: 'toastExpired' }
+  /** 検索行で ↵（§7.1）。選択はプレースホルダへ移る */
+  | { type: 'searchStarted'; query: string; scope: Scope }
+  /** 種別単位の到着（§7.3）。到着も reducer に届く 1 アクション */
+  | { type: 'resultsArrived'; kind: SearchKind; rows: readonly ResultRow[] }
+  | { type: 'searchFailed'; kind: SearchKind; error: SearchError }
+  /** notice 行の ↵。保留を合流させて選択を先頭へ */
+  | { type: 'heldMerged' };

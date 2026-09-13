@@ -1,5 +1,6 @@
 import type { Labels } from '@/components/labels';
 import type { RowHint, RowView } from '@/components/types';
+import { SEARCH_ROW_ID } from '@/lib/search/ids';
 import type { CommandSegment, Scope } from '@/lib/stack/types';
 
 import type { CachedEntry, PageEntry, ProjectEntry, SpaceEntry } from './model';
@@ -11,7 +12,13 @@ export type RowAction =
   | { type: 'search'; query: string; scope: Scope }
   | { type: 'copy'; text: string; subject: string }
   | { type: 'descend'; command: CommandSegment }
-  | { type: 'connect'; spaceId: string | undefined };
+  | { type: 'connect'; spaceId: string | undefined }
+  /** notice 行: 保留を合流させて選択を先頭へ（§7.3） */
+  | { type: 'mergeHeld' }
+  /** panel 行: サイドパネルへ語とスコープを渡す（⌘→ と同じ） */
+  | { type: 'openPanel' }
+  /** 429 の status 行: 再試行 */
+  | { type: 'retry' };
 
 export type Built = {
   row: RowView;
@@ -151,13 +158,19 @@ export function descendCommandRow(command: CommandSegment): Built {
   );
 }
 
-export function searchRow(query: string, scope: Scope, scopeLabel: string, labels: Labels): Built {
+export function searchRow(
+  query: string,
+  scope: Scope,
+  scopeLabel: string,
+  labels: Labels,
+  sub?: string,
+): Built {
   return build(
-    'search:search:query',
+    SEARCH_ROW_ID,
     {
       kind: 'search',
       title: labels.rows.searchFor(query),
-      sub: labels.rows.searchSub(scopeLabel),
+      sub: sub ?? labels.rows.searchSub(scopeLabel),
       tone: 'accent',
     },
     { type: 'search', query, scope },

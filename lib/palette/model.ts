@@ -61,6 +61,8 @@ export type PaletteIndex = {
   /** スコープで URL が組めるページ定義。根では共通のページ（個人設定・API キー）を返す */
   pagesFor: (scope: Scope) => readonly PageEntry[];
   issueUrl: (spaceId: string, issueKey: string) => string;
+  /** 本体の課題検索へ逃がす URL（§7.3 の上限超過・§7.5 の 0 件） */
+  externalSearchUrl: (scope: Scope, query: string) => string;
   cache: readonly CachedEntry[];
   /** 担当課題。API から届くまでは undefined（空状態は待たずに描く） */
   assigned: readonly CachedEntry[] | undefined;

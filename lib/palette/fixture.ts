@@ -177,6 +177,8 @@ export const index: PaletteIndex = {
   projects: [web, mobile, helpdesk],
   pagesFor,
   issueUrl: (spaceId, key) => `https://${spaceId}.backlog.com/view/${key}`,
+  externalSearchUrl: (scope, query) =>
+    `https://nulab.backlog.com/FindIssueAllOver.action?scope=${scope.kind}&q=${query}`,
   cache: [payment, login, password, pushNotice, loginWiki],
   assigned: [login, password],
   activity: [

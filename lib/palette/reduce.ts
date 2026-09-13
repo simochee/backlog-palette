@@ -1,6 +1,13 @@
 import { backspace, disarm, escape, pushCommand, pushProject, pushSpace } from '@/lib/stack/stack';
 import type { Stack } from '@/lib/stack/types';
 
+import {
+  heldMerged,
+  resultsArrived,
+  searchFailed,
+  searchStarted,
+  selectedWithMerge,
+} from './reduceSearch';
 import type { PaletteAction, PaletteState, TakeTarget } from './state';
 
 function withStack(state: PaletteState, stack: Stack): PaletteState {
@@ -66,7 +73,12 @@ export function reduce(state: PaletteState, action: PaletteAction): PaletteState
         toast: undefined,
       };
     case 'selected':
-      return { ...state, stack: disarm(state.stack), selectedId: action.id, toast: undefined };
+      return {
+        ...selectedWithMerge(state, action.id),
+        stack: disarm(state.stack),
+        selectedId: action.id,
+        toast: undefined,
+      };
     case 'took':
       return take(state, action.target);
     case 'descended':
@@ -81,6 +93,14 @@ export function reduce(state: PaletteState, action: PaletteAction): PaletteState
       return { ...state, toast: action.toast };
     case 'toastExpired':
       return { ...state, toast: undefined };
+    case 'searchStarted':
+      return searchStarted(state, action.query, action.scope);
+    case 'resultsArrived':
+      return resultsArrived(state, action.kind, action.rows);
+    case 'searchFailed':
+      return searchFailed(state, action.kind, action.error);
+    case 'heldMerged':
+      return heldMerged(state);
     default:
       return state;
   }
