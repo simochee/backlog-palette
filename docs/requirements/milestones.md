@@ -63,7 +63,7 @@ React も拡張機能 API も知らない純粋ロジック。MVP の `packages/
 
 | | |
 |---|---|
-| 成果物 | 正規化（NFKC・かな・ローマ字）、照合、ランキングと介入ルール、frecency、遷移パターン、スタック（`⇥` で積む規則を含む）、入力解釈（`>` `#` プレフィックス・課題キー）、キーマップの導出、結果の合流と保留、検索状態（パネルの条件を含む）と URL の codec、ページ定義、`document.title` の解析、文言辞書の型 |
+| 成果物 | 正規化（NFKC・かな・ローマ字）、照合、ランキングと介入ルール、frecency、遷移パターン、スタック（`⇥` で積む規則を含む）、入力解釈（`>` `#` プレフィックス・課題キー）、KeyBinding とフッターの導出（Hotkeys の照合・表示）、パレットの Store と reducer、結果の合流と保留、検索状態（パネルの条件を含む）と zod スキーマ・URL の codec、ページ定義、`document.title` の解析、storage の defineItem 一覧と DB コレクションの adapter、文言辞書の型（`tech-stack.md` §3） |
 | 完了条件 | `lib/**/*.test.ts` が vitest で通る（`vitest.config.ts` に `lib` のプロジェクトを足す。story と同じ `pnpm test` で走る）。テスト名は仕様（「課題キー完全一致は他候補の学習スコアがどれだけ高くても先頭に出る」「⌫ の 1 回目ではスタックは変わらず削除待ちになる」「全角の ＞ は半角と同じくコマンド絞り込みになる」「保留中の行は選択が先頭に戻るまで合流しない」） |
 | 人の工程 | 無し |
 | 並行 | M1・M3 |
@@ -76,9 +76,9 @@ content script → iframe → Service Worker の線を通す。**MVP の罠（`m
 
 | | |
 |---|---|
-| 成果物 | iframe の先行注入と `open` / `close`（origin 検証つき）、content script での `⌘K` 捕捉（`commands` は使わない。D-10）、ストレージのスキーマとマイグレーション、`tabs.update` / `tabs.create` による遷移、表示キャッシュの収集、サイドパネルのエントリ、Firefox ビルドの出し分け、E2E の土台（偽の Backlog スペースを `--host-resolver-rules` で `demo.backlog.jp` に見せる。MVP の `e2e/fixtures` を参照） |
+| 成果物 | iframe の先行注入と `open` / `close`（origin 検証つき）、content script での `⌘K` 捕捉（`commands` は使わない。D-10）、拡張ページからの `tabs.query`（スペースの決定）と `tabs.update` / `tabs.create`（遷移）、表示キャッシュの収集（content script → storage）、薄い Service Worker（初期化・alarms）、サイドパネルのエントリ、Firefox ビルドの出し分け、E2E の土台（偽の Backlog スペースを `--host-resolver-rules` で `demo.backlog.jp` に見せる。MVP の `e2e/fixtures` を参照） |
 | 完了条件 | CI に E2E ジョブが増え緑。E2E で「`⌘K` → iframe が表示され入力欄に文字が打てる」「Esc で閉じる」「Backlog ページのスクリプトからパレットの DOM に到達できない」「変換中の Enter で遷移しない（CDP の `Input.imeSetComposition`）」「Backlog 以外のページでは `⌘K` がページに届く」が通る。ビルド後の `manifest.json` に content script・side_panel（Chrome）／sidebar_action（Firefox）が入り、`commands` に既定キーが無い |
-| 人の工程 | 実機で 1 回だけ: `⌘K` → 表示が 100ms 以内に感じられるか、Backlog 本体のエディタや `⌘K` を使う画面で捕捉しない境界がどこか（未決 #4）。結果を `backlog-facts.md` に追記 |
+| 人の工程 | 実機で 1 回だけ: `⌘K` → 表示が 100ms 以内に感じられるか、Backlog 本体のエディタや `⌘K` を使う画面で捕捉しない境界がどこか（未決 #4）、**Firefox で Web ページに埋めた拡張 iframe から `tabs` と fetch が使えるか**（`backlog-facts.md` §5-16）。結果を台帳に追記 |
 | 並行 | M1・M2 |
 
 ---
@@ -87,9 +87,9 @@ content script → iframe → Service Worker の線を通す。**MVP の罠（`m
 
 | | |
 |---|---|
-| 成果物 | API キー接続の導線（発行ページ + メモ欄 + 貼り付けシート）、OAuth 副経路、`backlog-js` のラッパー（レート制御・スペースごとのトークン・429 の待ち）、`rateLimit` による初期化、マスタの先読み（プロジェクト・ステータス）、担当課題の取得、検索オーケストレーション（スペース × 種別の並列、push ストリーム、パネルの条件を `statusId[]` 等へ展開）、カスタムドメインの動的登録 |
+| 成果物 | API キー接続の導線（発行ページ + メモ欄 + 貼り付けシート、TanStack Form）、OAuth 副経路（SW）、`backlog-js` のラッパーと Pacer のレート制御（スペース × 枠、storage で共有）、`rateLimit` による初期化、TanStack Query の `queryOptions` カタログと persister、マスタの先読み（プロジェクト・ステータス）、担当課題の取得、検索（`useQueries` でスペース × 種別の並列、合流と保留は純粋関数、パネルの条件を `statusId[]` 等へ展開）、カスタムドメインの動的登録 |
 | 完了条件 | 偽スペースの E2E で「未接続 → 接続 → 空状態に担当課題が出る」「1 スペースが 401 でも他の結果が出る」「429 で該当スペースだけが待ちになる」が通る。ユニットで「『完了を除く』はプロジェクトごとの statusId 集合に展開される」 |
-| 人の工程 | **検証用スペースを用意し API キーを発行する**（人しかできない）。OAuth アプリの登録（Chrome の redirect URI。Firefox の URI も追加）。`backlog-facts.md` §5 の未確認 4・5・6・7・9・12 を実機で埋める（課題キーの先頭文字、小文字の URL、`/add/` のパス、`EditProject.action` の引数、カスタムドメインの形式） |
+| 人の工程 | **検証用スペースを用意し API キーを発行する**（人しかできない）。OAuth アプリの登録（Chrome の redirect URI。Firefox の URI も追加）。`backlog-facts.md` §5 の未確認 4・5・6・7・9・12・15 を実機で埋める（課題キーの先頭文字、小文字の URL、`/add/` のパス、`EditProject.action` の引数、カスタムドメインの形式、`Backlog-API-Key` ヘッダの CORS プリフライト） |
 | 依存 | M3 |
 
 ---

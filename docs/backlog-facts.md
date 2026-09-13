@@ -307,6 +307,9 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 | 12 | Enterprise カスタムドメインの実際の形式と、`{space}.git.backlog.*` を除外すべきか | `matches` と動的登録 | #12 |
 | 13 | 一般ユーザー権限（管理者でない）で `GET /api/v2/users` が実際に 403 になるか、その場合のメッセージ | `@ユーザー` 候補の取得経路 | — |
 | 14 | ドキュメント一覧の `plain` を含むレスポンスの実サイズと所要時間 | プレビュー・スニペットの実現性、§14 のパフォーマンス予算 | — |
+| 15 | `Backlog-API-Key` ヘッダ付きの fetch（拡張ページから、`Origin: chrome-extension://…`）が CORS のプリフライトを通るか。`?apiKey=` クエリでの挙動との比較 | 拡張ページから API を直接呼ぶ設計（`requirements/tech-stack.md` T-2）。通らなければクエリに切り替える | 2026-09-13 追記 |
+| 16 | Web ページに埋めた拡張 iframe から、Chrome と Firefox の両方で `tabs.query` / `tabs.update` と cross-origin fetch が使えるか | 同上。使えないブラウザでは SW に委譲する | 2026-09-13 追記 |
+| 17 | `@wxt-dev/storage` の `defineItem().watch` が拡張ページ間（iframe・サイドパネル・設定）で確実に届くか | TanStack DB コレクションの同期（T-1） | 2026-09-13 追記 |
 
 ---
 
