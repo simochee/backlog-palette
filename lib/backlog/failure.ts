@@ -23,7 +23,19 @@ function isOffline(): boolean {
   return typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine;
 }
 
+/** 鍵を持たないスペースへ問い合わせた。パレットでは未接続・再接続の行になる */
+export class NotConnectedError extends Error {
+  readonly spaceHost: string;
+
+  constructor(spaceHost: string) {
+    super('not connected');
+    this.name = 'NotConnectedError';
+    this.spaceHost = spaceHost;
+  }
+}
+
 export function toApiFailure(error: unknown, now: number = Date.now()): ApiFailure {
+  if (error instanceof NotConnectedError) return { kind: 'unauthorized' };
   if (error instanceof RateLimitExceededError) {
     return { kind: 'rateLimited', retryAfterSeconds: error.retryAfterSeconds };
   }

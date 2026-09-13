@@ -20,16 +20,17 @@ function fakeApi(overrides: Partial<ConnectApi> = {}): ConnectApi {
     getMyself: () => Promise.resolve({ id: 1 }),
     getSpace: () => Promise.resolve(SPACE),
     getRateLimit: () => Promise.resolve({ rateLimit: SNAPSHOT }),
-    getProjects: () => Promise.resolve([{ id: 101 }, { id: 102 }]),
     ...overrides,
   };
 }
 
-function deps(api: ConnectApi) {
+function deps(api: ConnectApi, overrides: Partial<ConnectDeps> = {}) {
   const recorded = {
     createClient: vi.fn(() => api),
     saveApiKey: vi.fn(() => Promise.resolve()),
     initializeRateLimit: vi.fn(() => Promise.resolve()),
+    prefetchMasters: vi.fn(() => Promise.resolve({ projectCount: 2 })),
+    ...overrides,
     saveSpace: vi.fn(() => Promise.resolve()),
     now: () => 1_700_000_000_000,
   } satisfies ConnectDeps;
@@ -37,7 +38,7 @@ function deps(api: ConnectApi) {
 }
 
 describe('接続の手順', () => {
-  it('キーが通ったら保存し、上限とプロジェクト数を記録して表示名を返す', async () => {
+  it('キーが通ったら保存し、上限を初期化してマスタを先読みし、プロジェクト数と表示名を返す', async () => {
     const d = deps(fakeApi());
 
     const result = await connectSpace(HOST, 'key', d);
@@ -55,6 +56,7 @@ describe('接続の手順', () => {
     expect(d.createClient).toHaveBeenCalledWith(HOST, 'key');
     expect(d.saveApiKey).toHaveBeenCalledWith(HOST, 'key');
     expect(d.initializeRateLimit).toHaveBeenCalledWith(HOST, SNAPSHOT);
+    expect(d.prefetchMasters).toHaveBeenCalledWith(HOST);
     expect(d.saveSpace).toHaveBeenCalledWith(
       expect.objectContaining({ host: HOST, projectCount: 2 }),
     );
@@ -71,9 +73,9 @@ describe('接続の手順', () => {
   });
 
   it('初期化に失敗しても保存した鍵は残り、失敗を返す', async () => {
-    const d = deps(
-      fakeApi({ getProjects: () => Promise.reject(new TypeError('Failed to fetch')) }),
-    );
+    const d = deps(fakeApi(), {
+      prefetchMasters: () => Promise.reject(new TypeError('Failed to fetch')),
+    });
 
     const result = await connectSpace(HOST, 'key', d);
 
