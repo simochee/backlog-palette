@@ -1,4 +1,4 @@
-import type { Labels } from '@/components/labels';
+import { type Labels, labelsFor } from '@/components/labels';
 import { resolveLanguage } from '@/lib/i18n/language';
 import type { CachedEntry, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
@@ -8,7 +8,6 @@ import { applyColorScheme } from '@/lib/theme/colorScheme';
 import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
-import { labelsFor } from './language.ts';
 import { revalidateInBackground } from './revalidate.ts';
 import type { SearchRunner } from './search.ts';
 import { type Restore, restoreFrom } from './share.ts';

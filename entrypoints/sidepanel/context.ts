@@ -1,4 +1,4 @@
-import { en, ja, type Labels } from '@/components/labels';
+import { type Labels, labelsFor } from '@/components/labels';
 import { spaceHostOf } from '@/lib/backlog/host';
 import type { ConnectedSpace } from '@/lib/connect/connectSpace';
 import { resolveLanguage } from '@/lib/i18n/language';
@@ -31,7 +31,7 @@ export async function readPanelContext(): Promise<PanelContext> {
   );
   const tabSpace = tab?.url === undefined ? undefined : spaceHostOf(new URL(tab.url).origin);
   return {
-    labels: language === 'ja' ? ja : en,
+    labels: labelsFor(language),
     tabSpace,
     spaces: connected,
     learningEnabled: prefs.learning,
