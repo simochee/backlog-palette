@@ -51,6 +51,12 @@ describe('↵ と ⇥ と ⌘↵', () => {
     ).toBe(ja.keys.apply);
   });
 
+  it('2 段階コマンドの ↵ は積んで引数を出す動作なので「開く」', () => {
+    expect(
+      labelOf({ selected: row({ kind: 'command', hints: ['descend', 'stack'] }) }, 'enter'),
+    ).toBe(ja.keys.open);
+  });
+
   it('⇥ は取り込める行があるときだけ出て、補完・積む・階層を開くで文言が変わる', () => {
     expect(labelOf({}, 'take')).toBe(ja.keys.complete);
     expect(labelOf({ selected: row({ kind: 'space', hints: ['enter', 'stack'] }) }, 'take')).toBe(
