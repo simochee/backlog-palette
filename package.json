@@ -33,6 +33,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@tanstack/hotkeys": "0.8.0",
     "@tanstack/react-form": "1.33.5",
     "lucide-react": "1.45.0",
     "radix-ui": "1.6.7",
