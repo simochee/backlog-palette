@@ -1,6 +1,7 @@
 export * from './callbacks';
 export * from './domain';
 export * from './footer';
+export * from './options';
 export * from './palette';
 export * from './palette.results';
 export * from './panel';
