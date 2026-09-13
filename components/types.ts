@@ -1,0 +1,123 @@
+export type RowKind =
+  | 'page'
+  | 'issue'
+  | 'wiki'
+  | 'document'
+  | 'project'
+  | 'space'
+  | 'command'
+  | 'search'
+  | 'panel'
+  | 'connect'
+  | 'status'
+  | 'notice'
+  | 'external'
+  | 'hint';
+
+export type Tone = 'neutral' | 'info' | 'success' | 'done' | 'warning' | 'danger';
+export type Badge = { label: string; tone: Tone };
+
+/**
+ * 行が持つ動作。空なら Enter で何も起きず、ヒントも出ない（不変条件 I1）。
+ * complete / stack は ⇥ の意味（補完か、スタックに積むか）。両方は持たない
+ */
+export type RowHint = 'enter' | 'modEnter' | 'descend' | 'complete' | 'stack';
+
+export type RowTone = 'default' | 'accent' | 'danger';
+
+export type RowView = {
+  id: string;
+  kind: RowKind;
+  code?: string;
+  title: string;
+  sub?: string;
+  marker?: Badge;
+  tag?: Badge;
+  space?: { label: string };
+  hints: readonly RowHint[];
+  tone?: RowTone;
+  busy?: boolean;
+};
+
+export type SectionView = {
+  id: string;
+  label?: string;
+  meta?: string;
+  rows: readonly RowView[];
+};
+
+export type PathSegmentView = {
+  id: string;
+  label: string;
+  badge?: boolean;
+  armed?: boolean;
+  compact?: boolean;
+};
+
+export type KeyHintId = 'enter' | 'modEnter' | 'move' | 'back' | 'take' | 'copyUrl' | 'toPanel';
+
+/** フッターのキーヒント。container が KeyBinding から導出して渡す（不変条件 I2） */
+export type KeyHint = {
+  id: KeyHintId;
+  keys: readonly string[];
+  label: string;
+  priority: number;
+};
+
+export type ToastView = { message: string; detail?: string };
+
+export type PaletteView = {
+  path: readonly PathSegmentView[];
+  input: { value: string; placeholder: string; completion?: string };
+  armedNotice?: string;
+  escLabel: string;
+  sections: readonly SectionView[];
+  selectedId?: string;
+  footer: readonly KeyHint[];
+  toast?: ToastView;
+};
+
+export type FilterOption = { id: string; label: string; count?: number; tone?: Tone };
+export type FilterField = {
+  id: string;
+  label: string;
+  value: string;
+  options: readonly FilterOption[];
+  neutralValue?: string;
+};
+
+export type SpaceProgress = {
+  id: string;
+  label: string;
+  state: 'loading' | 'ready' | 'error';
+  count?: number;
+  message?: string;
+  action?: { label: string };
+};
+
+export type PanelView = {
+  input: { value: string; placeholder: string };
+  recentQueries: readonly string[];
+  filters: readonly FilterField[];
+  spaces: readonly SpaceProgress[];
+  sections: readonly SectionView[];
+  selectedId?: string;
+  footer: readonly KeyHint[];
+  toast?: ToastView;
+};
+
+export type ConnectSheetState =
+  | { kind: 'idle' }
+  | { kind: 'submitting' }
+  | { kind: 'error'; message: string }
+  | { kind: 'done'; spaceLabel: string };
+
+export type SpaceItemView = {
+  id: string;
+  label: string;
+  host: string;
+  projectCount: number;
+  lastSyncedAt: string;
+  method: 'apiKey' | 'oauth';
+  state: 'connected' | 'needsReconnect';
+};

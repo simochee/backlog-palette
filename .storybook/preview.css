@@ -1,0 +1,5 @@
+body {
+  background: var(--bp-surface-page);
+  color: var(--bp-text-default);
+  font-family: var(--bp-font-body);
+}
