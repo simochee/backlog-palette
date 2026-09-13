@@ -1,4 +1,5 @@
 import { browser, defineBackground } from '#imports';
+import { serializeResponse } from '@/lib/backlog/delegatedFetch';
 import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
 import { onMessage } from '@/lib/messaging/background';
 import type { CurrentTab } from '@/lib/tabs/types';
@@ -59,8 +60,28 @@ function serveTabsDelegation() {
   });
 }
 
+/**
+ * fetch を持てないコンテキスト（Firefox の埋め込み iframe）からの委譲を受ける（D-33）。
+ * 任意 URL の中継にはしない。Backlog のスペースの origin だけを撃つ。
+ * リクエストのヘッダには鍵が載っているので、ここで内容をログに出さない。
+ */
+function serveFetchDelegation() {
+  onMessage('fetchBacklog', async ({ data }) => {
+    if (!isBacklogSpaceOrigin(new URL(data.url).origin)) {
+      throw new Error('Backlog のスペース以外には委譲しない');
+    }
+    const response = await fetch(data.url, {
+      method: data.method,
+      headers: data.headers,
+      ...(data.body === undefined ? {} : { body: data.body }),
+    });
+    return serializeResponse(response);
+  });
+}
+
 export default defineBackground(() => {
   serveTabsDelegation();
+  serveFetchDelegation();
 
   browser.runtime.onInstalled.addListener(() => {
     void browser.alarms.create(PRUNE_DISPLAY_CACHE, { periodInMinutes: 24 * 60 });
