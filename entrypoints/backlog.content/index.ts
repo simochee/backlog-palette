@@ -1,0 +1,180 @@
+import { browser, defineContentScript } from '#imports';
+import type { ContentScriptContext } from '#imports';
+import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/backlog/host';
+import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
+import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
+import { readVisitedPage } from '@/lib/visits/page';
+import { recordVisit } from '@/lib/visits/record';
+
+import { summaryFromTitle } from './title.ts';
+
+/*
+ * WXT の createIframeUi を使わない。'overlay' は wrapper に width:0 / height:0 を
+ * 付けて iframe を 0×0 に潰し、'modal' でも wrapper の div が 1 つ増える。
+ * content script がページに作る DOM は iframe 1 つだけにする（tech-stack.md §2）。
+ */
+function createPaletteFrame(src: string): HTMLIFrameElement {
+  const iframe = document.createElement('iframe');
+  iframe.src = src;
+  iframe.dataset.backlogPalette = '';
+  /*
+   * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
+   * Permissions Policy で許可する必要がある。コピーコマンドの前提。
+   */
+  iframe.allow = 'clipboard-write';
+  iframe.style.cssText = [
+    'display:none',
+    'position:fixed',
+    'inset:0',
+    // iframe には既定サイズ 300×150 が効くため、inset:0 だけでは引き伸ばされない
+    'width:100%',
+    'height:100%',
+    'border:0',
+    'z-index:2147483647',
+    'color-scheme:normal',
+  ].join(';');
+  return iframe;
+}
+
+const ISSUE_PATH = /^\/view\/([A-Z][A-Z0-9_]*-\d+)/u;
+
+function readPageContext(): PageContext {
+  const { origin, pathname } = window.location;
+  const issueKey = ISSUE_PATH.exec(pathname)?.[1];
+  return {
+    origin,
+    spaceKey: spaceKeyOf(origin),
+    projectKey: issueKey?.slice(0, issueKey.lastIndexOf('-')),
+    issueKey,
+  };
+}
+
+type PaletteFrame = { show: () => void; hide: () => void };
+
+function createPaletteFrameControl(
+  iframe: HTMLIFrameElement,
+  extensionOrigin: string,
+): PaletteFrame {
+  const send = (message: ToIframe) => {
+    iframe.contentWindow?.postMessage(message, extensionOrigin);
+  };
+  return {
+    show: () => {
+      iframe.style.display = 'block';
+      /*
+       * 親からも iframe 要素にフォーカスを移す。iframe の中で input.focus() を
+       * 呼ぶだけでは、ページ側にフォーカスされた要素が残っているときに
+       * トップレベルのフォーカスが移らないことがある。
+       */
+      iframe.focus();
+      send({ t: 'open', ctx: readPageContext() });
+    },
+    hide: () => {
+      iframe.style.display = 'none';
+      // 隠すだけでなく iframe にも伝える。伝えないと iframe は開いた状態を保持したままになる
+      send({ t: 'close' });
+    },
+  };
+}
+
+type PaletteHost = { toggle: () => void; close: () => void };
+
+function createPaletteHost(
+  ctx: ContentScriptContext,
+  iframe: HTMLIFrameElement,
+  frame: PaletteFrame,
+): PaletteHost {
+  let isOpen = false;
+  let isLoaded = false;
+  let hasPendingOpen = false;
+
+  const open = () => {
+    isOpen = true;
+    // 先行注入なので初回 ⌘K が load より先に来ることがある。読み込み完了後に開く
+    if (!isLoaded) {
+      hasPendingOpen = true;
+      return;
+    }
+    frame.show();
+  };
+
+  const close = () => {
+    isOpen = false;
+    hasPendingOpen = false;
+    frame.hide();
+  };
+
+  ctx.addEventListener(iframe, 'load', () => {
+    isLoaded = true;
+    if (!hasPendingOpen) return;
+    hasPendingOpen = false;
+    frame.show();
+  });
+
+  return {
+    toggle: () => {
+      if (isOpen) {
+        close();
+      } else {
+        open();
+      }
+    },
+    close,
+  };
+}
+
+/** URL と document.title だけから表示キャッシュに記録する。本文・コメントは読まない（surfaces.md §3） */
+function recordCurrentPage() {
+  const page = readVisitedPage(window.location.href);
+  if (page === undefined) return;
+  const title = summaryFromTitle(document.title);
+  void recordVisit({ ...page, ...(title === undefined ? {} : { title }), visitedAt: Date.now() });
+}
+
+export default defineContentScript({
+  matches: [...BACKLOG_SPACE_MATCHES],
+  excludeMatches: [...NOT_A_SPACE_MATCHES],
+
+  main(ctx) {
+    const extensionOrigin = new URL(browser.runtime.getURL('/')).origin;
+    // 初回 ⌘K で読み込みを待たせないため、非表示のまま先に注入する（palette.md §3）
+    const iframe = createPaletteFrame(browser.runtime.getURL('/palette.html'));
+    /*
+     * body ではなく documentElement に付ける。body に transform や filter が
+     * 掛かると position:fixed の基準が body になり、全面を覆えなくなる。
+     */
+    document.documentElement.append(iframe);
+    ctx.onInvalidated(() => iframe.remove());
+
+    const host = createPaletteHost(ctx, iframe, createPaletteFrameControl(iframe, extensionOrigin));
+
+    /*
+     * キャプチャ段階で受ける。Backlog 本体がバブリングで ⌘K を使っていても
+     * 先に止められる。commands は使わない（D-10）。
+     */
+    ctx.addEventListener(
+      window,
+      'keydown',
+      (event) => {
+        if (!isPaletteHotkey(event, navigator.platform)) return;
+        // 変換中は捕捉しない（I5）。テキスト入力にフォーカスがあるときも捕捉しない（D-21）
+        if (event.isComposing || isTextEntryTarget(event.target)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        host.toggle();
+      },
+      { capture: true },
+    );
+
+    recordCurrentPage();
+    ctx.addEventListener(window, 'wxt:locationchange', recordCurrentPage);
+
+    ctx.addEventListener(window, 'message', (event) => {
+      // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する
+      if (event.source !== iframe.contentWindow) return;
+      if (event.origin !== extensionOrigin) return;
+      if (!isFromIframe(event.data)) return;
+      host.close();
+    });
+  },
+});

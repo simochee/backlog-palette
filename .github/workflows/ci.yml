@@ -105,6 +105,53 @@ jobs:
         with:
           path: storybook-static
 
+  # verify とは並行に走らせる。E2E は自分でビルドしてから拡張を読み込むので
+  # verify のビルド結果に依存せず、needs を付けると待ち時間だけが増える。
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v2
+        with:
+          cache: true
+
+      # verify の Install browser と同じ chromium。キーを揃えてキャッシュを共有する。
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Firefox は Puppeteer が駆動する。Playwright の Firefox は拡張を読み込めない。
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-firefox-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Firefox
+        run: pnpm exec puppeteer browsers install firefox
+
+      - name: Build (chrome)
+        run: pnpm build
+
+      # manifest の出し分けは Firefox ビルドの成果物を検査する
+      - name: Build (firefox)
+        run: pnpm build:firefox
+
+      - name: E2E
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ failure() }}
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7
+
   # verify が通ったときだけ公開する。公開物は verify ジョブがビルドしたものを
   # 受け渡し、同じ Storybook を二度ビルドしない。
   deploy-storybook:
