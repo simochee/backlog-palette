@@ -67,6 +67,8 @@ export type ExtensionFixtures = {
   readStorage: <T>(key: string) => Promise<T | undefined>;
   /** 接続済みの状態を storage に直接置く。接続導線を通す E2E は connect.spec が持つ */
   seedConnected: (spaces: readonly { host: string; name: string }[]) => Promise<void>;
+  /** 設定を storage に直接置く。書かない項目は既定値のまま */
+  seedSettings: (patch: Record<string, unknown>) => Promise<void>;
 };
 
 export type WorkerFixtures = {
@@ -181,6 +183,25 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
         },
         { list, key: VALID_API_KEY },
       );
+    });
+  },
+
+  seedSettings: async ({ serviceWorker }, use) => {
+    await use(async (patch) => {
+      await serviceWorker.evaluate(async (input) => {
+        const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+        const current = (await api.storage.local.get('settings')).settings ?? {};
+        await api.storage.local.set({
+          settings: {
+            theme: 'system',
+            language: 'system',
+            learning: true,
+            telemetry: true,
+            ...(current as Record<string, unknown>),
+            ...input,
+          },
+        });
+      }, patch);
     });
   },
 
