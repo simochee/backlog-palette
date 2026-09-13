@@ -15,7 +15,7 @@ TanStack のエコシステムを軸にする。ライブラリは**層の規約
 | UI | アイコン | lucide-react | 1.45 | 安定 | 既定 |
 | UI | 入力欄と競合しない部品（Popover・Switch・RadioGroup。Phase 2 で AlertDialog） | Radix Primitives（`radix-ui`） | 1.6 | 安定 | D-17 |
 | UI | 候補リスト（listbox・仮想フォーカス） | **自前** | — | — | D-13 |
-| UI | フォーム（接続シート・カスタムドメイン） | @tanstack/react-form | 1.33 | 安定 | T-9 |
+| UI | フォーム（接続バー・カスタムドメイン） | @tanstack/react-form | 1.33 | 安定 | T-9 |
 | 状態 | パレットの状態（スタック・入力・セッション・トースト） | @tanstack/store（`lib/`）+ @tanstack/react-store（`entrypoints/`） | 0.11 | 事実上安定（Router の内部依存） | T-8 |
 | 状態 | ルーティングと検索状態の URL 化 | @tanstack/react-router（サイドパネル・設定画面のみ） | 1.170 | 安定 | T-6 |
 | データ | Backlog API の取得・キャッシュ・SWR | @tanstack/react-query（拡張ページごとに QueryClient）+ persister | 5.102 | 安定 | T-2 |
@@ -54,20 +54,19 @@ flowchart TB
     PANEL["sidepanel.html<br/>Router + Query + DB"]
     OPT["options.html<br/>Router + Form + DB"]
     ST[("@wxt-dev/storage<br/>DB コレクション / Query の persister / 鍵")]
-    SW["background<br/>インストール初期化 / OAuth 更新 / alarms / 履歴取り込み"]
+    SW["background<br/>インストール初期化 / alarms / 履歴取り込み"]
   end
   CS <-->|postMessage open/close| PAL
   PAL & PANEL & OPT <-->|live query / persister| ST
   PAL & PANEL --->|backlog-js + Pacer| API["Backlog API（CORS 許可）"]
   SW <--> ST
-  OPT -.->|OAuth 開始| SW
 ```
 
 | コンテキスト | やること | やらないこと |
 |---|---|---|
 | content script | `⌘K` の捕捉、iframe の注入と表示切替、`open` / `close`、表示キャッシュの収集（URL と `document.title` → storage）、`#bl-search` と `#bp-connect` の検出 | API 呼び出し、鍵の読み取り、パレット UI の DOM 生成 |
 | 拡張ページ（palette / sidepanel / options） | UI、Backlog API の直接呼び出し、キャッシュ、ローカルデータの読み書き、`tabs.update` / `tabs.create` による遷移 | ページから受けた値で鍵を選ぶこと（§3） |
-| Service Worker | インストール時の初期化、OAuth の認可フローとトークン更新、`alarms` によるマスタの TTL 更新、ブラウザ履歴の取り込み | UI、検索、日常の API 呼び出し |
+| Service Worker | インストール時の初期化、`alarms` によるマスタの TTL 更新、ブラウザ履歴の取り込み | UI、検索、日常の API 呼び出し。OAuth は作らない（決定の記録 2026-09-13） |
 
 ### 信頼境界の規則（元の非交渉制約を、この配置で言い直したもの）
 
@@ -93,7 +92,7 @@ entrypoints/*/            QueryClient を 1 つ持ち、persister（@tanstack/qu
 
 - **マスタ**（プロジェクト・ステータス）は `staleTime` 24h。パレットを開いたときにキャッシュから即描画し、裏で再取得する
 - **担当課題**は `staleTime` 5 分。空状態の末尾に届いた時点で追記
-- **検索**はスペース × 種別を `useQueries` で並列。1 スペースの失敗は他に影響しない。結果の合流と保留は `lib/search/merge.ts`（純粋関数）が行い、Query はキャッシュと再試行だけを担う。`⌘→` でパネルに渡すと同じキーで即ヒットする
+- **検索**は 1 スペースの中で種別（課題・Wiki・ドキュメント）を `useQueries` で並列（D-20。スペース横断はしない）。1 種別の失敗は他に影響しない。結果の合流と保留は `lib/search/merge.ts`（純粋関数）が行い、Query はキャッシュと再試行だけを担う。`⌘→` でパネルに渡すと同じキーで即ヒットする
 - **表示キャッシュの SWR**（D-14）は、表示した行の課題キーを `useQueries` で再取得して DB コレクションを更新する
 
 ### 3.2 ローカルデータ（TanStack DB + @wxt-dev/storage）

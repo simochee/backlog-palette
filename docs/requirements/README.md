@@ -15,7 +15,7 @@ MVP の評価（`mvp:docs/mvp-evaluation.md` §8.4）が指摘した穴、**「�
 | [`palette.md`](palette.md) | パレットの通し仕様。状態・行・キー・非同期の規則 | UI・container を書く人 |
 | [`ui-components.md`](ui-components.md) | Storybook で作る部品、props の語彙、story カタログ（＝仕様） | UI を書く人 |
 | [`surfaces.md`](surfaces.md) | パレット以外の面（サイドパネル・接続シート・設定画面・Backlog 外での挙動・Firefox・カスタムドメイン・言語・計測） | container を書く人 |
-| [`decisions.md`](decisions.md) | 決定事項 D-1〜D-16 と記録。§0 に判断の前提（工数で縮小しない） | 判断する人 |
+| [`decisions.md`](decisions.md) | 決定事項 D-1〜D-20 と記録。§0 に判断の前提（工数で縮小しない） | 判断する人 |
 | [`milestones.md`](milestones.md) | マイルストーン。依存と検証ゲートで組み、人が要る工程を明示 | 進め方を決める人 |
 | [`tech-stack.md`](tech-stack.md) | 技術スタック（TanStack を軸に層ごとの割り当て）、実行コンテキストの責務、データの流れ | 実装する人 |
 | [`../backlog-facts.md`](../backlog-facts.md) | Backlog の API・URL・ドメインの実測台帳（`mvp` から継承） | 全員。**再調査しない** |
