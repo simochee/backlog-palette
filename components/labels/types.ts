@@ -117,6 +117,8 @@ export type Labels = {
       wiki: string;
       document: string;
     };
+    /** 種別の取得が失敗した（5xx など）。再接続でもレート超過でもない */
+    failed: string;
     authExpired: string;
   };
   connect: {

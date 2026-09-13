@@ -10,7 +10,7 @@ import {
 } from '@/lib/palette';
 import type { ActivityEvent } from '@/lib/rank';
 import { type DisplayCacheEntry, displayCache } from '@/lib/storage/items';
-import { activity, type Settings, transitions } from '@/lib/storage/palette-items';
+import { activity, queryDict, type Settings, transitions } from '@/lib/storage/palette-items';
 
 import type { OpenContext } from './context.ts';
 import type { ConnectedSpaces } from './spaces.ts';
@@ -91,10 +91,11 @@ export type IndexInput = {
 /** 開いた瞬間に storage から索引を組む。API 応答は待たない（palette.md §3）。担当課題は M4 が足す */
 export async function buildIndex(input: IndexInput): Promise<PaletteIndex> {
   const { context, connected, settings, language, now } = input;
-  const [cache, log, history] = await Promise.all([
+  const [cache, log, history, learned] = await Promise.all([
     displayCache.getValue(),
     activity.getValue(),
     transitions.getValue(),
+    queryDict.getValue(),
   ]);
   const urls = navIndex({ originOf, projectKeyOf: (id) => id, language });
   return {
@@ -105,6 +106,7 @@ export async function buildIndex(input: IndexInput): Promise<PaletteIndex> {
     assigned: undefined,
     activity: [...log, ...visitsAsActivity(cache)],
     transitions: history,
+    queryDict: learned,
     currentPageKind: context.pageKind,
     currentIssue: currentIssueOf(cache, context),
     learningEnabled: settings.learning,

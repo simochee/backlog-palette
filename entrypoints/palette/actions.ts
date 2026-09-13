@@ -57,7 +57,7 @@ export function restartSearch(query: string, scope: Scope, env: SearchEnv, pendi
 }
 
 async function go(url: string, newTab: boolean, env: ActionEnv) {
-  if (env.learningEnabled) await recordNavigation(url, env.context, env.now());
+  if (env.learningEnabled) await recordNavigation(url, env.context, env.now(), env.query);
   await navigate(url, newTab ? 'new' : 'current');
   env.close();
 }

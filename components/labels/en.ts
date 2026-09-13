@@ -113,6 +113,7 @@ export const en: Labels = {
       wiki: 'Wiki',
       document: 'Documents',
     },
+    failed: 'Could not load',
     authExpired: 'Signed out',
   },
   connect: {

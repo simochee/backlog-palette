@@ -192,6 +192,7 @@ export const index: PaletteIndex = {
     { from: 'issue', to: 'board', at: now - DAY },
     { from: 'issue', to: 'board', at: now - 2 * DAY },
   ],
+  queryDict: [],
   currentPageKind: 'issue',
   currentIssue: { key: 'PROJ-142', title: payment.title, url: payment.url },
   learningEnabled: true,
