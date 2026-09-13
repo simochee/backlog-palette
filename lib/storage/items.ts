@@ -1,4 +1,5 @@
 import { storage } from '#imports';
+import type { SpaceRateRecord } from '@/lib/backlog/rateLimit';
 
 export type VisitedKind = 'issue' | 'project' | 'wiki' | 'document';
 
@@ -20,5 +21,23 @@ export type DisplayCacheEntry = {
 /** 新しい訪問が先頭。同じ URL は 1 件にまとめる */
 export const displayCache = storage.defineItem<DisplayCacheEntry[]>('local:displayCache', {
   fallback: [],
+  version: 1,
+});
+
+/**
+ * スペースごとの API キー。キーは接続先のホスト（`demo.backlog.jp`）。スペースキーは
+ * .jp と .com で重なりうるうえ、Enterprise のカスタムドメインには無い。
+ *
+ * 拡張ページと Service Worker だけが読む（I7）。DB のコレクションにも live query にも
+ * 載せない（tech-stack.md §3.2）。content script・props・fixtures・ログに出さない。
+ */
+export const apiKeys = storage.defineItem<Record<string, string>>('local:apiKeys', {
+  fallback: {},
+  version: 1,
+});
+
+/** レート枠の共有状態。ホストごと。形は lib/backlog/rateLimit.ts の SpaceRateRecord */
+export const rateLimits = storage.defineItem<Record<string, SpaceRateRecord>>('local:rateLimits', {
+  fallback: {},
   version: 1,
 });
