@@ -218,6 +218,14 @@ export const sampleIssues = {
     project: projects.mobile,
     status: statuses.open,
   }),
+  password: issueRow({
+    key: 'PROJ-120',
+    title: 'パスワード再設定メールが届かない',
+    project: projects.web,
+    assignee: people.sato,
+    status: statuses.open,
+    type: issueTypes.bug,
+  }),
   release: issueRow({
     key: 'MOB-81',
     title: 'v3.2 リリース手順の棚卸し',
