@@ -206,6 +206,22 @@
 - 退けた案: スペースキー。短く読みやすいが上の 2 点で一意にならない
 - 起票: 2026-09-13、M4 PR 1
 
+### D-33. Firefox の埋め込み iframe では fetch を background に委譲する
+
+- **状況**: Firefox では Web ページに埋めた拡張 iframe で `browser.tabs` が undefined になり、fetch は CORS を受ける
+  （matches のホスト権限が効かない。B の Firefox スパイク、● 2026-09-13）。`tech-stack.md` §5-16 の退避が Firefox で要る
+- **決定**: 委譲点は D-31 の差し替え fetch に渡す `fetchImpl` の 1 箇所（`lib/backlog/platformFetch.ts`）。`browser.tabs` が
+  無いコンテキストだけ `runtime.sendMessage` で background に `{ url, method, headers, body }` を送り、background が fetch して
+  `{ status, statusText, headers, body }`（`X-RateLimit-*` を含む）を返す。Chrome・サイドパネル・設定画面は直接撃つ。
+  レート制御は storage 共有なのでページ側のまま動く
+- メッセージは `@webext-core/messaging` 4.0.0。protocol は `lib/messaging/background.ts`（B の tabs 委譲と同じ場所）。
+  background 側のハンドラは Backlog のスペースの origin だけを受け、任意 URL の中継にしない
+- 鍵は background に**渡さない**設計だが、差し替え fetch はヘッダに鍵を載せた Request を送るので結果として鍵が background を
+  通る。background は拡張オリジンの内側（I7 の境界内）なので許容する。background ではリクエストの内容をログに出さない
+- 退けた案: Firefox でも常に background 経由にする。Chrome で不要な往復が増え、T-2（拡張ページから直接）の判断を崩す
+- 退けた案: 環境判定を `navigator.userAgent` で行う。権限の有無が本質で、`browser.tabs` の有無がそれを直接表す
+- 起票: 2026-09-13、リードの裁定。E2E は Chrome では通れないので、B の Firefox E2E（Puppeteer BiDi）に接続導線を足す
+
 ## 2. 決定済み（MVP から継承。理由は `mvp:docs/implementation-plan.md` §3・§19）
 
 | 決定 | 要点 |
@@ -251,6 +267,7 @@
 | 2026-09-13 | Firefox のアドオン ID | `backlog-palette@simochee.github.io`（D-23） | 公開後に変えられない値。公開先のホストを持ち主にする |
 | 2026-09-13 | API キーの送り方 | backlog-js のヘッダ認証 + fetch 差し替え（D-31） | 観測と退避を 1 箇所に。自前リクエストは知識の二重化 |
 | 2026-09-13 | スペースの識別子 | ホスト名（D-32） | スペースキーは .jp/.com で重なり、カスタムドメインに無い |
+| 2026-09-13 | Firefox の埋め込み iframe からの fetch | background に委譲（D-33） | tabs が無く CORS を受ける。委譲点は fetchImpl の 1 箇所 |
 
 ---
 
