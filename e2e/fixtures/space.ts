@@ -2,6 +2,8 @@ import { createServer, type Server } from 'node:https';
 
 import selfsigned from 'selfsigned';
 
+import { createFakeApi, type FakeApi, handleApi } from './api.ts';
+
 export const SPACE_HOST = 'demo.backlog.jp';
 
 /** スペースではないホスト。content script の excludeMatches が効くことを見る */
@@ -22,6 +24,8 @@ export const HOSTS = [SPACE_HOST, NOT_A_SPACE_HOST, OTHER_HOST] as const;
 export type FakeSpace = {
   port: number;
   url: (path: string, host?: (typeof HOSTS)[number]) => string;
+  /** Backlog API の偽エンドポイント。鍵の検査・401 / 429 の切り替え・受けたリクエストの記録 */
+  api: FakeApi;
   close: () => Promise<void>;
 };
 
@@ -57,8 +61,10 @@ export async function startFakeSpace(): Promise<FakeSpace> {
     ],
   });
 
+  const api = createFakeApi();
   const server: Server = createServer({ key: pems.private, cert: pems.cert }, (req, res) => {
     const url = new URL(req.url ?? '/', `https://${SPACE_HOST}`);
+    if (handleApi(api, req, res, url)) return;
     const title = PAGES[url.pathname] ?? 'ダミー | Webリニューアル';
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     res.end(pageHtml(title));
@@ -73,6 +79,7 @@ export async function startFakeSpace(): Promise<FakeSpace> {
 
   return {
     port,
+    api,
     url: (path, host = SPACE_HOST) => `https://${host}${path}`,
     close: () =>
       new Promise<void>((resolve) => {
