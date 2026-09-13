@@ -29,6 +29,8 @@ const PAGES: Record<string, string> = {
   '/view/PROJ-123': 'ログイン画面のバリデーション修正 | Webリニューアル',
   '/view/PROJ-142': '決済フローのエラーハンドリング | Webリニューアル',
   '/board/PROJ': 'ボード | Webリニューアル',
+  // 件名の形式（' | ' 区切り）に合わない title。課題キーだけが記録される場面を再現する
+  '/view/PROJ-999': 'Backlog',
   '/dashboard': 'ダッシュボード',
 };
 

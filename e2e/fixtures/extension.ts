@@ -2,7 +2,13 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { type BrowserContext, chromium, type Page, test as base } from '@playwright/test';
+import {
+  type BrowserContext,
+  chromium,
+  type Page,
+  test as base,
+  type Worker,
+} from '@playwright/test';
 
 import { type FakeSpace, HOSTS, startFakeSpace } from './space.ts';
 
@@ -13,9 +19,33 @@ export const PALETTE_FRAME = 'iframe[data-backlog-palette]';
 /** パレットを開閉するキー。拡張は OS で修飾キーを切り替える（surfaces.md §9） */
 export const HOTKEY = process.platform === 'darwin' ? 'Meta+k' : 'Control+k';
 
+/** storage に書いた表示キャッシュ。E2E は SW 経由で読む */
+export type DisplayCacheRow = {
+  url: string;
+  kind: string;
+  spaceKey: string;
+  projectKey: string;
+  key?: string;
+  title?: string;
+  visitedAt: number;
+};
+
+type ChromeStorage = {
+  storage: {
+    local: {
+      get: (key: string) => Promise<Record<string, unknown>>;
+      remove: (key: string) => Promise<void>;
+    };
+  };
+};
+
+const DISPLAY_CACHE_KEY = 'displayCache';
+
 export type ExtensionFixtures = {
   context: BrowserContext;
   page: Page;
+  serviceWorker: Worker;
+  readDisplayCache: () => Promise<DisplayCacheRow[]>;
 };
 
 export type WorkerFixtures = {
@@ -69,8 +99,34 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  context: async ({ extensionBrowser }, use) => {
+  serviceWorker: async ({ extensionBrowser }, use) => {
+    const worker =
+      extensionBrowser.serviceWorkers()[0] ??
+      (await extensionBrowser.waitForEvent('serviceworker'));
+    await use(worker);
+  },
+
+  context: async ({ extensionBrowser, serviceWorker }, use) => {
     await use(extensionBrowser);
+    /*
+     * 次のテストへ状態を持ち越さない。消すのは自分が書く item だけ。
+     * storage.local.clear() は設定まで消し、2 件目以降のテストを壊す（mvp の罠）。
+     */
+    await serviceWorker.evaluate(async (key) => {
+      const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+      await api.storage.local.remove(key);
+    }, DISPLAY_CACHE_KEY);
+  },
+
+  readDisplayCache: async ({ serviceWorker }, use) => {
+    await use(async () => {
+      const rows = await serviceWorker.evaluate(async (key) => {
+        const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+        const stored = await api.storage.local.get(key);
+        return stored[key] ?? [];
+      }, DISPLAY_CACHE_KEY);
+      return rows as DisplayCacheRow[];
+    });
   },
 
   page: async ({ context }, use) => {
