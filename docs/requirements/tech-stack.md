@@ -20,11 +20,11 @@ TanStack のエコシステムを軸にする。ライブラリは**層の規約
 | 状態 | ルーティングと検索状態の URL 化 | @tanstack/react-router（サイドパネル・設定画面のみ） | 1.170 | 安定 | T-6 |
 | データ | Backlog API の取得・キャッシュ・SWR | @tanstack/react-query（拡張ページごとに QueryClient）+ persister | 5.102 | 安定 | T-2 |
 | データ | Backlog API クライアント | backlog-js（Nulab 公式）+ 自前の薄いラッパー | 0.20 | 安定 | T-4 |
-| データ | レートリミット | @tanstack/pacer `asyncRateLimiter` | 0.23 | **beta** | T-7 |
+| データ | レートリミット | @tanstack/pacer `asyncRateLimiter` | 0.22 | **beta** | T-7 |
 | データ | ローカルデータの型つきコレクションと live query | @tanstack/db + @tanstack/react-db | 0.9 / 0.3 | **1.0 前** | T-1 |
 | データ | 永続化 | @wxt-dev/storage（`storage.defineItem`） | 1.2 | 安定 | T-1 |
 | データ | スキーマ検証（Standard Schema） | zod 4 | 4.6 | 安定 | T-3 |
-| キー | キー定義の照合・表示 | @tanstack/hotkeys（`matchesKeyboardEvent` / `formatForDisplay` のみ） | 0.10 | **alpha** | T-5 |
+| キー | キー定義の照合・表示 | @tanstack/hotkeys（`matchesKeyboardEvent` / `formatForDisplay` のみ） | 0.8 | **alpha** | T-5 |
 | キー | 捕捉ループ（キャプチャ段階・isComposing） | **自前** | — | — | T-5 |
 | メッセージ | content script ⇄ iframe | `window.postMessage`（自前。origin 検証つき） | — | — | 既定 |
 | メッセージ | 拡張ページ ⇄ Service Worker | @webext-core/messaging | 4.0 | 安定 | 既定 |
