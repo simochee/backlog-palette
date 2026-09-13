@@ -126,6 +126,15 @@ jobs:
       - name: Install browser
         run: pnpm exec playwright install --with-deps chromium
 
+      # Firefox は Puppeteer が駆動する。Playwright の Firefox は拡張を読み込めない。
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-firefox-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Firefox
+        run: pnpm exec puppeteer browsers install firefox
+
       - name: Build (chrome)
         run: pnpm build
 

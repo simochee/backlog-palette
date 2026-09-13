@@ -1,0 +1,52 @@
+import { expect, HOTKEY_MODIFIER, PALETTE_FRAME, test } from './fixtures.ts';
+
+test.describe('Firefox: パレットの注入と開閉', () => {
+  test('Backlog のページを開くと拡張の iframe が非表示で注入される', async ({
+    tab,
+    space,
+    paletteFrame,
+  }) => {
+    await tab.goto(space.url('/view/PROJ-123'));
+
+    const iframe = await tab.waitForSelector(PALETTE_FRAME, { timeout: 5000 });
+    expect(await iframe?.evaluate((el) => el.getAttribute('src'))).toMatch(
+      /^moz-extension:\/\/.+\/palette\.html$/u,
+    );
+    expect(await iframe?.evaluate((el) => (el as HTMLElement).style.display)).toBe('none');
+    // 中身が読み込まれていること。about:blank のまま止まっていない
+    await paletteFrame();
+  });
+
+  test('⌘K で iframe が表示され、打った文字がパレットの入力欄に入る', async ({
+    tab,
+    space,
+    paletteFrame,
+  }) => {
+    await tab.goto(space.url('/view/PROJ-123'));
+    const frame = await paletteFrame();
+
+    await tab.keyboard.down(HOTKEY_MODIFIER);
+    await tab.keyboard.press('k');
+    await tab.keyboard.up(HOTKEY_MODIFIER);
+
+    await tab.waitForSelector(`${PALETTE_FRAME}[style*="display: block"]`, { timeout: 5000 });
+    await tab.keyboard.type('board');
+    await frame.waitForFunction(() => document.querySelector('input')?.value === 'board', {
+      timeout: 5000,
+    });
+    expect(await tab.$eval('#page-input', (el) => (el as HTMLInputElement).value)).toBe('');
+  });
+
+  test('Esc で閉じる', async ({ tab, space, paletteFrame }) => {
+    await tab.goto(space.url('/view/PROJ-123'));
+    await paletteFrame();
+
+    await tab.keyboard.down(HOTKEY_MODIFIER);
+    await tab.keyboard.press('k');
+    await tab.keyboard.up(HOTKEY_MODIFIER);
+    await tab.waitForSelector(`${PALETTE_FRAME}[style*="display: block"]`, { timeout: 5000 });
+
+    await tab.keyboard.press('Escape');
+    await tab.waitForSelector(`${PALETTE_FRAME}[style*="display: none"]`, { timeout: 5000 });
+  });
+});
