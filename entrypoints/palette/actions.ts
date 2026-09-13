@@ -49,7 +49,8 @@ async function copy(text: string, subject: string, env: ActionEnv) {
  */
 async function openPanel(env: ActionEnv) {
   const tab = await readCurrentTab();
-  if (tab?.id !== undefined && 'sidePanel' in browser) await browser.sidePanel.open({ tabId: tab.id });
+  if (tab?.id !== undefined && 'sidePanel' in browser)
+    await browser.sidePanel.open({ tabId: tab.id });
   env.close();
 }
 

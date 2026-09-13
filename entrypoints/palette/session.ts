@@ -54,7 +54,14 @@ function openWith(prepared: Prepared, typed: string): OpenSession {
     stack: initialStackOf(context, connected.get(context.spaceHost)),
   });
   if (typed !== '') store.dispatch({ type: 'inputChanged', value: typed });
-  return { openedAt: now, context, index: { ...index, now }, labels, store, runner: emptySearchRunner };
+  return {
+    openedAt: now,
+    context,
+    index: { ...index, now },
+    labels,
+    store,
+    runner: emptySearchRunner,
+  };
 }
 
 /*
