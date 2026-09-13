@@ -19,13 +19,22 @@ export type DisplayCacheEntry = {
   /** 課題キー・Wiki の名前や ID・ドキュメント ID。プロジェクトのページでは無い */
   key?: string;
   title?: string;
+  /** 課題の再検証（D-14）で分かった今の状態。ページから読まず、API の応答だけが入れる */
+  status?: { id: number; name: string };
+  assignee?: string;
   visitedAt: number;
 };
 
-/** 新しい訪問が先頭。同じ URL は 1 件にまとめる */
+type DisplayCacheEntryV1 = Omit<DisplayCacheEntry, 'status' | 'assignee'>;
+
+/**
+ * 新しい訪問が先頭。同じ URL は 1 件にまとめる。
+ * v2 は status と assignee を足しただけで、v1 の値はそのまま読める
+ */
 export const displayCache = storage.defineItem<DisplayCacheEntry[]>('local:displayCache', {
   fallback: [],
-  version: 1,
+  version: 2,
+  migrations: { 2: (entries: DisplayCacheEntryV1[]): DisplayCacheEntry[] => entries },
 });
 
 /**

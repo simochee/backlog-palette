@@ -1,3 +1,4 @@
+import { statusBadge } from '@/lib/backlog/entries';
 import type { Language } from '@/lib/i18n/language';
 import { navIndex } from '@/lib/nav';
 import {
@@ -27,6 +28,8 @@ function cachedEntryOf(entry: DisplayCacheEntry): CachedEntry | undefined {
     spaceId: entry.spaceHost,
     projectId: entry.projectKey,
     projectName: entry.projectKey,
+    ...(entry.assignee === undefined ? {} : { assignee: entry.assignee }),
+    ...(entry.status === undefined ? {} : { status: statusBadge(entry.status) }),
     url: entry.url,
   };
 }

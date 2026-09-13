@@ -9,6 +9,7 @@ import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
 import { labelsFor } from './language.ts';
+import { revalidateInBackground } from './revalidate.ts';
 import type { SearchRunner } from './search.ts';
 import { type Restore, restoreFrom } from './share.ts';
 import { readConnectedSpaces } from './spaces.ts';
@@ -62,6 +63,8 @@ export async function createSession(): Promise<PaletteSession | undefined> {
     prefs.theme,
     window.matchMedia('(prefers-color-scheme: dark)').matches,
   );
+
+  revalidateInBackground(index, context.spaceHost, connected.has(context.spaceHost));
 
   return {
     context,
