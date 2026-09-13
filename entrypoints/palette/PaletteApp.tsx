@@ -8,7 +8,7 @@ import { detectPlatform } from '@/lib/keys';
 import { derive, type PaletteStore } from '@/lib/palette';
 import { scopeOf } from '@/lib/stack/stack';
 
-import type { ActionEnv } from './actions.ts';
+import type { ActionEnv, Pending } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import { hostChannel } from './hostChannel.ts';
 import { type PaletteSession, usePaletteSession } from './session.ts';
@@ -46,8 +46,16 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
   }, [store, toast]);
 }
 
-function OpenPalette({ session, close }: { session: PaletteSession; close: () => void }) {
-  const { store, index, labels, context, runner, pending } = session;
+type OpenPaletteProps = {
+  session: PaletteSession;
+  store: PaletteStore;
+  pending: Pending;
+  openedAt: number;
+  close: () => void;
+};
+
+function OpenPalette({ session, store, pending, openedAt, close }: OpenPaletteProps) {
+  const { index, labels, context, runner } = session;
   const state = useSelector(store, (snapshot) => snapshot);
   useToastExpiry(store, state.toast);
 
@@ -74,7 +82,7 @@ function OpenPalette({ session, close }: { session: PaletteSession; close: () =>
 
   return (
     <LabelsProvider labels={labels}>
-      <Palette {...derived.view} {...callbacks} />
+      <Palette {...derived.view} {...callbacks} focusToken={openedAt} />
     </LabelsProvider>
   );
 }
@@ -87,8 +95,16 @@ function OpenPalette({ session, close }: { session: PaletteSession; close: () =>
  * `open` を待ってから描くと、iframe が表示された直後の打鍵が入力欄に届かない
  */
 export function PaletteApp() {
-  const { session, close } = usePaletteSession(hostChannel);
+  const { session, store, pending, openedAt, close } = usePaletteSession(hostChannel);
   useCloseOnHotkey(close);
   if (session === undefined) return null;
-  return <OpenPalette session={session} close={close} />;
+  return (
+    <OpenPalette
+      session={session}
+      store={store}
+      pending={pending}
+      openedAt={openedAt}
+      close={close}
+    />
+  );
 }
