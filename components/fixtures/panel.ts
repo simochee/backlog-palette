@@ -17,6 +17,17 @@ type FilterOverrides = Partial<
 
 const neutral = 'all';
 
+/** 単一選択で「全スペース」は無い（D-20）。既定はタブのスペースで、そこから変えたときだけ効いている扱い */
+function spaceField(labels: Labels, value: string): FilterField {
+  return {
+    id: 'space',
+    label: labels.panel.fields.space,
+    value,
+    neutralValue: spaces.nulab.id,
+    options: Object.values(spaces).map((space) => ({ id: space.id, label: space.label })),
+  };
+}
+
 function projectField(labels: Labels, value: string): FilterField {
   return {
     id: 'project',
@@ -97,6 +108,7 @@ function updatedField(labels: Labels, value: string): FilterField {
 
 export function filters(labels: Labels, values: FilterOverrides = {}): FilterField[] {
   return [
+    spaceField(labels, values.space ?? spaces.nulab.id),
     projectField(labels, values.project ?? neutral),
     typeField(labels, values.type ?? neutral),
     statusField(labels, values.status ?? neutral),

@@ -50,7 +50,7 @@ export const P1: Story = {
 };
 
 export const P2: Story = {
-  name: 'P2 結果あり（幅 380、compact） — ⇥ は補完だけで積む行が無い／フィルターにスペースの項目が無い',
+  name: 'P2 結果あり（幅 380、compact） — ⇥ は補完だけで積む行が無い／スペースの項目は単一選択で「全スペース」が無い',
   args: p2(ja),
   decorators: [
     (Story) => (
@@ -61,7 +61,8 @@ export const P2: Story = {
   ],
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(args.filters.map((field) => field.id)).not.toContain('space');
+    const spaceField = args.filters.find((field) => field.id === 'space');
+    await expect(spaceField?.options.map((option) => option.id)).not.toContain('all');
     const hints = args.sections.flatMap((section) => section.rows.flatMap((row) => row.hints));
     await expect(hints).not.toContain('stack');
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.complete);
