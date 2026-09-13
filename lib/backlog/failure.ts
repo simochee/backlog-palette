@@ -1,0 +1,43 @@
+import { Error as BacklogErrors } from 'backlog-js';
+
+import { RateLimitExceededError, readRateObservation } from './rateLimit';
+
+/**
+ * API 呼び出しの失敗を行に閉じるための分類（I6、palette.md §7.5）。
+ * lib/search/types.ts の SearchError と同じ形で、そのまま渡せる。
+ */
+export type ApiFailure =
+  | { kind: 'unauthorized' }
+  | { kind: 'rateLimited'; retryAfterSeconds: number }
+  | { kind: 'offline' }
+  | { kind: 'failed' };
+
+function secondsUntilReset(response: Response, now: number): number {
+  const { reset } = readRateObservation(response);
+  if (reset === undefined) return 60;
+  return Math.max(1, Math.ceil(reset - now / 1000));
+}
+
+// Node の navigator は onLine を持たない。無いときに「オフライン」と誤判定しないための in 検査
+function isOffline(): boolean {
+  return typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine;
+}
+
+export function toApiFailure(error: unknown, now: number = Date.now()): ApiFailure {
+  if (error instanceof RateLimitExceededError) {
+    return { kind: 'rateLimited', retryAfterSeconds: error.retryAfterSeconds };
+  }
+  if (error instanceof BacklogErrors.BacklogError) {
+    if (error.status === 401) return { kind: 'unauthorized' };
+    if (error.status === 429) {
+      return {
+        kind: 'rateLimited',
+        retryAfterSeconds: secondsUntilReset(error.response, now),
+      };
+    }
+    return { kind: 'failed' };
+  }
+  // fetch はネットワーク断で TypeError を投げる。onLine が false ならそれを信じる
+  if (isOffline() || error instanceof TypeError) return { kind: 'offline' };
+  return { kind: 'failed' };
+}
