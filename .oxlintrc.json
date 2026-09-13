@@ -44,11 +44,16 @@
   },
   "overrides": [
     {
-      "files": ["**/*.stories.tsx"],
+      "files": ["**/*.stories.tsx", "**/*.invariants.ts"],
       "rules": {
         // storybook の `fn()` はスパイの呼び出し記録を返す。戻り値を無視する void 型の
         // props に渡すのが addon-vitest の想定する使い方で、誤用ではない。
-        "typescript/strict-void-return": "off"
+        "typescript/strict-void-return": "off",
+
+        // play function はキー操作を利用者と同じ順序で送る。行を ↓ で辿りながら
+        // Enter を検査するようなループは逐次でなければ意味がなく、Promise.all に
+        // 置き換えると操作の順序が消える。
+        "eslint/no-await-in-loop": "off"
       }
     }
   ]

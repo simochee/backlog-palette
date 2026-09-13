@@ -31,6 +31,7 @@ export const ClickPicks: Story = {
   play: async ({ args, canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: '決済' }));
 
-    await expect(args.onPick).toHaveBeenCalledExactlyOnceWith('決済');
+    await expect(args.onPick).toHaveBeenCalledTimes(1);
+    await expect(args.onPick).toHaveBeenCalledWith('決済');
   },
 };

@@ -37,6 +37,7 @@ export const en: Labels = {
     more: (count) => `${count} more`,
     loading: (space) => `${space} loading`,
     countOf: (space, count) => `${space} ${count}`,
+    count: (count) => `${count}`,
     summary: (spaces, count) => `${spaces} spaces · ${count} results`,
   },
   rows: {

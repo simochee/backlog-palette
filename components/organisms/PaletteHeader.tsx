@@ -52,7 +52,7 @@ export function PaletteHeader({
           <span className="@max-narrow:hidden">{escLabel}</span>
         </span>
       </div>
-      {armedNotice && (
+      {armedNotice !== undefined && (
         <p role="status" className="-mt-1.5 px-3 pb-2 text-xs text-warning">
           {armedNotice}
         </p>

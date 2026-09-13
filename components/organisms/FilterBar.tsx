@@ -19,6 +19,51 @@ export function isFieldActive(field: FilterField): boolean {
   return field.neutralValue !== undefined && field.value !== field.neutralValue;
 }
 
+function OptionList({
+  field,
+  onChange,
+  singleChoice,
+}: {
+  field: FilterField;
+  onChange: (optionId: string) => void;
+  singleChoice: string;
+}) {
+  return (
+    <Popover.Content
+      align="start"
+      sideOffset={4}
+      className="z-10 min-w-48 rounded-surface border border-border bg-floating p-2 font-body text-default shadow-floating"
+    >
+      <RadioGroup.Root
+        value={field.value}
+        onValueChange={onChange}
+        aria-label={field.label}
+        className="flex flex-col"
+      >
+        {field.options.map((option) => (
+          <label
+            key={option.id}
+            className="flex cursor-pointer items-center gap-2 rounded-control px-2 py-1.5 text-sm hover:bg-sunken"
+          >
+            <RadioGroup.Item
+              value={option.id}
+              className="flex size-4 shrink-0 items-center justify-center rounded-pill border border-border-strong bg-control outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:border-accent"
+            >
+              <RadioGroup.Indicator className="size-2 rounded-pill bg-accent" />
+            </RadioGroup.Item>
+            <span className="flex-1 truncate">{option.label}</span>
+            {option.tone !== undefined && <Badge label={option.label} tone={option.tone} dot />}
+            {option.count !== undefined && (
+              <span className="font-mono text-xs text-subtle">{option.count}</span>
+            )}
+          </label>
+        ))}
+      </RadioGroup.Root>
+      <p className="px-2 pt-1 text-xs text-subtle">{singleChoice}</p>
+    </Popover.Content>
+  );
+}
+
 function FieldMenu({
   field,
   onChange,
@@ -51,38 +96,7 @@ function FieldMenu({
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content
-          align="start"
-          sideOffset={4}
-          className="z-10 min-w-48 rounded-surface border border-border bg-floating p-2 font-body text-default shadow-floating"
-        >
-          <RadioGroup.Root
-            value={field.value}
-            onValueChange={onChange}
-            aria-label={field.label}
-            className="flex flex-col"
-          >
-            {field.options.map((option) => (
-              <label
-                key={option.id}
-                className="flex cursor-pointer items-center gap-2 rounded-control px-2 py-1.5 text-sm hover:bg-sunken"
-              >
-                <RadioGroup.Item
-                  value={option.id}
-                  className="flex size-4 shrink-0 items-center justify-center rounded-pill border border-border-strong bg-control outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:border-accent"
-                >
-                  <RadioGroup.Indicator className="size-2 rounded-pill bg-accent" />
-                </RadioGroup.Item>
-                <span className="flex-1 truncate">{option.label}</span>
-                {option.tone !== undefined && <Badge label={option.label} tone={option.tone} dot />}
-                {option.count !== undefined && (
-                  <span className="font-mono text-xs text-subtle">{option.count}</span>
-                )}
-              </label>
-            ))}
-          </RadioGroup.Root>
-          <p className="px-2 pt-1 text-xs text-subtle">{singleChoice}</p>
-        </Popover.Content>
+        <OptionList field={field} onChange={onChange} singleChoice={singleChoice} />
       </Popover.Portal>
     </Popover.Root>
   );
@@ -90,7 +104,7 @@ function FieldMenu({
 
 export function FilterBar({ fields, onChange, onClearAll, compact = false, ...rest }: FilterBarProps) {
   const labels = useLabels(rest.labels);
-  const anyActive = fields.some(isFieldActive);
+  const anyActive = fields.some((field) => isFieldActive(field));
 
   return (
     <div

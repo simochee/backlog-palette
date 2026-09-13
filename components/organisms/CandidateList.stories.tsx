@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, isMockFunction, userEvent, within } from 'storybook/test';
 import { type KeyboardEvent, useState } from 'react';
 
 import { assignedSection, pagesSection, recentSection } from '@/components/fixtures/sections';
@@ -117,11 +117,9 @@ export const HeadersAreNotSelectable: HarnessStory = {
 
     for (let i = 0; i < rows.length; i += 1) await userEvent.keyboard('{ArrowDown}');
 
-    const visited = (args.onSelectionChange as ReturnType<typeof fn>).mock.calls.map(
-      ([id]) => id as string,
-    );
+    if (!isMockFunction(args.onSelectionChange)) throw new Error('onSelectionChange は fn()');
+    const visited = args.onSelectionChange.mock.calls.map((call) => String(call[0]));
     await expect(visited).toEqual(rows.slice(1).map((row) => row.id));
-    await expect(visited.every((id) => rows.some((row) => row.id === id))).toBe(true);
   },
 };
 

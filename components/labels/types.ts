@@ -39,6 +39,7 @@ export type Labels = {
     more: (count: number) => string;
     loading: (space: string) => string;
     countOf: (space: string, count: number) => string;
+    count: (count: number) => string;
     summary: (spaces: number, count: number) => string;
   };
   rows: {

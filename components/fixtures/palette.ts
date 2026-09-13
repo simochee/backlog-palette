@@ -4,22 +4,15 @@ import type { PaletteView, PathSegmentView, RowView, SectionView } from '@/compo
 import { projects, spaces } from './domain';
 import { deriveFooter } from './footer';
 import {
-  authExpiredRow,
   connectRow,
   directJumpRow,
-  externalRow,
   hintRow,
-  noticeRow,
   pageRow,
-  panelRow,
-  projectRow,
   sampleIssues,
   searchingRow,
   searchRow,
-  spaceRow,
-  widenRow,
 } from './rows';
-import { assignedSection, commandsSection, pagesSection, recentSection } from './sections';
+import { assignedSection, pagesSection, recentSection } from './sections';
 
 export const rootPath = (labels: Labels): PathSegmentView[] => [
   { id: 'root', label: labels.palette.rootScope },
@@ -32,7 +25,7 @@ export const projectPath: PathSegmentView[] = [
   { id: 'project', label: projects.web.name, badge: true },
 ];
 
-type Partial = {
+export type StatePartial = {
   path: PathSegmentView[];
   input?: string;
   completion?: string;
@@ -45,7 +38,7 @@ type Partial = {
   toast?: PaletteView['toast'];
 };
 
-function view(labels: Labels, partial: Partial): PaletteView {
+export function view(labels: Labels, partial: StatePartial): PaletteView {
   const input = partial.input ?? '';
   const selectedId = partial.selectedId ?? partial.sections[0]?.rows[0]?.id;
   return {
@@ -67,9 +60,12 @@ function view(labels: Labels, partial: Partial): PaletteView {
   };
 }
 
-const crossSpace = (row: RowView, space: string): RowView => ({ ...row, space: { label: space } });
+export const crossSpace = (row: RowView, space: string): RowView => ({
+  ...row,
+  space: { label: space },
+});
 
-const resultRows = (labels: Labels): RowView[] => [
+export const resultRows = (labels: Labels): RowView[] => [
   crossSpace(sampleIssues.login, spaces.nulab.label),
   crossSpace(sampleIssues.password, spaces.nulab.label),
   crossSpace(sampleIssues.invoice, spaces.acme.label),
@@ -87,7 +83,7 @@ const resultRows = (labels: Labels): RowView[] => [
   },
 ];
 
-const loginPages = (labels: Labels): SectionView => ({
+export const loginPages = (labels: Labels): SectionView => ({
   id: 'pages',
   label: labels.sections.pages,
   rows: [pageRow('login-history', 'ログイン履歴', labels, projects.web, `スペース設定 · ${labels.rows.pageSub}`)],
@@ -175,140 +171,3 @@ export const s5 = (labels: Labels): PaletteView =>
     ],
   });
 
-/** S6 検索結果あり（全スペース） */
-export const s6 = (labels: Labels): PaletteView => {
-  const rows = resultRows(labels);
-  return view(labels, {
-    path: rootPath(labels),
-    input: 'ログイン',
-    hasResults: true,
-    selectedId: rows[1]?.id,
-    sections: [
-      { id: 'search', rows: [searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(3, 17))] },
-      {
-        id: 'results',
-        label: labels.sections.results,
-        meta: labels.sections.summary(3, 17),
-        rows: [noticeRow(2, labels), ...rows, externalRow(labels)],
-      },
-      loginPages(labels),
-    ],
-  });
-};
-
-/** S7 検索 0 件 */
-export const s7 = (labels: Labels): PaletteView =>
-  view(labels, {
-    path: projectPath,
-    input: 'ろぐいん',
-    hasResults: true,
-    selectedId: `widen:${spaces.nulab.label}`,
-    enterLabel: labels.keys.search,
-    sections: [
-      { id: 'search', rows: [searchRow('ろぐいん', projects.web.name, labels, labels.sections.summary(1, 0))] },
-      {
-        id: 'results',
-        label: labels.sections.results,
-        meta: labels.sections.summary(1, 0),
-        rows: [
-          hintRow('no-results', labels.rows.noResults),
-          widenRow(spaces.nulab.label, labels),
-          panelRow(labels),
-          externalRow(labels),
-        ],
-      },
-    ],
-  });
-
-/** S8 スコープ削除待ち */
-export const s8 = (labels: Labels): PaletteView =>
-  view(labels, {
-    path: [...spacePath, { id: 'project', label: projects.web.name, badge: true, armed: true }],
-    armedNotice: labels.palette.armedNotice,
-    sections: [recentSection(labels), pagesSection(labels), assignedSection(labels)],
-  });
-
-/** S9 コマンド階層（スペースを切り替え） */
-export const s9 = (labels: Labels): PaletteView =>
-  view(labels, {
-    path: [...projectPath, { id: 'command', label: labels.rows.switchSpace }],
-    escLabel: labels.palette.escBack,
-    sections: [
-      {
-        id: 'args',
-        rows: [spaces.nulab, spaces.acme, spaces.beta].map((space) => ({
-          ...spaceRow(space),
-          hints: ['enter', 'modEnter'],
-        })),
-      },
-    ],
-  });
-
-/** S10 未接続スペースがある全スペース検索 */
-export const s10 = (labels: Labels): PaletteView => {
-  const rows = resultRows(labels);
-  return view(labels, {
-    path: rootPath(labels),
-    input: 'ログイン',
-    hasResults: true,
-    selectedId: rows[0]?.id,
-    sections: [
-      { id: 'search', rows: [searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(2, 17))] },
-      {
-        id: 'results',
-        label: labels.sections.results,
-        meta: labels.sections.summary(2, 17),
-        rows: [...rows, connectRow(spaces.beta.label, labels)],
-      },
-      loginPages(labels),
-    ],
-  });
-};
-
-/** S11 一部スペースが認証切れ */
-export const s11 = (labels: Labels): PaletteView => {
-  const rows = resultRows(labels).filter((row) => row.space?.label !== spaces.acme.label);
-  return view(labels, {
-    path: rootPath(labels),
-    input: 'ログイン',
-    hasResults: true,
-    selectedId: rows[0]?.id,
-    sections: [
-      {
-        id: 'search',
-        rows: [
-          searchRow(
-            'ログイン',
-            labels.palette.rootScope,
-            labels,
-            `${labels.sections.countOf(spaces.nulab.label, 12)} · ${spaces.acme.label} 認証切れ`,
-          ),
-        ],
-      },
-      {
-        id: 'results',
-        label: labels.sections.results,
-        meta: `${labels.sections.countOf(spaces.nulab.label, 12)} · ${spaces.acme.label} 認証切れ`,
-        rows: [...rows, authExpiredRow(spaces.acme.label, labels)],
-      },
-      loginPages(labels),
-    ],
-  });
-};
-
-/** S12 コピー直後 */
-export const s12 = (labels: Labels): PaletteView =>
-  view(labels, {
-    path: projectPath,
-    selectedId: 'command:copy-key',
-    sections: [commandsSection(labels, 'PROJ-142'), recentSection(labels)],
-    toast: { message: labels.rows.copied('PROJ-142') },
-  });
-
-/** S13 #もば でプロジェクト行を選択中 */
-export const s13 = (labels: Labels): PaletteView =>
-  view(labels, {
-    path: spacePath,
-    input: '#もば',
-    sections: [{ id: 'projects', label: 'プロジェクト', rows: [projectRow(projects.mobile)] }],
-  });

@@ -12,6 +12,7 @@ type OverlayProps = {
 export function Overlay({ children, onDismiss }: OverlayProps) {
   return (
     <div
+      role="presentation"
       data-testid="overlay"
       className="absolute inset-0 flex flex-col items-center bg-overlay px-4 pt-(--bp-offset-palette)"
       onClick={(event) => {

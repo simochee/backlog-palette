@@ -5,13 +5,13 @@ export function useElementWidth(ref: RefObject<HTMLElement | null>): number | un
 
   useLayoutEffect(() => {
     const element = ref.current;
-    if (element === null) return undefined;
-
-    const measure = () => setWidth(element.getBoundingClientRect().width);
-    measure();
-
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
+    const observer = new ResizeObserver(() => {
+      if (element !== null) setWidth(element.getBoundingClientRect().width);
+    });
+    if (element !== null) {
+      setWidth(element.getBoundingClientRect().width);
+      observer.observe(element);
+    }
     return () => observer.disconnect();
   }, [ref]);
 

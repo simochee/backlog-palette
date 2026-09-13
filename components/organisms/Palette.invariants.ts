@@ -27,6 +27,11 @@ type Target = {
   spies: InvariantSpies;
 };
 
+async function expectCalledOnceWith(mock: ReturnType<typeof spy>, ...args: unknown[]) {
+  await expect(mock).toHaveBeenCalledTimes(1);
+  await expect(mock).toHaveBeenCalledWith(...args);
+}
+
 function spy<T extends Procedure>(callback: T | undefined, name: string) {
   if (callback === undefined || !isMockFunction(callback))
     throw new Error(`${name} は fn() で渡してください`);
@@ -37,79 +42,75 @@ async function pressAll(key: string, times: number) {
   for (let index = 0; index < times; index += 1) await userEvent.keyboard(`{${key}}`);
 }
 
+type FooterCheck = (input: HTMLInputElement, rows: readonly RowView[], target: Target) => Promise<void>;
+
+const selectedRow = (rows: readonly RowView[], view: InvariantView) =>
+  rows.find((row) => row.id === view.selectedId);
+
+const footerChecks: Record<KeyHint['id'], FooterCheck> = {
+  async enter(_input, rows, { view, spies }) {
+    const selected = selectedRow(rows, view);
+    const onAction = spy(spies.onAction, 'onAction');
+    onAction.mockClear();
+    await userEvent.keyboard('{Enter}');
+    if (selected === undefined) {
+      await expect(spy(spies.onSearch, 'onSearch')).toHaveBeenCalledTimes(1);
+    } else {
+      await expectCalledOnceWith(onAction, selected.id, { newTab: false });
+    }
+  },
+  async modEnter(_input, rows, { view, spies }) {
+    const onAction = spy(spies.onAction, 'onAction');
+    onAction.mockClear();
+    await userEvent.keyboard('{Meta>}{Enter}{/Meta}');
+    await expectCalledOnceWith(onAction, selectedRow(rows, view)?.id, { newTab: true });
+  },
+  async move(_input, rows, { view, spies }) {
+    const onSelectionChange = spy(spies.onSelectionChange, 'onSelectionChange');
+    onSelectionChange.mockClear();
+    const index = rows.findIndex((row) => row.id === view.selectedId);
+    const next = rows[index + 1];
+    if (next === undefined) {
+      await userEvent.keyboard('{ArrowUp}');
+      await expect(onSelectionChange).toHaveBeenLastCalledWith(rows[index - 1]?.id);
+      await userEvent.keyboard('{ArrowDown}');
+    } else {
+      await userEvent.keyboard('{ArrowDown}');
+      await expect(onSelectionChange).toHaveBeenLastCalledWith(next.id);
+      await userEvent.keyboard('{ArrowUp}');
+    }
+  },
+  async back(input, _rows, { spies }) {
+    const onBackspaceAtStart = spy(spies.onBackspaceAtStart, 'onBackspaceAtStart');
+    onBackspaceAtStart.mockClear();
+    input.setSelectionRange(0, 0);
+    await userEvent.keyboard('{Backspace}');
+    await expect(onBackspaceAtStart).toHaveBeenCalledTimes(1);
+    input.setSelectionRange(input.value.length, input.value.length);
+  },
+  async take(_input, rows, { view, spies }) {
+    const onTake = spy(spies.onTake, 'onTake');
+    onTake.mockClear();
+    await userEvent.keyboard('{Tab}');
+    await expectCalledOnceWith(onTake, selectedRow(rows, view)?.id);
+  },
+  async copyUrl(_input, _rows, { spies }) {
+    const onCopySearchUrl = spy(spies.onCopySearchUrl, 'onCopySearchUrl');
+    onCopySearchUrl.mockClear();
+    await userEvent.keyboard('{Meta>}{Shift>}c{/Shift}{/Meta}');
+    await expect(onCopySearchUrl).toHaveBeenCalledTimes(1);
+  },
+  async toPanel(_input, _rows, { spies }) {
+    const onOpenPanel = spy(spies.onOpenPanel, 'onOpenPanel');
+    onOpenPanel.mockClear();
+    await userEvent.keyboard('{Meta>}{ArrowRight}{/Meta}');
+    await expect(onOpenPanel).toHaveBeenCalledTimes(1);
+  },
+};
+
 /** I2: フッターに出ているキーを押すと対応するハンドラが呼ばれる */
 async function assertFooterKeys(input: HTMLInputElement, rows: readonly RowView[], target: Target) {
-  const { view, spies } = target;
-  const selected = rows.find((row) => row.id === view.selectedId);
-  const index = rows.findIndex((row) => row.id === view.selectedId);
-
-  for (const hint of view.footer) {
-    switch (hint.id) {
-      case 'enter': {
-        const onAction = spy(spies.onAction, 'onAction');
-        onAction.mockClear();
-        await userEvent.keyboard('{Enter}');
-        if (selected === undefined) {
-          await expect(spy(spies.onSearch, 'onSearch')).toHaveBeenCalledTimes(1);
-        } else {
-          await expect(onAction).toHaveBeenCalledExactlyOnceWith(selected.id, { newTab: false });
-        }
-        break;
-      }
-      case 'modEnter': {
-        const onAction = spy(spies.onAction, 'onAction');
-        onAction.mockClear();
-        await userEvent.keyboard('{Meta>}{Enter}{/Meta}');
-        await expect(onAction).toHaveBeenCalledExactlyOnceWith(selected?.id, { newTab: true });
-        break;
-      }
-      case 'move': {
-        const onSelectionChange = spy(spies.onSelectionChange, 'onSelectionChange');
-        onSelectionChange.mockClear();
-        const next = rows[index + 1];
-        if (next === undefined) {
-          await userEvent.keyboard('{ArrowUp}');
-          await expect(onSelectionChange).toHaveBeenLastCalledWith(rows[index - 1]?.id);
-          await userEvent.keyboard('{ArrowDown}');
-        } else {
-          await userEvent.keyboard('{ArrowDown}');
-          await expect(onSelectionChange).toHaveBeenLastCalledWith(next.id);
-          await userEvent.keyboard('{ArrowUp}');
-        }
-        break;
-      }
-      case 'back': {
-        const onBackspaceAtStart = spy(spies.onBackspaceAtStart, 'onBackspaceAtStart');
-        onBackspaceAtStart.mockClear();
-        input.setSelectionRange(0, 0);
-        await userEvent.keyboard('{Backspace}');
-        await expect(onBackspaceAtStart).toHaveBeenCalledTimes(1);
-        input.setSelectionRange(input.value.length, input.value.length);
-        break;
-      }
-      case 'take': {
-        const onTake = spy(spies.onTake, 'onTake');
-        onTake.mockClear();
-        await userEvent.keyboard('{Tab}');
-        await expect(onTake).toHaveBeenCalledExactlyOnceWith(selected?.id);
-        break;
-      }
-      case 'copyUrl': {
-        const onCopySearchUrl = spy(spies.onCopySearchUrl, 'onCopySearchUrl');
-        onCopySearchUrl.mockClear();
-        await userEvent.keyboard('{Meta>}{Shift>}c{/Shift}{/Meta}');
-        await expect(onCopySearchUrl).toHaveBeenCalledTimes(1);
-        break;
-      }
-      case 'toPanel': {
-        const onOpenPanel = spy(spies.onOpenPanel, 'onOpenPanel');
-        onOpenPanel.mockClear();
-        await userEvent.keyboard('{Meta>}{ArrowRight}{/Meta}');
-        await expect(onOpenPanel).toHaveBeenCalledTimes(1);
-        break;
-      }
-    }
-  }
+  for (const hint of target.view.footer) await footerChecks[hint.id](input, rows, target);
 }
 
 /** I1: ヒントを持つ行で Enter を押すと onAction が呼ばれ、持たない行では何も起きない */
@@ -121,7 +122,7 @@ async function assertRowEnter(rows: readonly RowView[], target: Target) {
     onAction.mockClear();
     await userEvent.keyboard('{Enter}');
     if (row.hints.length > 0) {
-      await expect(onAction).toHaveBeenCalledExactlyOnceWith(row.id, { newTab: false });
+      await expectCalledOnceWith(onAction, row.id, { newTab: false });
     } else {
       await expect(onAction).not.toHaveBeenCalled();
     }

@@ -41,9 +41,10 @@ export const Compact: Story = {
 export const BuiltinStatusesOnly: Story = {
   name: 'プロジェクトが「すべて」でステータスが組み込みだけ',
   args: {
-    fields: filters(ja).map((field) =>
-      field.id === 'status' ? { ...field, options: field.options.slice(0, 6) } : field,
-    ),
+    fields: filters(ja).map((field) => {
+      if (field.id !== 'status') return field;
+      return { id: field.id, label: field.label, value: field.value, neutralValue: field.neutralValue, options: field.options.slice(0, 6) };
+    }),
   },
 };
 
@@ -59,9 +60,18 @@ export const SingleChoice: Story = {
 
     await userEvent.click(within(group).getByRole('radio', { name: ja.panel.options.wiki }));
 
-    await expect(args.onChange).toHaveBeenCalledExactlyOnceWith('type', 'wiki');
+    await expect(args.onChange).toHaveBeenCalledTimes(1);
+    await expect(args.onChange).toHaveBeenCalledWith('type', 'wiki');
   },
 };
+
+const withValue = (field: FilterField, value: string): FilterField => ({
+  id: field.id,
+  label: field.label,
+  value,
+  neutralValue: field.neutralValue,
+  options: field.options,
+});
 
 function Controlled({ initial }: { initial: FilterField[] }) {
   const [fields, setFields] = useState(initial);
@@ -69,12 +79,10 @@ function Controlled({ initial }: { initial: FilterField[] }) {
     <FilterBar
       fields={fields}
       onChange={(fieldId, optionId) =>
-        setFields((current) =>
-          current.map((field) => (field.id === fieldId ? { ...field, value: optionId } : field)),
-        )
+        setFields((current) => current.map((field) => withValue(field, fieldId === field.id ? optionId : field.value)))
       }
       onClearAll={() =>
-        setFields((current) => current.map((field) => ({ ...field, value: field.neutralValue ?? field.value })))
+        setFields((current) => current.map((field) => withValue(field, field.neutralValue ?? field.value)))
       }
     />
   );

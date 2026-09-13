@@ -8,8 +8,8 @@ export function useTokenLength(ref: RefObject<HTMLElement | null>, token: string
     const element = ref.current;
     if (element === null) return;
     const value = getComputedStyle(element).getPropertyValue(token).trim();
-    const parsed = Number.parseFloat(value);
-    setLength(Number.isNaN(parsed) ? undefined : parsed);
+    const parsed = Number(value.replace(/px$/u, ''));
+    setLength(value === '' || Number.isNaN(parsed) ? undefined : parsed);
   }, [ref, token]);
 
   return length;

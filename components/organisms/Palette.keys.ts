@@ -33,10 +33,28 @@ function isComposing(event: KeyLike): boolean {
 }
 
 function neighbour(rows: readonly RowView[], selectedId: string | undefined, delta: 1 | -1) {
-  if (rows.length === 0) return undefined;
   const index = rows.findIndex((row) => row.id === selectedId);
   if (index === -1) return rows[0];
   return rows[index + delta];
+}
+
+function resolveArrow(context: KeyContext, delta: 1 | -1): KeyDecision {
+  const next = neighbour(context.rows, context.selectedId, delta);
+  return next === undefined || next.id === context.selectedId
+    ? { type: 'none', preventDefault: true }
+    : { type: 'move', to: next.id };
+}
+
+function resolveEnter(target: RowView | undefined, mod: boolean): KeyDecision {
+  if (target === undefined) return { type: 'none', preventDefault: true };
+  if (mod) {
+    return target.hints.includes('modEnter')
+      ? { type: 'action', id: target.id, newTab: true }
+      : { type: 'none', preventDefault: true };
+  }
+  return target.hints.length > 0
+    ? { type: 'action', id: target.id, newTab: false }
+    : { type: 'none', preventDefault: true };
 }
 
 /**
@@ -56,32 +74,13 @@ export function resolveKey(event: KeyLike, context: KeyContext): KeyDecision {
     return { type: 'none', preventDefault: true };
   }
 
-  if (event.key === 'ArrowDown' || (event.ctrlKey && event.key.toLowerCase() === 'n')) {
-    const next = neighbour(context.rows, context.selectedId, 1);
-    return next === undefined || next.id === context.selectedId
-      ? { type: 'none', preventDefault: true }
-      : { type: 'move', to: next.id };
-  }
+  if (event.key === 'ArrowDown' || (event.ctrlKey && event.key.toLowerCase() === 'n'))
+    return resolveArrow(context, 1);
 
-  if (event.key === 'ArrowUp' || (event.ctrlKey && event.key.toLowerCase() === 'p')) {
-    const previous = neighbour(context.rows, context.selectedId, -1);
-    return previous === undefined || previous.id === context.selectedId
-      ? { type: 'none', preventDefault: true }
-      : { type: 'move', to: previous.id };
-  }
+  if (event.key === 'ArrowUp' || (event.ctrlKey && event.key.toLowerCase() === 'p'))
+    return resolveArrow(context, -1);
 
-  if (event.key === 'Enter') {
-    const target = context.target;
-    if (target === undefined) return { type: 'none', preventDefault: true };
-    if (mod) {
-      return target.hints.includes('modEnter')
-        ? { type: 'action', id: target.id, newTab: true }
-        : { type: 'none', preventDefault: true };
-    }
-    return target.hints.length > 0
-      ? { type: 'action', id: target.id, newTab: false }
-      : { type: 'none', preventDefault: true };
-  }
+  if (event.key === 'Enter') return resolveEnter(context.target, mod);
 
   if (event.key === 'Backspace' && context.caretAtStart && !mod && !event.altKey)
     return { type: 'backspaceAtStart' };

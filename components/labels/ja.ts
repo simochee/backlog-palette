@@ -37,6 +37,7 @@ export const ja: Labels = {
     more: (count) => `他 ${count} 件`,
     loading: (space) => `${space} 読み込み中`,
     countOf: (space, count) => `${space} ${count} 件`,
+    count: (count) => `${count} 件`,
     summary: (spaces, count) => `${spaces} スペース · ${count} 件`,
   },
   rows: {

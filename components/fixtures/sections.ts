@@ -36,20 +36,21 @@ export function assignedSection(labels: Labels): SectionView {
   return {
     id: 'assigned',
     label: labels.sections.assigned,
-    meta: labels.sections.countOf('', 3).trim(),
+    meta: labels.sections.count(3),
     rows: [sampleIssues.login, sampleIssues.release, sampleIssues.invoice],
   };
 }
 
 export function commandsSection(labels: Labels, issueKey?: string): SectionView {
-  const copy = issueKey
-    ? [
+  const copy =
+    issueKey === undefined
+      ? []
+      : [
         commandRow('copy-key', labels.rows.copyIssueKey, issueKey),
         commandRow('copy-url', labels.rows.copyIssueUrl, issueKey),
         commandRow('copy-title', labels.rows.copyIssueTitle, issueKey),
         commandRow('copy-md', labels.rows.copyIssueMarkdown, issueKey),
-      ]
-    : [];
+      ];
   return {
     id: 'commands',
     label: labels.sections.commands,

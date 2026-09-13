@@ -7,75 +7,103 @@ import { externalRow, hintRow, pageRow, sampleIssues, searchingRow, widenRow } f
 
 type FilterOverrides = Partial<Record<'space' | 'project' | 'type' | 'status' | 'assignee' | 'updated', string>>;
 
+const neutral = 'all';
+
+function spaceField(labels: Labels, value: string): FilterField {
+  return {
+    id: 'space',
+    label: labels.panel.fields.space,
+    value,
+    neutralValue: neutral,
+    options: [
+      { id: neutral, label: labels.panel.options.allSpaces },
+      ...Object.values(spaces).map((space) => ({ id: space.id, label: space.label })),
+    ],
+  };
+}
+
+function projectField(labels: Labels, value: string): FilterField {
+  return {
+    id: 'project',
+    label: labels.panel.fields.project,
+    value,
+    neutralValue: neutral,
+    options: [
+      { id: neutral, label: labels.panel.options.all },
+      ...Object.values(projects).map((project) => ({ id: project.key, label: project.name })),
+    ],
+  };
+}
+
+function typeField(labels: Labels, value: string): FilterField {
+  const { options } = labels.panel;
+  return {
+    id: 'type',
+    label: labels.panel.fields.type,
+    value,
+    neutralValue: neutral,
+    options: [
+      { id: neutral, label: options.all },
+      { id: 'issue', label: options.issue, count: 14 },
+      { id: 'wiki', label: options.wiki, count: 2 },
+      { id: 'document', label: options.document, count: 1 },
+    ],
+  };
+}
+
+function statusField(labels: Labels, value: string): FilterField {
+  return {
+    id: 'status',
+    label: labels.panel.fields.status,
+    value,
+    neutralValue: neutral,
+    options: [
+      { id: neutral, label: labels.panel.options.all },
+      { id: 'not-closed', label: labels.panel.options.notClosed },
+      ...Object.entries(statuses).map(([id, status]) => ({ id, label: status.label, tone: status.tone })),
+    ],
+  };
+}
+
+function assigneeField(labels: Labels, value: string): FilterField {
+  const { options } = labels.panel;
+  return {
+    id: 'assignee',
+    label: labels.panel.fields.assignee,
+    value,
+    neutralValue: neutral,
+    options: [
+      { id: neutral, label: options.all },
+      { id: 'me', label: options.me },
+      { id: 'unassigned', label: options.unassigned },
+    ],
+  };
+}
+
+function updatedField(labels: Labels, value: string): FilterField {
+  const { options } = labels.panel;
+  return {
+    id: 'updated',
+    label: labels.panel.fields.updated,
+    value,
+    neutralValue: 'any',
+    options: [
+      { id: 'any', label: options.anyTime },
+      { id: 'week', label: options.week },
+      { id: 'month', label: options.month },
+      { id: 'quarter', label: options.quarter },
+    ],
+  };
+}
+
 export function filters(labels: Labels, values: FilterOverrides = {}): FilterField[] {
-  const { fields, options } = labels.panel;
   return [
-    {
-      id: 'space',
-      label: fields.space,
-      value: values.space ?? 'all',
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: options.allSpaces },
-        ...Object.values(spaces).map((space) => ({ id: space.id, label: space.label })),
-      ],
-    },
-    {
-      id: 'project',
-      label: fields.project,
-      value: values.project ?? 'all',
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: options.all },
-        ...Object.values(projects).map((project) => ({ id: project.key, label: project.name })),
-      ],
-    },
-    {
-      id: 'type',
-      label: fields.type,
-      value: values.type ?? 'all',
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: options.all },
-        { id: 'issue', label: options.issue, count: 14 },
-        { id: 'wiki', label: options.wiki, count: 2 },
-        { id: 'document', label: options.document, count: 1 },
-      ],
-    },
-    {
-      id: 'status',
-      label: fields.status,
-      value: values.status ?? 'all',
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: options.all },
-        { id: 'not-closed', label: options.notClosed },
-        ...Object.entries(statuses).map(([id, status]) => ({ id, label: status.label, tone: status.tone })),
-      ],
-    },
-    {
-      id: 'assignee',
-      label: fields.assignee,
-      value: values.assignee ?? 'all',
-      neutralValue: 'all',
-      options: [
-        { id: 'all', label: options.all },
-        { id: 'me', label: options.me },
-        { id: 'unassigned', label: options.unassigned },
-      ],
-    },
-    {
-      id: 'updated',
-      label: fields.updated,
-      value: values.updated ?? 'any',
-      neutralValue: 'any',
-      options: [
-        { id: 'any', label: options.anyTime },
-        { id: 'week', label: options.week },
-        { id: 'month', label: options.month },
-        { id: 'quarter', label: options.quarter },
-      ],
-    },
+    spaceField(labels, values.space ?? neutral),
+    projectField(labels, values.project ?? neutral),
+    typeField(labels, values.type ?? neutral),
+    statusField(labels, values.status ?? neutral),
+    assigneeField(labels, values.assignee ?? neutral),
+    updatedField(labels, values.updated ?? 'any'),
   ];
 }
 
@@ -200,7 +228,7 @@ export const p5 = (labels: Labels): PanelView =>
   panel(labels, {
     input: '決済',
     filters: filters(labels, { status: 'not-closed' }),
-    spaces: allReady.map((space) => ({ ...space, state: 'loading', count: undefined })),
+    spaces: allReady.map((space) => ({ id: space.id, label: space.label, state: 'loading' })),
     hasResults: true,
     sections: [{ id: 'results', label: labels.sections.results, rows: [searchingRow(labels)] }],
   });

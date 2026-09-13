@@ -34,12 +34,46 @@ export function moveSelection(
   return next?.id;
 }
 
+function SectionGroup({
+  listId,
+  section,
+  selectedId,
+  onAction,
+}: {
+  listId: string;
+  section: SectionView;
+  selectedId: string | undefined;
+  onAction: (id: string) => void;
+}) {
+  const headerId = `${listId}-section-${section.id}`;
+  return (
+    <div
+      role="group"
+      aria-labelledby={section.label === undefined ? undefined : headerId}
+      data-section-id={section.id}
+    >
+      {section.label !== undefined && (
+        <SectionHeader id={headerId} label={section.label} meta={section.meta} />
+      )}
+      {section.rows.map((row) => (
+        <ResultRow
+          key={row.id}
+          row={row}
+          selected={row.id === selectedId}
+          optionId={optionDomId(listId, row.id)}
+          onClick={() => onAction(row.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function CandidateList({ id, sections, selectedId, onAction, ...aria }: CandidateListProps) {
   const listRef = useRef<HTMLDivElement>(null);
-  const activeDescendant = selectedId ? optionDomId(id, selectedId) : undefined;
+  const activeDescendant = selectedId === undefined ? undefined : optionDomId(id, selectedId);
 
   useEffect(() => {
-    if (!activeDescendant) return;
+    if (activeDescendant === undefined) return;
     listRef.current
       ?.querySelector(`#${CSS.escape(activeDescendant)}`)
       ?.scrollIntoView({ block: 'nearest' });
@@ -50,37 +84,23 @@ export function CandidateList({ id, sections, selectedId, onAction, ...aria }: C
       ref={listRef}
       id={id}
       role="listbox"
+      tabIndex={-1}
       aria-label={aria['aria-label']}
       aria-activedescendant={activeDescendant}
       // 行のクリックで入力欄からフォーカスが抜けると次の打鍵が届かなくなる。
       // 選択はクリックの click で伝えるので、mousedown の既定動作だけを止める。
       onMouseDown={(event) => event.preventDefault()}
-      className="py-1"
+      className="py-1 outline-none"
     >
-      {sections.map((section) => {
-        const headerId = `${id}-section-${section.id}`;
-        return (
-          <div
-            key={section.id}
-            role="group"
-            aria-labelledby={section.label ? headerId : undefined}
-            data-section-id={section.id}
-          >
-            {section.label && (
-              <SectionHeader id={headerId} label={section.label} meta={section.meta} />
-            )}
-            {section.rows.map((row) => (
-              <ResultRow
-                key={row.id}
-                row={row}
-                selected={row.id === selectedId}
-                optionId={optionDomId(id, row.id)}
-                onClick={() => onAction(row.id)}
-              />
-            ))}
-          </div>
-        );
-      })}
+      {sections.map((section) => (
+        <SectionGroup
+          key={section.id}
+          listId={id}
+          section={section}
+          selectedId={selectedId}
+          onAction={onAction}
+        />
+      ))}
     </div>
   );
 }

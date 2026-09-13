@@ -33,9 +33,11 @@ export const AllReady: Story = {
 export const WithLoading: Story = {
   name: '読み込み中を含む',
   args: {
-    spaces: mixedProgress(ja).map((space) =>
-      space.state === 'error' ? { ...space, state: 'ready', count: 1 } : space,
-    ),
+    spaces: [
+      { id: spaces.nulab.id, label: spaces.nulab.label, state: 'ready', count: 12 },
+      { id: spaces.acme.id, label: spaces.acme.label, state: 'loading' },
+      { id: spaces.beta.id, label: spaces.beta.label, state: 'ready', count: 1 },
+    ],
   },
 };
 
@@ -50,6 +52,7 @@ export const ReconnectCallsAction: Story = {
   play: async ({ args, canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: ja.panel.reconnect }));
 
-    await expect(args.onSpaceAction).toHaveBeenCalledExactlyOnceWith(spaces.beta.id);
+    await expect(args.onSpaceAction).toHaveBeenCalledTimes(1);
+    await expect(args.onSpaceAction).toHaveBeenCalledWith(spaces.beta.id);
   },
 };

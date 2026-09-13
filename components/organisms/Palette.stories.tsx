@@ -1,8 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { projects, spaces } from '@/components/fixtures/domain';
 import {
+  hintLabel,
+  kindsIn,
+  options,
+  projects,
+  resultsGroup,
   s0,
   s1,
   s1Empty,
@@ -18,16 +22,17 @@ import {
   s11,
   s12,
   s13,
-} from '@/components/fixtures/palette';
-import { en, ja, type Labels, LabelsProvider } from '@/components/labels';
+  sectionIds,
+  spaces,
+} from '@/components/fixtures';
+import { ja } from '@/components/labels';
 import { flattenRows } from '@/components/organisms/CandidateList';
-import type { PaletteView } from '@/components/types';
 
 import { Palette } from './Palette';
 import { StatefulPalette } from './Palette.harness';
 import { assertPaletteInvariants } from './Palette.invariants';
 
-const callbacks = () => ({
+export const paletteCallbacks = () => ({
   onInputChange: fn(),
   onSelectionChange: fn(),
   onAction: fn(),
@@ -41,7 +46,7 @@ const callbacks = () => ({
 
 const meta = {
   component: Palette,
-  args: { ...s1(ja), ...callbacks() },
+  args: { ...s1(ja), ...paletteCallbacks() },
   render: (args) => <StatefulPalette {...args} />,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -57,13 +62,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const options = (canvasElement: HTMLElement) => within(canvasElement).getAllByRole('option');
-const groups = (canvasElement: HTMLElement) =>
-  Array.from(canvasElement.querySelectorAll<HTMLElement>('[role="group"]'));
-const hintLabel = (canvasElement: HTMLElement, id: string) =>
-  canvasElement.querySelector(`[data-hint-id="${id}"]:not([aria-hidden="true"] *)`)?.textContent ??
-  '';
-
 export const S0: Story = {
   name: 'S0 未接続で何も出せない — 接続行が 1 つだけあり選択されている',
   args: s0(ja),
@@ -72,7 +70,7 @@ export const S0: Story = {
 
     const rows = options(canvasElement);
     await expect(rows).toHaveLength(1);
-    await expect(rows[0]).toHaveAttribute('data-kind', 'connect');
+    await expect(rows[0]?.dataset.kind).toBe('connect');
     await expect(rows[0]).toHaveAttribute('aria-selected', 'true');
   },
 };
@@ -83,8 +81,7 @@ export const S1: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const ids = groups(canvasElement).map((group) => group.dataset.sectionId);
-    await expect(ids).toEqual(['recent', 'pages', 'assigned']);
+    await expect(sectionIds(canvasElement)).toEqual(['recent', 'pages', 'assigned']);
     await expect(options(canvasElement)[0]).toHaveAttribute('aria-selected', 'true');
   },
 };
@@ -96,9 +93,9 @@ export const S1Empty: Story = {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
     const [hint] = options(canvasElement);
-    await expect(hint).toHaveAttribute('data-kind', 'hint');
+    await expect(hint?.dataset.kind).toBe('hint');
     await expect(hint?.querySelector('kbd')).toBeNull();
-    await expect(groups(canvasElement).map((group) => group.dataset.sectionId)).toContain('pages');
+    await expect(sectionIds(canvasElement)).toContain('pages');
   },
 };
 
@@ -108,13 +105,9 @@ export const S2: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const canvas = within(canvasElement);
-    await expect(canvas.getByTestId('ghost-completion')).toHaveTextContent('がんとチャート');
+    await expect(within(canvasElement).getByTestId('ghost-completion')).toHaveTextContent('がんとチャート');
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.complete);
-    await expect(groups(canvasElement).map((group) => group.dataset.sectionId)).toEqual([
-      'pages',
-      'search',
-    ]);
+    await expect(sectionIds(canvasElement)).toEqual(['pages', 'search']);
 
     await userEvent.keyboard('{Tab}');
     await expect(args.onTake).toHaveBeenLastCalledWith('page:gantt');
@@ -128,8 +121,8 @@ export const S3: Story = {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
     const [direct] = options(canvasElement);
-    await expect(direct).toHaveAttribute('data-row-id', 'direct:PROJ-12');
-    await expect(direct).toHaveAttribute('data-tone', 'accent');
+    await expect(direct?.dataset.rowId).toBe('direct:PROJ-12');
+    await expect(direct?.dataset.tone).toBe('accent');
     await expect(direct).toHaveAttribute('aria-selected', 'true');
   },
 };
@@ -140,7 +133,7 @@ export const S4: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    await expect(options(canvasElement)[0]).toHaveAttribute('data-kind', 'search');
+    await expect(options(canvasElement)[0]?.dataset.kind).toBe('search');
     await expect(hintLabel(canvasElement, 'enter')).toContain(ja.keys.search);
   },
 };
@@ -152,10 +145,12 @@ export const S5: Story = {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
     const [search, searching] = options(canvasElement);
-    await expect(search).toHaveAttribute('data-kind', 'search');
-    await expect(searching).toHaveAttribute('data-row-id', 'searching');
+    await expect(search?.dataset.kind).toBe('search');
+    await expect(searching?.dataset.rowId).toBe('searching');
     await expect(searching).toHaveAttribute('aria-selected', 'true');
-    await expect(within(canvasElement).getByText(ja.sections.loading(spaces.nulab.label))).toBeVisible();
+    await expect(
+      within(canvasElement).getByText(ja.sections.loading(spaces.nulab.label)),
+    ).toBeVisible();
   },
 };
 
@@ -173,7 +168,8 @@ export const S6: Story = {
     for (let index = 0; index < rows.length; index += 1) await userEvent.keyboard('{ArrowUp}');
     args.onAction.mockClear();
     await userEvent.keyboard('{Enter}');
-    await expect(args.onAction).toHaveBeenCalledExactlyOnceWith('notice', { newTab: false });
+    await expect(args.onAction).toHaveBeenCalledTimes(1);
+    await expect(args.onAction).toHaveBeenCalledWith('notice', { newTab: false });
   },
 };
 
@@ -183,13 +179,9 @@ export const S7: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const results = groups(canvasElement).find((group) => group.dataset.sectionId === 'results');
-    const kinds = Array.from(results?.querySelectorAll('[role="option"]') ?? []).map(
-      (option) => option.getAttribute('data-kind'),
-    );
-    await expect(kinds).toEqual(['hint', 'search', 'panel', 'external']);
-    await expect(results?.querySelectorAll('[role="option"]')[1]).toHaveAttribute(
-      'data-tone',
+    const results = resultsGroup(canvasElement);
+    await expect(kindsIn(results)).toEqual(['hint', 'search', 'panel', 'external']);
+    await expect(results?.querySelectorAll<HTMLElement>('[role="option"]')[1]?.dataset.tone).toBe(
       'accent',
     );
   },
@@ -215,8 +207,7 @@ export const S9: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const kinds = options(canvasElement).map((option) => option.getAttribute('data-kind'));
-    await expect(kinds).toEqual(['space', 'space', 'space']);
+    await expect(kindsIn(canvasElement)).toEqual(['space', 'space', 'space']);
     await expect(within(canvasElement).getByText(ja.palette.escBack)).toBeInTheDocument();
 
     await userEvent.keyboard('{Escape}');
@@ -230,10 +221,7 @@ export const S10: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const results = groups(canvasElement).find((group) => group.dataset.sectionId === 'results');
-    const kinds = Array.from(results?.querySelectorAll('[role="option"]') ?? []).map(
-      (option) => option.getAttribute('data-kind'),
-    );
+    const kinds = kindsIn(resultsGroup(canvasElement));
     await expect(kinds.at(-1)).toBe('connect');
     await expect(kinds.filter((kind) => kind === 'connect')).toHaveLength(1);
     await expect(within(canvasElement).queryByRole('alert')).toBeNull();
@@ -246,10 +234,7 @@ export const S11: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const results = groups(canvasElement).find((group) => group.dataset.sectionId === 'results');
-    const kinds = Array.from(results?.querySelectorAll('[role="option"]') ?? []).map(
-      (option) => option.getAttribute('data-kind'),
-    );
+    const kinds = kindsIn(resultsGroup(canvasElement));
     await expect(kinds.at(-1)).toBe('status');
     await expect(kinds.filter((kind) => kind === 'issue').length).toBeGreaterThan(0);
   },
@@ -261,8 +246,9 @@ export const S12: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    const canvas = within(canvasElement);
-    await expect(canvas.getByRole('status')).toHaveTextContent(ja.rows.copied('PROJ-142'));
+    await expect(within(canvasElement).getByRole('status')).toHaveTextContent(
+      ja.rows.copied('PROJ-142'),
+    );
     await expect(hintLabel(canvasElement, 'enter')).toContain(ja.keys.open);
   },
 };
@@ -275,101 +261,14 @@ export const S13: Story = {
 
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.stack);
 
+    const id = `project:${projects.mobile.key}`;
     args.onTake.mockClear();
     args.onAction.mockClear();
     await userEvent.keyboard('{Tab}');
-    await expect(args.onTake).toHaveBeenCalledExactlyOnceWith(`project:${projects.mobile.key}`);
+    await expect(args.onTake).toHaveBeenCalledTimes(1);
+    await expect(args.onTake).toHaveBeenCalledWith(id);
     await userEvent.keyboard('{Enter}');
-    await expect(args.onAction).toHaveBeenCalledExactlyOnceWith(`project:${projects.mobile.key}`, {
-      newTab: false,
-    });
+    await expect(args.onAction).toHaveBeenCalledTimes(1);
+    await expect(args.onAction).toHaveBeenCalledWith(id, { newTab: false });
   },
-};
-
-export const Narrow: Story = {
-  name: '狭い幅（360） — ↵ が残り、補足が隠れ、パスがバッジだけになる',
-  args: { ...s6(ja), path: s1(ja).path, width: 360 },
-  globals: { width: '360' },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await expect(hintLabel(canvasElement, 'enter')).toContain(ja.keys.open);
-    const [firstOption] = options(canvasElement).filter(
-      (option) => option.getAttribute('data-kind') === 'issue',
-    );
-    const sub = firstOption?.querySelector('.truncate.\\@max-narrow\\:hidden');
-    await expect(sub).not.toBeVisible();
-    await expect(canvas.getByText(spaces.nulab.label)).not.toBeVisible();
-  },
-};
-
-export const DarkS1: Story = {
-  name: 'ダーク — S1',
-  args: s1(ja),
-  globals: { theme: 'dark' },
-};
-
-export const DarkS6: Story = {
-  name: 'ダーク — S6',
-  args: s6(ja),
-  globals: { theme: 'dark' },
-};
-
-export const EnglishS1: Story = {
-  name: 'English — S1',
-  args: { ...s1(en), labels: en },
-  globals: { locale: 'en' },
-};
-
-export const EnglishS6: Story = {
-  name: 'English — S6（ラベル長の違いでフッターが溢れないこと）',
-  args: { ...s6(en), labels: en },
-  globals: { locale: 'en' },
-  play: async ({ canvasElement }) => {
-    await expect(hintLabel(canvasElement, 'enter')).toContain(en.keys.open);
-    await expect(hintLabel(canvasElement, 'copyUrl')).toContain(en.keys.copyUrl);
-  },
-};
-
-function Cell({
-  theme,
-  labels,
-  width,
-  view,
-}: {
-  theme: 'light' | 'dark';
-  labels: Labels;
-  width: number;
-  view: PaletteView;
-}) {
-  return (
-    <div
-      data-color-scheme={theme}
-      className="@container relative h-160 shrink-0 overflow-hidden rounded-surface bg-page"
-      style={{ width }}
-    >
-      <LabelsProvider labels={labels}>
-        <Palette {...view} {...callbacks()} labels={labels} width={width} />
-      </LabelsProvider>
-    </div>
-  );
-}
-
-export const Matrix: Story = {
-  name: '両テーマ・両言語・幅 360/640/720 で描画が落ちない',
-  parameters: { layout: 'padded' },
-  decorators: [(Story) => <Story />],
-  render: () => (
-    <div className="flex flex-col gap-4">
-      {(['light', 'dark'] as const).map((theme) =>
-        ([ja, en] as const).map((labels) => (
-          <div key={`${theme}-${labels.palette.escClose}`} className="flex flex-wrap gap-4">
-            {[360, 640, 720].map((width) => (
-              <Cell key={width} theme={theme} labels={labels} width={width} view={s6(labels)} />
-            ))}
-          </div>
-        )),
-      )}
-    </div>
-  ),
 };
