@@ -13,42 +13,35 @@ export type HostChannel = {
   send: (message: FromIframe) => void;
 };
 
-/** origin を信じるかの判定。カスタムドメイン（surfaces.md §8）は storage を読むので非同期 */
+/** 静的な 3 ドメイン以外の origin を信じるかの判定。カスタムドメイン（surfaces.md §8）は storage を読むので非同期 */
 export type TrustOrigin = (origin: string) => Promise<boolean>;
 
-const staticTrust: TrustOrigin = (origin) => Promise.resolve(isTrustedPageOrigin(origin));
+const noExtraTrust: TrustOrigin = () => Promise.resolve(false);
 
-export function createHostChannel(scope: Window, trust: TrustOrigin = staticTrust): HostChannel {
+type Inbox = {
+  accept: (origin: string, message: ToIframe) => void;
+  subscribe: HostChannel['subscribe'];
+  send: HostChannel['send'];
+};
+
+function createInbox(scope: Window): Inbox {
   const buffered: ToIframe[] = [];
   const outgoing: FromIframe[] = [];
   const handlers = new Set<(message: ToIframe) => void>();
   let parentOrigin: string | undefined;
 
-  const accept = (origin: string, message: ToIframe) => {
-    // 返信先は「実際に送ってきた origin」。ページが名乗った値は使わない
-    parentOrigin = origin;
-    // origin の検証が済む前に iframe 側が送ろうとした返信（Esc の close など）をここで流す
-    for (const pending of outgoing.splice(0)) scope.parent.postMessage(pending, origin);
-    if (handlers.size === 0) {
-      buffered.push(message);
-      return;
-    }
-    for (const handler of handlers) handler(message);
-  };
-
-  scope.addEventListener('message', (event: MessageEvent<unknown>) => {
-    // 埋め込み元の window からで、かつ登録済みスペースの origin からのメッセージだけ処理する
-    if (event.source !== scope.parent) return;
-    if (!isToIframe(event.data)) return;
-    const { origin } = event;
-    const message = event.data;
-    const consider = async () => {
-      if (await trust(origin)) accept(origin, message);
-    };
-    void consider();
-  });
-
   return {
+    accept(origin, message) {
+      // 返信先は「実際に送ってきた origin」。ページが名乗った値は使わない
+      parentOrigin = origin;
+      // origin の検証が済む前に iframe 側が送ろうとした返信（Esc の close など）をここで流す
+      for (const pending of outgoing.splice(0)) scope.parent.postMessage(pending, origin);
+      if (handlers.size === 0) {
+        buffered.push(message);
+        return;
+      }
+      for (const handler of handlers) handler(message);
+    },
     subscribe(next) {
       handlers.add(next);
       for (const message of buffered.splice(0)) next(message);
@@ -56,7 +49,6 @@ export function createHostChannel(scope: Window, trust: TrustOrigin = staticTrus
         handlers.delete(next);
       };
     },
-
     send(message) {
       // targetOrigin に '*' を使わない。open を受けて返信先が分かるまで待つ
       if (parentOrigin === undefined) {
@@ -66,4 +58,32 @@ export function createHostChannel(scope: Window, trust: TrustOrigin = staticTrus
       scope.parent.postMessage(message, parentOrigin);
     },
   };
+}
+
+export function createHostChannel(scope: Window, extraTrust: TrustOrigin = noExtraTrust): HostChannel {
+  const { accept, subscribe, send } = createInbox(scope);
+
+  /*
+   * 静的なスペースは同期で受ける。open を待たせると、その間に打たれた文字が入力欄に
+   * 入った後で状態のリセットが届き、消える（palette.md §3）。非同期の判定はカスタム
+   * ドメインだけ
+   */
+  const receive = (origin: string, message: ToIframe) => {
+    if (isTrustedPageOrigin(origin)) {
+      accept(origin, message);
+      return;
+    }
+    const consider = async () => {
+      if (await extraTrust(origin)) accept(origin, message);
+    };
+    void consider();
+  };
+
+  scope.addEventListener('message', (event: MessageEvent<unknown>) => {
+    // 埋め込み元の window からで、かつ登録済みスペースの origin からのメッセージだけ処理する
+    if (event.source !== scope.parent) return;
+    if (isToIframe(event.data)) receive(event.origin, event.data);
+  });
+
+  return { subscribe, send };
 }
