@@ -5,6 +5,9 @@ import { expect, test } from '@playwright/test';
 
 type Manifest = {
   permissions?: string[];
+  optional_permissions?: string[];
+  optional_host_permissions?: string[];
+  web_accessible_resources?: ({ matches?: string[] } | string)[];
   commands?: Record<string, { suggested_key?: unknown }>;
   content_scripts?: { js: string[] }[];
   side_panel?: { default_path: string };
@@ -32,6 +35,14 @@ test.describe('ビルド後の manifest', () => {
     expect(manifest.action?.default_popup).toBeUndefined();
   });
 
+  test('Chrome: カスタムドメインを後から足せる（scripting と任意のホスト権限、iframe は https 全体に開く）', () => {
+    const manifest = readManifest('chrome-mv3');
+
+    expect(manifest.permissions).toContain('scripting');
+    expect(manifest.optional_host_permissions).toEqual(['https://*/*']);
+    expect(manifest.web_accessible_resources?.[0]).toMatchObject({ matches: ['https://*/*'] });
+  });
+
   test('Firefox: sidebar_action と gecko.id・data_collection_permissions があり、sidePanel 権限は無い', () => {
     const manifest = readManifest('firefox-mv2');
 
@@ -45,5 +56,13 @@ test.describe('ビルド後の manifest', () => {
     ).toEqual(['none']);
     expect(manifest.commands).toBeUndefined();
     expect(manifest.browser_action?.default_popup).toBeUndefined();
+  });
+
+  test('Firefox: 任意のホスト権限は optional_permissions に載る', () => {
+    const manifest = readManifest('firefox-mv2');
+
+    expect(manifest.permissions).toContain('scripting');
+    expect(manifest.optional_permissions).toEqual(['https://*/*']);
+    expect(manifest.optional_host_permissions).toBeUndefined();
   });
 });
