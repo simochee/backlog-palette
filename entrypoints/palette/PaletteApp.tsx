@@ -99,7 +99,14 @@ function OpenPalette({ session, close }: { session: OpenSession; close: () => vo
     [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
   useRestoredSearch(session, pending, close);
-  const callbacks = usePaletteCallbacks({ store, derived, env, pending, stack: state.stack, close });
+  const callbacks = usePaletteCallbacks({
+    store,
+    derived,
+    env,
+    pending,
+    stack: state.stack,
+    close,
+  });
 
   return (
     <LabelsProvider labels={labels}>

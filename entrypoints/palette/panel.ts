@@ -1,7 +1,7 @@
 import { browser } from '#imports';
 import { type SearchState, searchState } from '@/lib/share';
-import { panelRequest } from '@/lib/storage/panel-items';
 import type { Scope } from '@/lib/stack/types';
+import { panelRequest } from '@/lib/storage/panel-items';
 import { readCurrentTab } from '@/lib/tabs';
 
 import { shareScopeOf } from './share.ts';

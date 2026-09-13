@@ -1,7 +1,6 @@
 import type { FrameLocator, Page } from '@playwright/test';
 
 import { buildShareUrl, searchState } from '../lib/share/index.ts';
-
 import { expect, HOTKEY, PALETTE_FRAME, test } from './fixtures/extension.ts';
 
 const MOD = process.platform === 'darwin' ? 'Meta' : 'Control';
