@@ -43,15 +43,9 @@ test.describe('S1 空状態（palette.md §9）', () => {
   test('開いたページは表示キャッシュに入り、次に開いたとき最近開いたに出る', async ({
     page,
     space,
-    seedConnected,
     readDisplayCache,
   }) => {
-    /*
-     * 接続済みにするのは「最近開いた」を出すため。いまの lib は未接続のスペースでページと
-     * 接続行しか出さないが、表示キャッシュと行動ログは API を使わないので本来は出せる。
-     * 仕様の判断として M2 側へ差し戻し中
-     */
-    await seedConnected([{ host: SPACE_HOST, name: 'デモスペース' }]);
+    // 未接続でも「最近開いた」は出る。表示キャッシュと行動ログは API を使わない（§9）
     await page.goto(space.url('/view/PROJ-142'));
     await expect.poll(readDisplayCache).not.toHaveLength(0);
 
