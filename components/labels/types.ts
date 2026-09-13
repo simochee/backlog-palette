@@ -126,6 +126,7 @@ export type Labels = {
     doneTitle: (space: string) => string;
     close: string;
     invalidKey: string;
+    failed: string;
   };
   options: {
     spacesTitle: string;

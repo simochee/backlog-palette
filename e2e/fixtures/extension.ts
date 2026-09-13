@@ -41,11 +41,16 @@ type ChromeStorage = {
 
 const DISPLAY_CACHE_KEY = 'displayCache';
 
+/** テスト間で消す item。拡張が書くものだけを列挙し、storage.local.clear() は使わない */
+const OWNED_KEYS = [DISPLAY_CACHE_KEY, 'apiKeys', 'spaces', 'rateLimits'];
+
 export type ExtensionFixtures = {
   context: BrowserContext;
   page: Page;
   serviceWorker: Worker;
   readDisplayCache: () => Promise<DisplayCacheRow[]>;
+  /** storage.local の item を SW 経由で読む。無ければ undefined */
+  readStorage: <T>(key: string) => Promise<T | undefined>;
 };
 
 export type WorkerFixtures = {
@@ -113,10 +118,20 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
      * 次のテストへ状態を持ち越さない。消すのは自分が書く item だけ。
      * storage.local.clear() は設定まで消し、2 件目以降のテストを壊す（mvp の罠）。
      */
-    await serviceWorker.evaluate(async (key) => {
+    await serviceWorker.evaluate(async (keys) => {
       const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
-      await api.storage.local.remove(key);
-    }, DISPLAY_CACHE_KEY);
+      await Promise.all(keys.map((key) => api.storage.local.remove(key)));
+    }, OWNED_KEYS);
+  },
+
+  readStorage: async ({ serviceWorker }, use) => {
+    await use(async <T,>(key: string) => {
+      const stored = await serviceWorker.evaluate(async (name) => {
+        const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+        return (await api.storage.local.get(name))[name];
+      }, key);
+      return stored as T | undefined;
+    });
   },
 
   readDisplayCache: async ({ serviceWorker }, use) => {

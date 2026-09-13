@@ -1,6 +1,15 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-import { DOCUMENTS, ISSUE_TYPES, ISSUES, PROJECTS, STATUSES, TESTER, WIKIS } from './apiData.ts';
+import {
+  DOCUMENTS,
+  ISSUE_TYPES,
+  ISSUES,
+  PROJECTS,
+  SPACE,
+  STATUSES,
+  TESTER,
+  WIKIS,
+} from './apiData.ts';
 
 export type ApiMode = 'ok' | 'unauthorized' | 'rateLimited';
 
@@ -106,6 +115,7 @@ const ROUTES: [RegExp, RateGroup, Handler][] = [
       },
     }),
   ],
+  [/^\/api\/v2\/space$/u, 'read', () => ({ status: 200, body: SPACE })],
   [/^\/api\/v2\/users\/myself$/u, 'read', () => ({ status: 200, body: TESTER })],
   [/^\/api\/v2\/projects$/u, 'read', () => ({ status: 200, body: PROJECTS })],
   [

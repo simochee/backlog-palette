@@ -123,6 +123,7 @@ export const ja: Labels = {
     doneTitle: (space) => `${space} に接続しました`,
     close: '閉じる',
     invalidKey: 'キーが正しくありません',
+    failed: 'このスペースに接続できませんでした',
   },
   options: {
     spacesTitle: '接続しているスペース',

@@ -2,6 +2,8 @@
  * 偽スペースの API が返すデータ。形は docs/backlog-facts.md §3・§6.3 に合わせる。
  * 中身は架空。実スペースの値は書かない。
  */
+export const SPACE = { spaceKey: 'demo', name: 'デモスペース', ownerId: 1, lang: 'ja' };
+
 export const TESTER = { id: 1, userId: 'tester', name: 'テスト太郎', roleType: 2, lang: 'ja' };
 
 export const PROJECTS = [
