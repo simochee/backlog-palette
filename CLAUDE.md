@@ -24,7 +24,7 @@ pnpm 12 は postinstall をデフォルトで実行しない。ネイティブ�
 | `pnpm test` | story をテストとして実行 |
 | `pnpm test:watch` | 同上、監視モード |
 | `pnpm lint` / `pnpm lint:fix` | oxlint。型検査を兼ねる |
-| `pnpm format` / `pnpm format:check` | oxfmt で整形 / 整形済みかの確認 |
+| `pnpm format` | oxfmt で整形 |
 
 ## ローカルのクオリティゲート
 
@@ -33,8 +33,8 @@ CI で検証することをローカルで繰り返さない。CI は非同期�
 
 `.github/workflows/ci.yml` が実行する。ローカルでは実行しない:
 
-- `pnpm lint`
-- `pnpm format:check`
+- `pnpm lint:fix`
+- `pnpm format`
 - `pnpm build` / `pnpm build:firefox`
 - `pnpm build:storybook`
 - `pnpm test`
@@ -54,6 +54,30 @@ CI は前段が落ちても後続を走らせ、1 回の実行で失敗箇所を
 oxc に寄せている。lint と型検査が oxlint (`.oxlintrc.json`)、整形が oxfmt
 (`.oxfmtrc.json`)。整形は oxfmt の LSP かエディタの保存時整形に任せ、まとめて直したい
 ときだけ `pnpm format` を叩く。
+
+### 自動修正は CI がコミットする
+
+CI は lint と整形を検査ではなく修正として走らせ (`pnpm lint:fix` / `pnpm format`)、
+出た差分をオープンな PR があるブランチにコミットする。機械が直せる指摘を人に
+往復させないため。
+
+`oxlint --fix` は直せなかった指摘だけを報告して非ゼロ終了するので、検査を別に
+走らせる必要はない。一方 `oxfmt` は書き換えるだけで非ゼロ終了しないため、
+整形の検証点は「コミットできる PR がないのに差分が出たら落とす」という形で
+Commit fixes ステップが持っている。
+
+**push したら次の作業の前に `git pull` する。** CI がコミットを積んでいるとブランチが
+進んでいる。
+
+自動修正のコミットは新しい CI 実行を起こさない。`GITHUB_TOKEN` による push は
+ワークフローをトリガしない仕様で、加えてコミット件名に `[skip ci]` を付けている。
+片方だけでも止まるが、required status checks のために GitHub App トークンへ
+差し替えた瞬間に前者の前提が消えるため、二重にしてある。
+
+修正後のコードは同じ実行の後続ステップが検証するので検証漏れはないが、
+**チェック結果は修正前のコミットに紐づく**。PR の最新コミットにチェックが
+付いていないように見えるのはこのため。ここを埋めたくなったら
+`[skip ci]` を外した上でトークンを差し替えることになる。
 
 ### 型検査を oxlint に統合している
 

@@ -26,7 +26,6 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
-    "format:check": "oxfmt --check",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
     "test": "vitest run",

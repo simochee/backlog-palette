@@ -13,6 +13,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
 
+    # Commit fixes が PR ブランチへコミットを積むために書き込みが要る。
+    permissions:
+      contents: write
+      pull-requests: read
+
     steps:
       - uses: actions/checkout@v7
 
@@ -33,13 +38,45 @@ jobs:
       # 前段が落ちても後続を走らせる。1 回の実行で失敗箇所が出揃わないと、
       # 直して push し直すたびに次の失敗を知ることになり往復が増える。
       # lint は型検査も兼ねる。最も速く最も落ちやすいので先頭に置く。
+      #
+      # 検査ではなく修正として走らせる。機械が直せる指摘で人を往復させないため。
+      # `oxlint --fix` は直せなかった指摘だけを報告して非ゼロ終了するので、
+      # 検査を別に走らせる必要はない。
       - name: Lint
         if: ${{ !cancelled() }}
-        run: pnpm lint --format=github
+        run: pnpm lint:fix --format=github
 
       - name: Format
         if: ${{ !cancelled() }}
-        run: pnpm format:check
+        run: pnpm format
+
+      # 自動修正の結果を記録する。`oxfmt` は書き換えるだけで非ゼロ終了しないので、
+      # 整形の検証点はここになる。コミット先の PR がないのに差分が出たということは
+      # 整形されていないコードが直接 push されたということなので落とす。
+      - name: Commit fixes
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo '自動修正なし'
+            exit 0
+          fi
+
+          if [ -z "$(gh pr list --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number')" ]; then
+            echo '::error::自動修正で差分が出たが、コミットできる PR がない'
+            git --no-pager diff
+            exit 1
+          fi
+
+          # `[skip ci]` は二重の歯止め。GITHUB_TOKEN による push はそもそも
+          # ワークフローをトリガしないが、required status checks のために
+          # GitHub App トークンへ差し替えた瞬間にその前提が消え、自分が直した
+          # コミットで自分がまた走る無限ループになる。
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -a -m 'chore: oxlint と oxfmt の自動修正を適用する [skip ci]'
+          git push origin "HEAD:$GITHUB_REF_NAME"
 
       # ブラウザ本体の導入はテストだけが必要とする。lint より後ろに置いて、
       # 導入が失敗しても lint の結果は得られるようにする。
