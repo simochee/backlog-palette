@@ -4,12 +4,14 @@ import type { Labels } from '@/components/labels';
 import type { HostChannel } from '@/lib/messaging/hostChannel';
 import { createPaletteStore, type PaletteIndex, type PaletteStore } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
+import { resolveLanguage } from '@/lib/i18n/language';
 import { settings } from '@/lib/storage/palette-items';
+import { applyColorScheme } from '@/lib/theme/colorScheme';
 
 import { type Pending, restartSearch } from './actions.ts';
 import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
-import { labelsFor, resolveLanguage } from './language.ts';
+import { labelsFor } from './language.ts';
 import { handOffToPanel } from './panel.ts';
 import { emptySearchRunner, type SearchRunner } from './search.ts';
 import { type Restore, restoreFrom } from './share.ts';
@@ -41,7 +43,11 @@ async function createSession(): Promise<PaletteSession | undefined> {
   const [connected, prefs] = await Promise.all([readConnectedSpaces(), settings.getValue()]);
   const language = resolveLanguage(prefs.language, navigator.language);
   const index = await buildIndex({ context, connected, settings: prefs, language, now });
-  document.documentElement.dataset.colorScheme = prefs.theme === 'system' ? undefined : prefs.theme;
+  applyColorScheme(
+    document.documentElement,
+    prefs.theme,
+    window.matchMedia('(prefers-color-scheme: dark)').matches,
+  );
 
   return {
     context,

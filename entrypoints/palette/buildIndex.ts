@@ -1,3 +1,4 @@
+import type { Language } from '@/lib/i18n/language';
 import { navIndex } from '@/lib/nav';
 import {
   type CachedEntry,
@@ -12,7 +13,6 @@ import { type DisplayCacheEntry, displayCache } from '@/lib/storage/items';
 import { activity, type Settings, transitions } from '@/lib/storage/palette-items';
 
 import type { OpenContext } from './context.ts';
-import type { Language } from './language.ts';
 import type { ConnectedSpaces } from './spaces.ts';
 
 const originOf = (host: string) => `https://${host}`;
