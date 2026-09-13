@@ -10,6 +10,9 @@ const EXTENSION_PATH = resolve(import.meta.dirname, '../../.output/chrome-mv3');
 
 export const PALETTE_FRAME = 'iframe[data-backlog-palette]';
 
+/** パレットを開閉するキー。拡張は OS で修飾キーを切り替える（surfaces.md §9） */
+export const HOTKEY = process.platform === 'darwin' ? 'Meta+k' : 'Control+k';
+
 export type ExtensionFixtures = {
   context: BrowserContext;
   page: Page;
