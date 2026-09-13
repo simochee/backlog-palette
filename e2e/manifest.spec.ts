@@ -13,6 +13,7 @@ type Manifest = {
     gecko?: { id?: string; data_collection_permissions?: { required?: string[] } };
   };
   action?: { default_popup?: string };
+  options_ui?: { page: string; open_in_tab?: boolean };
   browser_action?: { default_popup?: string };
 };
 
@@ -30,6 +31,7 @@ test.describe('ビルド後の manifest', () => {
     expect(manifest.permissions).toContain('sidePanel');
     expect(manifest.commands).toBeUndefined();
     expect(manifest.action?.default_popup).toBeUndefined();
+    expect(manifest.options_ui).toEqual({ page: 'options.html', open_in_tab: true });
   });
 
   test('Firefox: sidebar_action と gecko.id・data_collection_permissions があり、sidePanel 権限は無い', () => {
@@ -45,5 +47,6 @@ test.describe('ビルド後の manifest', () => {
     ).toEqual(['none']);
     expect(manifest.commands).toBeUndefined();
     expect(manifest.browser_action?.default_popup).toBeUndefined();
+    expect(manifest.options_ui).toEqual({ page: 'options.html', open_in_tab: true });
   });
 });
