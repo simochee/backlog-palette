@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { test as base } from '@playwright/test';
 import { type Browser, type Frame, launch, type Page } from 'puppeteer';
 
+import { OWNED_KEYS } from '../fixtures/extension.ts';
 import { type ConnectProxy, startConnectProxy } from '../fixtures/proxy.ts';
 import { type FakeSpace, startFakeSpace } from '../fixtures/space.ts';
 
@@ -18,7 +19,41 @@ export type FirefoxFixtures = {
   tab: Page;
   /** パレット iframe の中のフレーム。開くまで待つ */
   paletteFrame: () => Promise<Frame>;
+  /** 接続の貼り付けバーの中のフレーム。開くまで待つ */
+  connectFrame: () => Promise<Frame>;
 };
+
+/*
+ * BiDi は moz-extension:// のフレームの URL を about:blank と報告する。
+ * frame.url() では見つからないので、フレームの中で location.href を評価して探す。
+ */
+async function waitForExtensionFrame(tab: Page, file: string): Promise<Frame> {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    for (const frame of tab.frames()) {
+      if (frame === tab.mainFrame()) continue;
+      const href = await frame.evaluate(() => location.href).catch(() => '');
+      if (href.endsWith(`/${file}`)) return frame;
+    }
+    await new Promise((done) => {
+      setTimeout(done, 100);
+    });
+  }
+  throw new Error(`${file} の iframe が読み込まれない`);
+}
+
+/*
+ * 次のテストへ状態を持ち越さない。Firefox は Service Worker を持たないので、Backlog のページを
+ * 開いて注入されるパレットの iframe（拡張ページ）の中で storage.local.remove を評価する。
+ * 消すのは Chromium 側と同じ自分が書く item だけ（clear は設定まで消す、mvp の罠）
+ */
+async function clearOwnedStorage(tab: Page, space: FakeSpace): Promise<void> {
+  await tab.goto(space.url('/dashboard'));
+  const frame = await waitForExtensionFrame(tab, 'palette.html');
+  await frame.evaluate(async (keys) => {
+    type Storage = { storage: { local: { remove: (keys: string[]) => Promise<void> } } };
+    await (globalThis as unknown as { browser: Storage }).browser.storage.local.remove(keys);
+  }, OWNED_KEYS);
+}
 
 export type FirefoxWorkerFixtures = {
   space: FakeSpace;
@@ -72,30 +107,19 @@ export const test = base.extend<FirefoxFixtures, FirefoxWorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  tab: async ({ firefox }, use) => {
+  tab: async ({ firefox, space }, use) => {
     const tab = await firefox.newPage();
     await use(tab);
+    await clearOwnedStorage(tab, space);
     await tab.close();
   },
 
   paletteFrame: async ({ tab }, use) => {
-    await use(async () => {
-      /*
-       * BiDi は moz-extension:// のフレームの URL を about:blank と報告する。
-       * frame.url() では見つからないので、フレームの中で location.href を評価して探す。
-       */
-      for (let attempt = 0; attempt < 50; attempt += 1) {
-        for (const frame of tab.frames()) {
-          if (frame === tab.mainFrame()) continue;
-          const href = await frame.evaluate(() => location.href).catch(() => '');
-          if (href.endsWith('/palette.html')) return frame;
-        }
-        await new Promise((done) => {
-          setTimeout(done, 100);
-        });
-      }
-      throw new Error('palette iframe が読み込まれない');
-    });
+    await use(() => waitForExtensionFrame(tab, 'palette.html'));
+  },
+
+  connectFrame: async ({ tab }, use) => {
+    await use(() => waitForExtensionFrame(tab, 'connect.html'));
   },
 });
 

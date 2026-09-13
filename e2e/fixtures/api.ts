@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-import { DOCUMENTS, ISSUE_TYPES, ISSUES, PROJECTS, STATUSES, TESTER, WIKIS } from './apiData.ts';
+import { DOCUMENTS, ISSUE_TYPES, PROJECTS, SPACE, STATUSES, TESTER, WIKIS } from './apiData.ts';
+import { currentIssues, type IssueUpdate } from './apiIssues.ts';
 
 export type ApiMode = 'ok' | 'unauthorized' | 'rateLimited';
 
@@ -27,6 +28,8 @@ export type FakeApi = {
   mode: ApiMode;
   allowApiKeyHeader: boolean;
   requests: ApiRequest[];
+  /** 課題キーごとの「その後の変更」。再検証（D-14）が今の姿を引き直せるかを見る */
+  issueUpdates: Record<string, IssueUpdate>;
   reset: () => void;
 };
 
@@ -42,17 +45,19 @@ export function createFakeApi(): FakeApi {
     mode: 'ok',
     allowApiKeyHeader: true,
     requests: [],
+    issueUpdates: {},
     reset: () => {
       api.apiKey = VALID_API_KEY;
       api.mode = 'ok';
       api.allowApiKeyHeader = true;
       api.requests = [];
+      api.issueUpdates = {};
     },
   };
   return api;
 }
 
-type Handler = (query: Record<string, string[]>, params: string[]) => Reply;
+type Handler = (query: Record<string, string[]>, params: string[], api: FakeApi) => Reply;
 type Reply = { status: number; body: unknown };
 
 /*
@@ -76,10 +81,10 @@ function findProject(idOrKey: string) {
   return PROJECTS.find((p) => p.projectKey === idOrKey || String(p.id) === idOrKey);
 }
 
-function filterIssues(query: Record<string, string[]>) {
+function filterIssues(query: Record<string, string[]>, api: FakeApi) {
   const projectIds = readProjectIds(query);
   const keyword = query.keyword?.[0];
-  return ISSUES.filter(
+  return currentIssues(api).filter(
     (i) => projectIds.includes(i.projectId) && matchesKeyword(keyword, i.summary, i.description),
   );
 }
@@ -106,6 +111,7 @@ const ROUTES: [RegExp, RateGroup, Handler][] = [
       },
     }),
   ],
+  [/^\/api\/v2\/space$/u, 'read', () => ({ status: 200, body: SPACE })],
   [/^\/api\/v2\/users\/myself$/u, 'read', () => ({ status: 200, body: TESTER })],
   [/^\/api\/v2\/projects$/u, 'read', () => ({ status: 200, body: PROJECTS })],
   [
@@ -131,19 +137,30 @@ const ROUTES: [RegExp, RateGroup, Handler][] = [
   [
     /^\/api\/v2\/issues$/u,
     'search',
-    (query) =>
+    (query, _params, api) =>
       // パラメータ無しはエラー（backlog-facts.md §6.3）
       readProjectIds(query).length === 0
         ? error(400, 'projectId[] is required.')
-        : { status: 200, body: paginate(filterIssues(query), query) },
+        : { status: 200, body: paginate(filterIssues(query, api), query) },
   ],
   [
     /^\/api\/v2\/issues\/count$/u,
     'search',
-    (query) =>
+    (query, _params, api) =>
       readProjectIds(query).length === 0
         ? error(400, 'projectId[] is required.')
-        : { status: 200, body: { count: filterIssues(query).length } },
+        : { status: 200, body: { count: filterIssues(query, api).length } },
+  ],
+  [
+    // 課題 1 件。再検証（D-14）が引く。キーでも ID でも引ける
+    /^\/api\/v2\/issues\/([^/]+)$/u,
+    'read',
+    (_query, [idOrKey], api) => {
+      const issue = currentIssues(api).find(
+        (i) => i.issueKey === idOrKey || String(i.id) === idOrKey,
+      );
+      return issue === undefined ? error(404, 'No issue.') : { status: 200, body: issue };
+    },
   ],
   [
     /^\/api\/v2\/wikis$/u,
@@ -261,7 +278,7 @@ export function handleApi(
   }
 
   const params = (pattern.exec(url.pathname) ?? []).slice(1);
-  const { status, body } = handler(request.query, params);
+  const { status, body } = handler(request.query, params, api);
   reply(res, status, { ...cors, ...rateHeaders(group, RATE_LIMITS[group] - 1) }, body);
   return true;
 }

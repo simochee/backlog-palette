@@ -53,8 +53,9 @@ test.describe('Firefox: パレットの注入と開閉', () => {
     await tab.keyboard.press('k');
     await tab.keyboard.up(HOTKEY_MODIFIER);
 
+    // スコープパスの先頭の段がタブ URL から決めたスペース。未接続なのでホスト名
     await frame.waitForFunction(
-      () => document.querySelector('input')?.placeholder === 'demo.backlog.jp で検索',
+      () => document.querySelector('ol li')?.textContent?.includes('demo.backlog.jp') === true,
       { timeout: 5000 },
     );
   });

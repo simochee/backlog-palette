@@ -1,8 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'wxt';
 
-import { BACKLOG_SPACE_MATCHES } from './lib/backlog/host.ts';
-
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   imports: false,
@@ -14,14 +12,25 @@ export default defineConfig({
   manifest: ({ browser }) => ({
     name: 'Backlog Palette',
     description: '⌘K で Backlog のどこへでも。',
-    permissions: ['storage', 'tabs', 'clipboardWrite', 'alarms'],
+    permissions: ['storage', 'tabs', 'clipboardWrite', 'alarms', 'scripting'],
+    /*
+     * Enterprise のカスタムドメイン（surfaces.md §8）は利用者が設定画面で足すので、
+     * 任意の https ホストを任意の権限として宣言し、登録時に permissions.request で求める。
+     * optional_host_permissions は MV3 のキーで、Firefox（MV2）は optional_permissions に載せる
+     */
+    ...(browser === 'firefox'
+      ? { optional_permissions: ['https://*/*'] }
+      : { optional_host_permissions: ['https://*/*'] }),
     // popup は持たない（D-22）。クリックは background の action.onClicked が受ける
     action: { default_title: 'Backlog Palette' },
     web_accessible_resources: [
       {
-        resources: ['palette.html'],
-        matches: [...BACKLOG_SPACE_MATCHES],
-        // 拡張のインストール有無をページ側から検出されないようにする
+        resources: ['palette.html', 'connect.html'],
+        /*
+         * カスタムドメインのページでも iframe を読めるように https 全体に開く（D-34）。
+         * matches は実行時に変えられない。ページ側からの検出は use_dynamic_url が防ぐ
+         */
+        matches: ['https://*/*'],
         use_dynamic_url: true,
       },
     ],

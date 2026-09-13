@@ -10,6 +10,7 @@ import {
   type Worker,
 } from '@playwright/test';
 
+import { VALID_API_KEY } from './api.ts';
 import { type FakeSpace, HOSTS, startFakeSpace } from './space.ts';
 
 const EXTENSION_PATH = resolve(import.meta.dirname, '../../.output/chrome-mv3');
@@ -34,6 +35,7 @@ type ChromeStorage = {
   storage: {
     local: {
       get: (key: string) => Promise<Record<string, unknown>>;
+      set: (items: Record<string, unknown>) => Promise<void>;
       remove: (key: string) => Promise<void>;
     };
   };
@@ -41,11 +43,30 @@ type ChromeStorage = {
 
 const DISPLAY_CACHE_KEY = 'displayCache';
 
+/** テスト間で消す item。拡張が書くものだけを列挙し、storage.local.clear() は使わない */
+/** テストが書く item。テスト間で消す（Firefox の fixture も同じ一覧を消す） */
+export const OWNED_KEYS = [
+  DISPLAY_CACHE_KEY,
+  'apiKeys',
+  'spaces',
+  'rateLimits',
+  'queryCache',
+  'activity',
+  'transitions',
+  'settings',
+  'panelRequest',
+  'searchHistory',
+];
+
 export type ExtensionFixtures = {
   context: BrowserContext;
   page: Page;
   serviceWorker: Worker;
   readDisplayCache: () => Promise<DisplayCacheRow[]>;
+  /** storage.local の item を SW 経由で読む。無ければ undefined */
+  readStorage: <T>(key: string) => Promise<T | undefined>;
+  /** 接続済みの状態を storage に直接置く。接続導線を通す E2E は connect.spec が持つ */
+  seedConnected: (spaces: readonly { host: string; name: string }[]) => Promise<void>;
 };
 
 export type WorkerFixtures = {
@@ -83,6 +104,8 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
         {
           channel: 'chromium',
           headless: true,
+          // 文言は日本語の仕様（palette.md）で検査する。既定の en-US だと行のタイトルが英語になる
+          locale: 'ja-JP',
           ignoreDefaultArgs: ['--disable-extensions'],
           args: [
             `--disable-extensions-except=${EXTENSION_PATH}`,
@@ -113,10 +136,20 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
      * 次のテストへ状態を持ち越さない。消すのは自分が書く item だけ。
      * storage.local.clear() は設定まで消し、2 件目以降のテストを壊す（mvp の罠）。
      */
-    await serviceWorker.evaluate(async (key) => {
+    await serviceWorker.evaluate(async (keys) => {
       const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
-      await api.storage.local.remove(key);
-    }, DISPLAY_CACHE_KEY);
+      await Promise.all(keys.map((key) => api.storage.local.remove(key)));
+    }, OWNED_KEYS);
+  },
+
+  readStorage: async ({ serviceWorker }, use) => {
+    await use(async <T>(key: string) => {
+      const stored = await serviceWorker.evaluate(async (name) => {
+        const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+        return (await api.storage.local.get(name))[name];
+      }, key);
+      return stored as T | undefined;
+    });
   },
 
   readDisplayCache: async ({ serviceWorker }, use) => {
@@ -127,6 +160,27 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
         return stored[key] ?? [];
       }, DISPLAY_CACHE_KEY);
       return rows as DisplayCacheRow[];
+    });
+  },
+
+  seedConnected: async ({ serviceWorker }, use) => {
+    await use(async (list) => {
+      await serviceWorker.evaluate(
+        async (input) => {
+          const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+          await api.storage.local.set({
+            apiKeys: Object.fromEntries(input.list.map((s) => [s.host, input.key])),
+            spaces: input.list.map((s) => ({
+              host: s.host,
+              name: s.name,
+              spaceKey: s.host.split('.')[0],
+              projectCount: 0,
+              connectedAt: Date.now(),
+            })),
+          });
+        },
+        { list, key: VALID_API_KEY },
+      );
     });
   },
 
