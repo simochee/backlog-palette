@@ -97,6 +97,9 @@ lib/        ──✗ React, components/
 story を置くのは `components/` 配下だけ。`entrypoints/` には置かない
 （container は拡張機能 API に依存しており、Storybook で再現する対象ではない）。
 
+main への push で https://simochee.github.io/backlog-palette/ に公開される。
+公開は CI の検証が通ったときだけ走るので、壊れた Storybook は世に出ない。
+
 ## import のルール
 
 WXT の auto-import は無効化している (`wxt.config.ts` の `imports: false`)。

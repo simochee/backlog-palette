@@ -27,6 +27,8 @@ pnpm install
 
 型検査・ビルド・テストは push のたびに CI が実行するので、手元で繰り返す必要はない。
 
+Storybook は main への push で https://simochee.github.io/backlog-palette/ に公開される。
+
 ## 構成
 
 ```
