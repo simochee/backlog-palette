@@ -1,3 +1,7 @@
+/*
+ * sections.ts と揃えて Sections.tsx にしない。大文字小文字だけ違う名前が同じディレクトリに
+ * あると、macOS で oxlint の型検査だけがモジュールを解決できなくなる（tsc は通る）。
+ */
 import { useEffect } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
