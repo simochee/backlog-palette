@@ -1,4 +1,5 @@
 import { storage } from '#imports';
+import type { SearchScope } from '@/lib/share/schema';
 
 /*
  * パレットの索引と個人化が読む defineItem。表示キャッシュ（displayCache）と鍵（apiKeys）、
@@ -25,9 +26,7 @@ export const transitions = storage.defineItem<TransitionRecord[]>('local:transit
 /** 検索の履歴。パネルの「最近の検索」（surfaces.md §5.2）。新しいものが先頭 */
 export type SearchHistoryRecord = {
   query: string;
-  scope:
-    | { kind: 'space'; spaceId: string }
-    | { kind: 'project'; spaceId: string; projectId: string };
+  scope: SearchScope;
   at: number;
 };
 
@@ -44,25 +43,6 @@ export const queryDict = storage.defineItem<QueryDictRecord[]>('local:queryDict'
   version: 1,
 });
 
-/**
- * 登録したスペース。id はホスト（`demo.backlog.jp`）で apiKeys のキーと揃える。鍵は持たない。
- * label は表示名、icon は API から取ったスペース画像の data URL
- */
-export type SpaceRecord = {
-  id: string;
-  host: string;
-  label: string;
-  icon?: string;
-  connectedAt: number;
-  /** 認証切れを検出したら立てる。パレットは connect / status 行で出す */
-  needsReconnect?: boolean;
-};
-
-export const spaces = storage.defineItem<SpaceRecord[]>('local:spaces', {
-  fallback: [],
-  version: 1,
-});
-
 export type Settings = {
   theme: 'system' | 'light' | 'dark';
   language: 'system' | 'ja' | 'en';
@@ -70,11 +50,15 @@ export type Settings = {
   telemetry: boolean;
 };
 
+/**
+ * 利用状況の送信は既定オン（surfaces.md §2）。送信先が決まるまで送らないのは §10 の規則で、
+ * トグルの既定値ではなく送信処理側のゲートで表す
+ */
 export const defaultSettings: Settings = {
   theme: 'system',
   language: 'system',
   learning: true,
-  telemetry: false,
+  telemetry: true,
 };
 
 /**

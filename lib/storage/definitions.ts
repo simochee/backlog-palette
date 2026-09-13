@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
+import { searchScopeSchema } from '@/lib/share/schema';
+
 import { createStorageCollection, type StorageItemLike } from './collection';
 import type {
   ActivityRecord,
   QueryDictRecord,
   SearchHistoryRecord,
-  SpaceRecord,
   TransitionRecord,
 } from './palette-items';
 
@@ -18,7 +19,8 @@ import type {
 export const displayCacheSchema = z.object({
   url: z.url(),
   kind: z.enum(['issue', 'project', 'wiki', 'document']),
-  spaceKey: z.string().min(1),
+  /** スペースの識別子はホスト名（D-32） */
+  spaceHost: z.string().min(1),
   projectKey: z.string().min(1),
   key: z.string().optional(),
   title: z.string().optional(),
@@ -35,14 +37,7 @@ export const transitionSchema = z.object({
 
 export const searchHistorySchema = z.object({
   query: z.string(),
-  scope: z.discriminatedUnion('kind', [
-    z.object({ kind: z.literal('space'), spaceId: z.string().min(1) }),
-    z.object({
-      kind: z.literal('project'),
-      spaceId: z.string().min(1),
-      projectId: z.string().min(1),
-    }),
-  ]),
+  scope: searchScopeSchema,
   at: z.number(),
 });
 
@@ -53,14 +48,21 @@ export const queryDictSchema = z.object({
   at: z.number(),
 });
 
+/**
+ * 接続済みスペース。item（local:spaces）は M4 の items.ts が所有し、形は ConnectedSpace と同じ。
+ * host が識別子（D-32）。鍵は持たない
+ */
 export const spaceSchema = z.object({
-  id: z.string().min(1),
   host: z.string().min(1),
-  label: z.string(),
+  name: z.string(),
+  spaceKey: z.string().min(1),
   icon: z.string().optional(),
+  projectCount: z.number().int().nonnegative(),
   connectedAt: z.number(),
   needsReconnect: z.boolean().optional(),
 });
+
+export type ConnectedSpaceRow = z.infer<typeof spaceSchema>;
 
 export type DisplayCacheRow = z.infer<typeof displayCacheSchema>;
 
@@ -107,5 +109,5 @@ export const queryDictCollection = (item: StorageItemLike<QueryDictRecord[]>) =>
     schema: queryDictSchema,
   });
 
-export const spacesCollection = (item: StorageItemLike<SpaceRecord[]>) =>
-  createStorageCollection({ id: 'spaces', item, getKey: (row) => row.id, schema: spaceSchema });
+export const spacesCollection = (item: StorageItemLike<ConnectedSpaceRow[]>) =>
+  createStorageCollection({ id: 'spaces', item, getKey: (row) => row.host, schema: spaceSchema });
