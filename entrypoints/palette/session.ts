@@ -2,16 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Labels } from '@/components/labels';
 import type { HostChannel } from '@/lib/messaging/hostChannel';
-import { createPaletteStore, type PaletteIndex, type PaletteStore } from '@/lib/palette';
+import {
+  type CachedEntry,
+  createPaletteStore,
+  type PaletteIndex,
+  type PaletteStore,
+} from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
 import { settings } from '@/lib/storage/palette-items';
 
 import { type Pending, restartSearch } from './actions.ts';
+import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
 import { labelsFor, resolveLanguage } from './language.ts';
 import { handOffToPanel } from './panel.ts';
-import { emptySearchRunner, type SearchRunner } from './search.ts';
+import type { SearchRunner } from './search.ts';
 import { type Restore, restoreFrom } from './share.ts';
 import { readConnectedSpaces } from './spaces.ts';
 
@@ -25,6 +31,8 @@ export type PaletteSession = {
   labels: Labels;
   store: PaletteStore;
   runner: SearchRunner;
+  /** 担当課題。API から届いたら空状態の末尾に足す（palette.md §9）。未接続なら undefined のまま */
+  assigned: Promise<readonly CachedEntry[] | undefined>;
   /** 開いたときのスタック。現在ページから決まる */
   stack: Stack;
   /** 共有 URL で開いたときに復元する検索（palette.md §7.6） */
@@ -32,6 +40,22 @@ export type PaletteSession = {
   /** 走っている検索。入力が変わったら捨てる */
   pending: Pending;
 };
+
+/*
+ * 失敗しても空状態は描く。401 は検索の行で再接続に導く（palette.md §7.5）ので、ここでは
+ * 担当課題のセクションを出さないだけにする
+ */
+async function assignedFor(
+  host: string,
+  connected: boolean,
+): Promise<readonly CachedEntry[] | undefined> {
+  if (!connected) return undefined;
+  try {
+    return await backlog.queryClient.query(backlog.queries.assignedIssues(host));
+  } catch {
+    return undefined;
+  }
+}
 
 async function createSession(): Promise<PaletteSession | undefined> {
   const context = await readOpenContext();
@@ -51,7 +75,8 @@ async function createSession(): Promise<PaletteSession | undefined> {
     index,
     labels: labelsFor(language),
     store,
-    runner: emptySearchRunner,
+    runner: backlog.runner,
+    assigned: assignedFor(context.spaceHost, connected.has(context.spaceHost)),
     stack,
     restore: restoreFrom(context.href, context.spaceHost),
     pending: { search: undefined, lastSearch: undefined },

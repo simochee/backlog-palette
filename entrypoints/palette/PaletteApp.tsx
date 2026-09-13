@@ -1,11 +1,11 @@
 import { useSelector } from '@tanstack/react-store';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { detectPlatform } from '@/lib/keys';
-import { derive, type PaletteStore } from '@/lib/palette';
+import { type CachedEntry, derive, type PaletteIndex, type PaletteStore } from '@/lib/palette';
 import { scopeOf } from '@/lib/stack/stack';
 
 import type { ActionEnv } from './actions.ts';
@@ -46,8 +46,29 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
   }, [store, toast]);
 }
 
+/** 担当課題は届いた時点で索引に足す。届くまでは表示キャッシュだけで描く（palette.md §9） */
+function useIndexWithAssigned(session: PaletteSession): PaletteIndex {
+  const [assigned, setAssigned] = useState<readonly CachedEntry[]>();
+  useEffect(() => {
+    let alive = true;
+    const receive = async () => {
+      const rows = await session.assigned;
+      if (alive) setAssigned(rows);
+    };
+    void receive();
+    return () => {
+      alive = false;
+    };
+  }, [session]);
+  return useMemo(
+    () => (assigned === undefined ? session.index : { ...session.index, assigned }),
+    [session.index, assigned],
+  );
+}
+
 function OpenPalette({ session, close }: { session: PaletteSession; close: () => void }) {
-  const { store, index, labels, context, runner, pending } = session;
+  const { store, labels, context, runner, pending } = session;
+  const index = useIndexWithAssigned(session);
   const state = useSelector(store, (snapshot) => snapshot);
   useToastExpiry(store, state.toast);
 
