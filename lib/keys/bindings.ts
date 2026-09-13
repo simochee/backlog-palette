@@ -69,7 +69,9 @@ const enterLabelKeys: Partial<Record<RowKind, 'search' | 'connect' | 'apply'>> =
   notice: 'apply',
 };
 
+/** 2 段階コマンドの ↵ は積んで引数の行を出す動作なので、種別に関わらず「開く」 */
 function enterLabel(row: RowView, labels: Labels): string {
+  if (row.hints.includes('descend')) return labels.keys.open;
   return labels.keys[enterLabelKeys[row.kind] ?? 'open'];
 }
 

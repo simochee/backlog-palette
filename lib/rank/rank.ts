@@ -14,7 +14,7 @@ export type Ranked<T> = {
   frecency: number;
 };
 
-function compare<T>(a: Ranked<T>, b: Ranked<T>): number {
+function compare(a: Ranked<unknown>, b: Ranked<unknown>): number {
   if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
 
   const byStrength = rankOf(a.match.strength) - rankOf(b.match.strength);
@@ -34,6 +34,6 @@ function compare<T>(a: Ranked<T>, b: Ranked<T>): number {
  * セクション内の並びだけを決める。セクションの順序は固定で、個人化はその内側にだけ効く
  * （D-16 の介入ルール）。セクションをまたぐ並び替えは提供しない。
  */
-export function rankWithinSection<T>(entries: readonly Ranked<T>[]): Ranked<T>[] {
+export function rankWithinSection<R extends Ranked<unknown>>(entries: readonly R[]): R[] {
   return entries.toSorted(compare);
 }
