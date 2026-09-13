@@ -17,7 +17,7 @@
 
 ---
 
-## 1. 決定（2026-09-13、全 16 件を確認済み）
+## 1. 決定（2026-09-13、全 16 件を確認済み。M1 着手時に D-17・D-18 を追加）
 
 各項目の「別案」は退けた理由とともに残す。覆すときは §3 に記録する。
 
@@ -99,6 +99,33 @@
 
 - **決定**: 空状態の「{プロジェクト} のページ」セクション内の並びにだけ効かせる。介入ルール（セクション順固定・完全一致は動かさない・同点のときだけ）の内側
 
+### D-17. Popover・Switch・RadioGroup は Radix Primitives。react-aria-components は採らない
+
+- **決定**: 入力欄を包まない headless primitives として Radix Primitives（`radix-ui`）を使う。用途は フィルターバーの Popover、
+  設定画面の Switch、フィルターの RadioGroup。Phase 2 で書き込み操作の確認が要るときは同じ Radix の AlertDialog を足す。
+  パレットの listbox・キー処理は D-13 のとおり自前のまま
+- 理由: フォーカストラップが要る面は Phase 1 に無い（パレットもシートも iframe。削除の確認は 2 段押し）が、Popover 級の部品
+  （位置の反転・スクロール追従・光閉じ・フォーカスの戻し・`aria-expanded` の配線）は毎回同じバグを踏む種類の仕事で、自作しない方がよい。
+  Radix は data 属性でスタイルするので Tailwind（D-18）と素直に噛み合い、listbox を包まないので D-13 と競合しない
+- 退けた案: react-aria-components（初稿）。最も網羅的だが最も重く、強みである Select / ComboBox 級の部品をこの製品は自前と決めている。
+  MVP で内部状態と戦った相手でもある
+- 退けた案: 全部自作（ネイティブ要素 + HTML `popover` 属性）。依存はゼロになるが Popover の位置計算と Phase 2 の Dialog を自前で持つことになる
+- 退けた案: Base UI。Radix 作者 + MUI で活発だが、Radix の方が実績が長い。API が近いので、乗り換えが要るときの距離は短い
+
+### D-18. 見た目は Tailwind CSS v4 + Lightning CSS。トークンは `--bp-*` のまま
+
+- **決定**: CSS Modules をやめ、Tailwind CSS v4（`@tailwindcss/vite`）と Vite の `css.transformer: 'lightningcss'` で組む。
+  `--bp-*` トークンは `components/tokens/palette.css` に残し、`@theme inline` で Tailwind のテーマに写す。ユーティリティは
+  `var(--bp-*)` を直接吐くので、ダークはトークンの再定義だけで追従する
+- 守ること: 色・寸法はテーマ経由のユーティリティ（`bg-floating` `text-subtle` `p-2`）か `h-(--bp-size-row)` のようなトークン参照だけ。
+  `bg-[#fff]` `w-[640px]` のような直書きは書かない。幅の分岐は `--container-*` トークンを持つコンテナクエリで行い、JS で幅を測るのは
+  要素の実寸が要る箇所（フッターのヒントの溢れ）だけ
+- 理由: 見た目の調整を Storybook 上で完結させたい。クラスがマークアップに並ぶ方が、CSS Modules のファイルを往復するより
+  調整が速い。Lightning CSS は Tailwind v4 が内部で使っているものと同じで、CSS の変換系を 1 つに揃えられる
+- 退けた案: CSS Modules + トークン（初稿）。動くが、コンポーネントごとに `.module.css` が増え、幅の分岐をコンテナクエリで書くときに
+  ブレークポイントの数値をトークン化できない（`@container` はカスタムプロパティを参照できない）。Tailwind のテーマなら
+  ビルド時に解決されるので、数値の置き場所が 1 つになる
+
 ---
 
 ## 2. 決定済み（MVP から継承。理由は `mvp:docs/implementation-plan.md` §3・§19）
@@ -131,6 +158,8 @@
 | 2026-09-13 | D-1〜D-16 | §1 のとおり | 1 件ずつ確認。推奨と違ったのは D-1（プレビューは不要、詳細検索の面）、D-4（`⇥` で積む）、D-9（パレットに条件なし）、D-10（Backlog 上だけ）、D-12（`@ユーザー` なし） |
 | 2026-09-13 | Backlog 外でのポップアップ起動 | 作らない（D-10） | 他サイトの `⌘K` を奪う。製品上の理由 |
 | 2026-09-13 | `@ユーザー` | 作らない（D-12） | ユーザー一覧が管理者限定。技術的制約 |
+| 2026-09-13 | a11y 部品のライブラリ | Radix Primitives（D-17） | Popover 級は自作しない。react-aria は重く、強みを使わない構成になる。M1 着手時に見直した |
+| 2026-09-13 | 見た目の組み方 | Tailwind CSS v4 + Lightning CSS（D-18） | 調整を Storybook 上で完結させる。ブレークポイントもトークンとして 1 箇所に置ける |
 
 ---
 

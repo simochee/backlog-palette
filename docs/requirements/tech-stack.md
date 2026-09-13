@@ -11,9 +11,9 @@ TanStack のエコシステムを軸にする。ライブラリは**層の規約
 |---|---|---|---|---|---|
 | 拡張の土台 | ビルド・manifest・エントリ | WXT | 0.21 | 安定 | 既定 |
 | UI | 描画 | React | 19 | 安定 | 既定 |
-| UI | 見た目 | CSS Modules + `--bp-*` トークン | — | — | 既定 |
+| UI | 見た目 | Tailwind CSS v4（`@tailwindcss/vite`）+ Lightning CSS（Vite の `css.transformer`）+ `--bp-*` トークン | 4.3 / 1.33 | 安定 | D-18 |
 | UI | アイコン | lucide-react | 1.45 | 安定 | 既定 |
-| UI | 入力欄と競合しない部品（Switch・Select・Dialog） | react-aria-components | 1.21 | 安定 | D-13 |
+| UI | 入力欄と競合しない部品（Popover・Switch・RadioGroup。Phase 2 で AlertDialog） | Radix Primitives（`radix-ui`） | 1.6 | 安定 | D-17 |
 | UI | 候補リスト（listbox・仮想フォーカス） | **自前** | — | — | D-13 |
 | UI | フォーム（接続シート・カスタムドメイン） | @tanstack/react-form | 1.33 | 安定 | T-9 |
 | 状態 | パレットの状態（スタック・入力・セッション・トースト） | @tanstack/store（`lib/`）+ @tanstack/react-store（`entrypoints/`） | 0.11 | 事実上安定（Router の内部依存） | T-8 |
@@ -35,7 +35,7 @@ TanStack のエコシステムを軸にする。ライブラリは**層の規約
 | 開発 | Devtools | @tanstack/react-devtools（Storybook と `wxt dev` のみ） | — | — | 任意 |
 
 **使わないもの**: @tanstack/react-virtual（行数は最大 30。仮想化が要らない）、@wxt-dev/i18n（文言は `components/labels` の辞書。D-11）、
-react-aria-components の `Autocomplete` / `ListBox`（D-13）、`chrome.commands` の既定キー（D-10）。
+react-aria-components（D-13 で `Autocomplete` / `ListBox` を外し、D-17 で Radix に置き換えた）、CSS Modules（D-18）、`chrome.commands` の既定キー（D-10）。
 
 ---
 
@@ -177,3 +177,5 @@ HotkeyManager は使わない。入力欄にフォーカスがある状態での
 | 2026-09-13 | T-7 レートリミット | Pacer の asyncRateLimiter | sliding window。状態は storage で共有 |
 | 2026-09-13 | T-8 パレットの状態 | @tanstack/store（lib）+ react-store（entrypoints） | lib/ が React を知らない規約に合う |
 | 2026-09-13 | T-9 Form | 使う | 検証・送信中・エラーの表示を統一 |
+| 2026-09-13 | T-10 a11y 部品 | Radix Primitives。react-aria-components は採らない | D-17。Popover 級は自作せず、listbox を包まない headless primitives を使う |
+| 2026-09-13 | T-11 見た目 | Tailwind CSS v4 + Lightning CSS | D-18。トークンは `@theme inline` で写し、ダークはトークンの再定義だけで追従する |

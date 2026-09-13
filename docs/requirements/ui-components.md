@@ -201,7 +201,7 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 `isComposing` の無視の 3 つを**キャプチャ段階で先回りして潰す**形になった（評価 §3）。
 本実装では `CandidateList` を自前で書く（`role="listbox"` / `role="option"` / `aria-activedescendant`、
 選択は controlled）。必要な挙動は 150 行程度で、外部ライブラリの内部状態と戦う箇所が無くなる。
-ダイアログ・スイッチ・セレクトのような**入力欄と競合しない部品**には react-aria-components を使ってよい。
+Popover・Switch・RadioGroup のような**入力欄と競合しない部品**には Radix Primitives を使う（D-17）。
 
 ---
 
@@ -226,6 +226,8 @@ MVP は react-aria-components の `Autocomplete` を土台にし、仮想フォ�
 
 - ライトを `:root` / `[data-color-scheme="light"]` に、ダークを `[data-color-scheme="dark"]` に。**同一要素セレクタと子孫セレクタを併記**する（MVP でダークが効かなかった罠）
 - Storybook の toolbar に light / dark を持ち、全 story を両方で見る
+- 見た目は Tailwind CSS v4 で書く（D-18）。`--bp-*` を `@theme inline` で Tailwind のテーマに写し、部品はテーマ経由のユーティリティか
+  `h-(--bp-size-row)` のようなトークン参照だけを使う。幅の分岐は `--container-*` トークンを持つコンテナクエリ（`@max-narrow:` など）
 
 ---
 
