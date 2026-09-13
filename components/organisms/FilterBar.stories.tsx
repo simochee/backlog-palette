@@ -125,7 +125,7 @@ export const BackToNeutral: Story = {
 
 export const ClearAllKeepsScope: Story = {
   name: '「条件をすべて外す」でスコープは変わらない',
-  args: { fields: filters(ja, { space: 'nulab', type: 'issue' }) },
+  args: { fields: filters(ja, { project: 'PROJ', type: 'issue' }) },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
 

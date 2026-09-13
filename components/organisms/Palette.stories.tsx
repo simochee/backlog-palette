@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
 import {
+  groups,
   hintLabel,
   kindsIn,
   options,
@@ -146,12 +147,11 @@ export const S5: Story = {
 };
 
 export const S6: Story = {
-  name: 'S6 検索結果あり（全スペース） — 行にスペースバッジが出る／保留通知行の Enter で onAction が呼ばれる',
+  name: 'S6 検索結果あり — 見出しの補足に種別ごとの件数／保留通知行の Enter で onAction が呼ばれる',
   args: s6(ja),
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByTitle(spaces.nulab.label).length).toBeGreaterThan(0);
-    await expect(canvas.getAllByTitle(spaces.acme.label).length).toBeGreaterThan(0);
+    await expect(canvas.getByText(`${ja.panel.options.issue} 12`, { exact: false })).toBeVisible();
 
     const rows = flattenRows(args.sections);
     const noticeIndex = rows.findIndex((row) => row.id === 'notice');
@@ -209,25 +209,28 @@ export const S9: Story = {
 };
 
 export const S10: Story = {
-  name: 'S10 未接続スペースがある全スペース検索 — 末尾に接続行が 1 つ。バナーは無い',
+  name: 'S10 根 — 検索行が無い／接続済みスペースは space 行、未接続は connect 行／共通ページのセクションが出る',
   args: s10(ja),
   play: async ({ args, canvasElement }) => {
-    const kinds = kindsIn(resultsGroup(canvasElement));
-    await expect(kinds.at(-1)).toBe('connect');
-    await expect(kinds.filter((kind) => kind === 'connect')).toHaveLength(1);
-    await expect(within(canvasElement).queryByRole('alert')).toBeNull();
+    await expect(kindsIn(canvasElement)).not.toContain('search');
+    const spacesGroup = groups(canvasElement).find((group) => group.dataset.sectionId === 'spaces');
+    await expect(kindsIn(spacesGroup)).toEqual(['space', 'space', 'connect']);
+    await expect(sectionIds(canvasElement)).toEqual(['spaces', 'common']);
+    await expect(
+      within(canvasElement).getByPlaceholderText(ja.palette.rootPlaceholder),
+    ).toBeVisible();
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
   },
 };
 
 export const S11: Story = {
-  name: 'S11 一部スペースが認証切れ — 末尾に再接続行。他の結果は出ている',
+  name: 'S11 認証切れ — 結果は無く再接続行だけ。パレット全体はエラー画面にならない',
   args: s11(ja),
   play: async ({ args, canvasElement }) => {
-    const kinds = kindsIn(resultsGroup(canvasElement));
-    await expect(kinds.at(-1)).toBe('status');
-    await expect(kinds.filter((kind) => kind === 'issue').length).toBeGreaterThan(0);
+    await expect(kindsIn(resultsGroup(canvasElement))).toEqual(['status']);
+    await expect(within(canvasElement).getByRole('combobox')).toBeVisible();
+    await expect(hintLabel(canvasElement, 'enter')).toContain(ja.keys.connect);
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
   },

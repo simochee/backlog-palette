@@ -1,7 +1,7 @@
 import type { Labels } from '@/components/labels';
-import type { PaletteView, RowView } from '@/components/types';
+import type { PaletteView, RowView, SectionView } from '@/components/types';
 
-import { projects, spaces } from './domain';
+import { projects, type SpaceFixture, spaces } from './domain';
 import { loginPages, projectPath, resultRows, rootPath, spacePath, view } from './palette';
 import {
   authExpiredRow,
@@ -9,6 +9,7 @@ import {
   externalRow,
   hintRow,
   noticeRow,
+  pageRow,
   panelRow,
   projectRow,
   searchRow,
@@ -17,37 +18,77 @@ import {
 } from './rows';
 import { assignedSection, commandsSection, pagesSection, recentSection } from './sections';
 
+/** 種別ごとの進捗。スペース横断はしない（D-20）ので単位は種別 */
+const kindsMeta = (labels: Labels): string =>
+  [
+    `${labels.panel.options.issue} 12`,
+    `${labels.panel.options.wiki} 3`,
+    `${labels.panel.options.document} 2`,
+  ].join(' · ');
+
 /** コマンド階層の引数行。command の後に space は積めないので stack のヒントを持たない */
-const argumentRow = (space: (typeof spaces)[keyof typeof spaces]): RowView => {
+const argumentRow = (space: SpaceFixture): RowView => {
   const row = spaceRow(space);
   return {
     id: row.id,
     kind: row.kind,
     title: row.title,
     sub: row.sub,
+    space: { label: space.label, icon: space.icon },
     hints: ['enter', 'modEnter'],
   };
 };
 
-/** S6 検索結果あり（全スペース） */
+const withIcon = (space: SpaceFixture): RowView => ({
+  ...spaceRow(space),
+  space: { label: space.label, icon: space.icon },
+});
+
+/** 根のスペース一覧。接続済みは space 行、未接続は connect 行 */
+const spacesSection = (labels: Labels): SectionView => ({
+  id: 'spaces',
+  label: labels.sections.spaces,
+  rows: [withIcon(spaces.nulab), withIcon(spaces.acme), connectRow(spaces.beta.label, labels)],
+});
+
+const commonPagesSection = (labels: Labels): SectionView => ({
+  id: 'common',
+  label: labels.sections.commonPages,
+  rows: [
+    pageRow(
+      'personal-settings',
+      labels.rows.personalSettings,
+      labels,
+      projects.web,
+      labels.rows.commonPageSub,
+    ),
+    pageRow(
+      'api-key-settings',
+      labels.rows.apiKeySettings,
+      labels,
+      projects.web,
+      labels.rows.commonPageSub,
+    ),
+  ],
+});
+
+/** S6 検索結果あり */
 export const s6 = (labels: Labels): PaletteView => {
   const rows = resultRows();
   return view(labels, {
-    path: rootPath(labels),
+    path: spacePath,
     input: 'ログイン',
     hasResults: true,
     selectedId: rows[1]?.id,
     sections: [
       {
         id: 'search',
-        rows: [
-          searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(3, 17)),
-        ],
+        rows: [searchRow('ログイン', spaces.nulab.label, labels, labels.sections.count(17))],
       },
       {
         id: 'results',
         label: labels.sections.results,
-        meta: labels.sections.summary(3, 17),
+        meta: kindsMeta(labels),
         rows: [noticeRow(2, labels), ...rows, externalRow(labels)],
       },
       loginPages(labels),
@@ -66,12 +107,12 @@ export const s7 = (labels: Labels): PaletteView =>
     sections: [
       {
         id: 'search',
-        rows: [searchRow('ろぐいん', projects.web.name, labels, labels.sections.summary(1, 0))],
+        rows: [searchRow('ろぐいん', projects.web.name, labels, labels.sections.count(0))],
       },
       {
         id: 'results',
         label: labels.sections.results,
-        meta: labels.sections.summary(1, 0),
+        meta: labels.sections.count(0),
         rows: [
           hintRow('no-results', labels.rows.noResults),
           widenRow(spaces.nulab.label, labels),
@@ -90,7 +131,7 @@ export const s8 = (labels: Labels): PaletteView =>
     sections: [recentSection(labels), pagesSection(labels), assignedSection(labels)],
   });
 
-/** S9 コマンド階層（スペースを切り替え） */
+/** S9 コマンド階層（[space] からスペースを切り替え） */
 export const s9 = (labels: Labels): PaletteView =>
   view(labels, {
     path: [...spacePath, { id: 'command', label: labels.rows.switchSpace }],
@@ -103,62 +144,44 @@ export const s9 = (labels: Labels): PaletteView =>
     ],
   });
 
-/** S10 未接続スペースがある全スペース検索 */
-export const s10 = (labels: Labels): PaletteView => {
-  const rows = resultRows();
-  return view(labels, {
-    path: rootPath(labels),
-    input: 'ログイン',
-    hasResults: true,
-    selectedId: rows[0]?.id,
-    sections: [
-      {
-        id: 'search',
-        rows: [
-          searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(2, 17)),
-        ],
-      },
-      {
-        id: 'results',
-        label: labels.sections.results,
-        meta: labels.sections.summary(2, 17),
-        rows: [...rows, connectRow(spaces.beta.label, labels)],
-      },
-      loginPages(labels),
-    ],
-  });
-};
+/** S10 根（スペースを外した後）。検索行は無く、移動先のスペースと共通ページだけ（D-20） */
+export const s10 = (labels: Labels): PaletteView => ({
+  ...view(labels, {
+    path: rootPath,
+    sections: [spacesSection(labels), commonPagesSection(labels)],
+  }),
+  input: { value: '', placeholder: labels.palette.rootPlaceholder },
+});
 
-/** S11 一部スペースが認証切れ */
-export const s11 = (labels: Labels): PaletteView => {
-  const rows = resultRows().filter((row) => row.space?.label !== spaces.acme.label);
-  return view(labels, {
-    path: rootPath(labels),
+/** S11 認証切れ。結果は返らず、再接続行だけ（I6: パレット全体はエラー画面にしない） */
+export const s11 = (labels: Labels): PaletteView =>
+  view(labels, {
+    path: spacePath,
     input: 'ログイン',
     hasResults: true,
-    selectedId: rows[0]?.id,
+    enterLabel: labels.keys.connect,
+    selectedId: `status:${spaces.nulab.label}`,
     sections: [
       {
         id: 'search',
         rows: [
           searchRow(
             'ログイン',
-            labels.palette.rootScope,
+            spaces.nulab.label,
             labels,
-            `${labels.sections.countOf(spaces.nulab.label, 12)} · ${spaces.acme.label} 認証切れ`,
+            labels.rows.authExpired(spaces.nulab.label),
           ),
         ],
       },
       {
         id: 'results',
         label: labels.sections.results,
-        meta: `${labels.sections.countOf(spaces.nulab.label, 12)} · ${spaces.acme.label} 認証切れ`,
-        rows: [...rows, authExpiredRow(spaces.acme.label, labels)],
+        meta: labels.panel.authExpired,
+        rows: [authExpiredRow(spaces.nulab.label, labels)],
       },
       loginPages(labels),
     ],
   });
-};
 
 /** S12 コピー直後 */
 export const s12 = (labels: Labels): PaletteView =>

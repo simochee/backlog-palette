@@ -21,7 +21,7 @@ export type SidePanelCallbacks = {
   onSearch: (query: string) => void;
   onFilterChange: (fieldId: string, optionId: string) => void;
   onClearFilters: () => void;
-  onSpaceAction: (spaceId: string) => void;
+  onProgressAction: (id: string) => void;
   onCopySearchUrl?: () => void;
   onEscape?: () => void;
 };
@@ -75,8 +75,8 @@ function PanelFilters({ props }: { props: SidePanelProps }) {
         labels={props.labels}
       />
       <StatusStrip
-        spaces={props.spaces}
-        onSpaceAction={props.onSpaceAction}
+        progress={props.progress}
+        onProgressAction={props.onProgressAction}
         labels={props.labels}
       />
     </>

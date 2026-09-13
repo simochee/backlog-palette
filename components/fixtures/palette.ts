@@ -14,9 +14,8 @@ import {
 } from './rows';
 import { assignedSection, pagesSection, recentSection } from './sections';
 
-export const rootPath = (labels: Labels): PathSegmentView[] => [
-  { id: 'root', label: labels.palette.rootScope },
-];
+/** 根はスペースを積んでいない状態。検索はせず、移動先のスペースと共通ページだけ（D-20） */
+export const rootPath: PathSegmentView[] = [];
 export const spaceSegment = (space: SpaceFixture): PathSegmentView => ({
   id: `space:${space.id}`,
   label: space.label,
@@ -68,21 +67,14 @@ export function view(labels: Labels, partial: StatePartial): PaletteView {
   };
 }
 
-export const crossSpace = (row: RowView, space: SpaceFixture): RowView => ({
-  ...row,
-  space: { label: space.label, icon: space.icon },
-});
-
 export const resultRows = (): RowView[] => [
-  crossSpace(sampleIssues.login, spaces.nulab),
-  crossSpace(sampleIssues.password, spaces.nulab),
-  crossSpace(sampleIssues.invoice, spaces.acme),
+  sampleIssues.login,
+  sampleIssues.password,
   {
     id: 'document:login-flow',
     kind: 'document',
     title: 'ログインフロー改修 要件',
     sub: `${projects.web.name} · 最終更新 山本 遼`,
-    space: { label: spaces.nulab.label, icon: spaces.nulab.icon },
     hints: ['enter', 'modEnter', 'complete'],
   },
   {
@@ -90,7 +82,6 @@ export const resultRows = (): RowView[] => [
     kind: 'wiki',
     title: 'ログイン仕様メモ',
     sub: `${projects.web.name} · 最終更新 佐藤 美咲`,
-    space: { label: spaces.nulab.label, icon: spaces.nulab.icon },
     hints: ['enter', 'modEnter', 'complete'],
   },
 ];

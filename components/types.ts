@@ -91,7 +91,8 @@ export type FilterField = {
   neutralValue?: string;
 };
 
-export type SpaceProgress = {
+/** 検索の単位（種別）ごとの進捗。スペース横断はしない（D-20）ので単位はスペースではない */
+export type SearchProgress = {
   id: string;
   label: string;
   state: 'loading' | 'ready' | 'error';
@@ -104,7 +105,7 @@ export type PanelView = {
   input: { value: string; placeholder: string };
   recentQueries: readonly string[];
   filters: readonly FilterField[];
-  spaces: readonly SpaceProgress[];
+  progress: readonly SearchProgress[];
   sections: readonly SectionView[];
   selectedId?: string;
   footer: readonly KeyHint[];

@@ -21,7 +21,7 @@ export const panelCallbacks = () => ({
   onSearch: fn(),
   onFilterChange: fn(),
   onClearFilters: fn(),
-  onSpaceAction: fn(),
+  onProgressAction: fn(),
   onCopySearchUrl: fn(),
   onEscape: fn(),
 });

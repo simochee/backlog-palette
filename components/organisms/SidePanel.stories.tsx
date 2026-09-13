@@ -12,7 +12,6 @@ import {
   p5,
   panelCallbacks,
   recentQueries,
-  spaces,
 } from '@/components/fixtures';
 import { en, ja, type Labels, LabelsProvider } from '@/components/labels';
 import type { PanelView } from '@/components/types';
@@ -51,7 +50,7 @@ export const P1: Story = {
 };
 
 export const P2: Story = {
-  name: 'P2 結果あり（幅 380、compact） — 行にスペースバッジが出る／⇥ は補完だけで積む行が無い',
+  name: 'P2 結果あり（幅 380、compact） — ⇥ は補完だけで積む行が無い／フィルターにスペースの項目が無い',
   args: p2(ja),
   decorators: [
     (Story) => (
@@ -62,7 +61,7 @@ export const P2: Story = {
   ],
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getAllByTitle(spaces.nulab.label).length).toBeGreaterThan(0);
+    await expect(args.filters.map((field) => field.id)).not.toContain('space');
     const hints = args.sections.flatMap((section) => section.rows.flatMap((row) => row.hints));
     await expect(hints).not.toContain('stack');
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.complete);
@@ -76,7 +75,7 @@ export const P2: Story = {
 };
 
 export const P3: Story = {
-  name: 'P3 スペース単位の逐次到着 — ステータス帯に読み込み中とエラーが並び、結果の行は動かない',
+  name: 'P3 種別単位の逐次到着 — ステータス帯に読み込み中とエラーが並び、結果の行は動かない',
   args: p3(ja),
   play: async ({ args, canvasElement }) => {
     const strip = within(canvasElement).getByLabelText(ja.panel.statusLabel);
@@ -93,7 +92,7 @@ export const P3: Story = {
 };
 
 export const P4: Story = {
-  name: 'P4 0 件 — 条件を外す提案が先頭 → スコープ → 本体検索',
+  name: 'P4 0 件 — 条件を外す提案が先頭 → プロジェクトを外す → 本体検索',
   args: p4(ja),
   play: async ({ args, canvasElement }) => {
     await expect(kindsIn(canvasElement)).toEqual(['hint', 'command', 'search', 'external']);

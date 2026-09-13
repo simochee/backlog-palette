@@ -3,11 +3,11 @@ import type {
   FilterField,
   PanelView,
   RowView,
+  SearchProgress,
   SectionView,
-  SpaceProgress,
 } from '@/components/types';
 
-import { projects, type SpaceFixture, spaces, statuses } from './domain';
+import { projects, spaces, statuses } from './domain';
 import { deriveFooter } from './footer';
 import { externalRow, hintRow, sampleIssues, searchingRow, widenRow } from './rows';
 
@@ -16,19 +16,6 @@ type FilterOverrides = Partial<
 >;
 
 const neutral = 'all';
-
-function spaceField(labels: Labels, value: string): FilterField {
-  return {
-    id: 'space',
-    label: labels.panel.fields.space,
-    value,
-    neutralValue: neutral,
-    options: [
-      { id: neutral, label: labels.panel.options.allSpaces },
-      ...Object.values(spaces).map((space) => ({ id: space.id, label: space.label })),
-    ],
-  };
-}
 
 function projectField(labels: Labels, value: string): FilterField {
   return {
@@ -110,7 +97,6 @@ function updatedField(labels: Labels, value: string): FilterField {
 
 export function filters(labels: Labels, values: FilterOverrides = {}): FilterField[] {
   return [
-    spaceField(labels, values.space ?? neutral),
     projectField(labels, values.project ?? neutral),
     typeField(labels, values.type ?? neutral),
     statusField(labels, values.status ?? neutral),
@@ -121,39 +107,34 @@ export function filters(labels: Labels, values: FilterOverrides = {}): FilterFie
 
 export const recentQueries = ['決済', 'リリース手順', 'ログイン'];
 
-export const allReady: SpaceProgress[] = [
-  { id: spaces.nulab.id, label: spaces.nulab.label, state: 'ready', count: 12 },
-  { id: spaces.acme.id, label: spaces.acme.label, state: 'ready', count: 4 },
-  { id: spaces.beta.id, label: spaces.beta.label, state: 'ready', count: 1 },
+/** 進捗は種別ごと（D-20）。全部 ready なら帯は件数だけに畳む */
+export const allReady = (labels: Labels): SearchProgress[] => [
+  { id: 'issue', label: labels.panel.options.issue, state: 'ready', count: 12 },
+  { id: 'wiki', label: labels.panel.options.wiki, state: 'ready', count: 3 },
+  { id: 'document', label: labels.panel.options.document, state: 'ready', count: 2 },
 ];
 
-export const mixedProgress = (labels: Labels): SpaceProgress[] => [
-  { id: spaces.nulab.id, label: spaces.nulab.label, state: 'ready', count: 12 },
-  { id: spaces.acme.id, label: spaces.acme.label, state: 'loading' },
+export const mixedProgress = (labels: Labels): SearchProgress[] => [
+  { id: 'issue', label: labels.panel.options.issue, state: 'ready', count: 12 },
+  { id: 'wiki', label: labels.panel.options.wiki, state: 'loading' },
   {
-    id: spaces.beta.id,
-    label: spaces.beta.label,
+    id: 'document',
+    label: labels.panel.options.document,
     state: 'error',
     message: labels.panel.authExpired,
     action: { label: labels.panel.reconnect },
   },
 ];
 
-const crossSpace = (row: RowView, space: SpaceFixture): RowView => ({
-  ...row,
-  space: { label: space.label, icon: space.icon },
-});
-
 export const paymentResults = (): RowView[] => [
-  crossSpace(sampleIssues.payment, spaces.nulab),
-  crossSpace(sampleIssues.password, spaces.nulab),
-  crossSpace(sampleIssues.invoice, spaces.acme),
+  sampleIssues.payment,
+  sampleIssues.password,
+  sampleIssues.invoice,
   {
     id: 'wiki:payment-spec',
     kind: 'wiki',
     title: '決済まわりの仕様メモ',
     sub: `${projects.web.name} · 最終更新 田中 拓也`,
-    space: { label: spaces.nulab.label, icon: spaces.nulab.icon },
     hints: ['enter', 'modEnter', 'complete'],
   },
 ];
@@ -161,7 +142,7 @@ export const paymentResults = (): RowView[] => [
 type PanelPartial = {
   input?: string;
   filters?: FilterField[];
-  spaces?: SpaceProgress[];
+  progress?: SearchProgress[];
   sections?: SectionView[];
   selectedId?: string;
   hasResults?: boolean;
@@ -176,7 +157,7 @@ function panel(labels: Labels, partial: PanelPartial): PanelView {
     input: { value: input, placeholder: labels.panel.placeholder },
     recentQueries: partial.recent ?? recentQueries,
     filters: partial.filters ?? filters(labels),
-    spaces: partial.spaces ?? [],
+    progress: partial.progress ?? [],
     sections,
     selectedId,
     footer: deriveFooter(labels, {
@@ -197,7 +178,7 @@ export const p2 = (labels: Labels): PanelView =>
   panel(labels, {
     input: '決済',
     filters: filters(labels, { type: 'issue' }),
-    spaces: allReady,
+    progress: allReady(labels),
     hasResults: true,
     sections: [{ id: 'results', rows: paymentResults() }],
   });
@@ -206,22 +187,22 @@ export const p2 = (labels: Labels): PanelView =>
 export const p3 = (labels: Labels): PanelView =>
   panel(labels, {
     input: '決済',
-    spaces: mixedProgress(labels),
+    progress: mixedProgress(labels),
     hasResults: true,
-    sections: [
-      {
-        id: 'results',
-        rows: paymentResults().filter((row) => row.space?.label === spaces.nulab.label),
-      },
-    ],
+    sections: [{ id: 'results', rows: paymentResults().slice(0, 2) }],
   });
 
 /** P4 0 件 */
 export const p4 = (labels: Labels): PanelView =>
   panel(labels, {
     input: '決済',
-    filters: filters(labels, { space: spaces.nulab.id, status: 'not-closed' }),
-    spaces: [{ id: spaces.nulab.id, label: spaces.nulab.label, state: 'ready', count: 0 }],
+    filters: filters(labels, { project: projects.web.key, status: 'not-closed' }),
+    progress: allReady(labels).map((item) => ({
+      id: item.id,
+      label: item.label,
+      state: item.state,
+      count: 0,
+    })),
     hasResults: true,
     selectedId: 'command:clear-filters',
     sections: [
@@ -235,7 +216,7 @@ export const p4 = (labels: Labels): PanelView =>
             title: labels.panel.clearFiltersRow,
             hints: ['enter'],
           },
-          widenRow(labels.palette.rootScope, labels),
+          widenRow(spaces.nulab.label, labels),
           externalRow(labels),
         ],
       },
@@ -247,7 +228,11 @@ export const p5 = (labels: Labels): PanelView =>
   panel(labels, {
     input: '決済',
     filters: filters(labels, { status: 'not-closed' }),
-    spaces: allReady.map((space) => ({ id: space.id, label: space.label, state: 'loading' })),
+    progress: allReady(labels).map((item) => ({
+      id: item.id,
+      label: item.label,
+      state: 'loading',
+    })),
     hasResults: true,
     sections: [{ id: 'results', label: labels.sections.results, rows: [searchingRow(labels)] }],
   });

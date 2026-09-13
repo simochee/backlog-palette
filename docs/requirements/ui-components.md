@@ -101,18 +101,19 @@ export type FilterField = {
   neutralValue?: string;         // 無条件を表す選択肢。value がこれと違えば「効いている」
 };
 
-export type SpaceProgress = {
+/** 検索の単位（種別）ごとの進捗。スペース横断はしない（D-20）ので単位はスペースではない */
+export type SearchProgress = {
   id: string; label: string;
   state: 'loading' | 'ready' | 'error';
   count?: number; message?: string;
-  action?: { label: string };    // 「再接続」。押下は onSpaceAction(id)
+  action?: { label: string };    // 「再接続」。押下は onProgressAction(id)
 };
 
 export type PanelView = {
   input: { value: string; placeholder: string };
   recentQueries: readonly string[];
   filters: readonly FilterField[];
-  spaces: readonly SpaceProgress[];
+  progress: readonly SearchProgress[];
   sections: readonly SectionView[];
   selectedId?: string;
   footer: readonly KeyHint[];
@@ -157,7 +158,7 @@ components/
     PaletteFooter.tsx            KeyHints + Toast／銘
     Palette.tsx                  上 3 つを束ね、キー処理を 1 箇所に持つ。PaletteView とコールバックだけを受ける
     FilterBar.tsx                常設フィルターバー。単一選択のラジオとして描く。compact 形（surfaces §5.3）
-    StatusStrip.tsx              スペース単位の進捗・件数・エラー。リストの外に固定
+    StatusStrip.tsx              種別単位の進捗・件数・エラー。リストの外に固定
     RecentQueries.tsx            入力欄が空のときの最近の検索
     SidePanel.tsx                入力 + RecentQueries + FilterBar + StatusStrip + CandidateList。PanelView を受ける
     ConnectSheet.tsx             API キーの貼り付けバー（surfaces §1）。画面下部中央の横長。入力欄とボタンだけ
@@ -191,7 +192,7 @@ type PaletteProps = PaletteView & {
 ```
 
 `SidePanel` も同じ形（`PanelView` + コールバック）。フィルターの変更は `onFilterChange(fieldId, optionId)`、
-ステータス帯の操作は `onSpaceAction(spaceId)`。行の動作・キー処理は `Palette` と同じ規則を共有する。
+ステータス帯の操作は `onProgressAction(id)`。行の動作・キー処理は `Palette` と同じ規則を共有する。
 
 キー処理（§palette 6・13）は `Palette` の 1 箇所に置く。`isComposing` の捨て方、`Tab` の既定動作の抑止、
 `Enter` の宛先を DOM から引き直す規則はここ。**molecules はキーを解釈しない。**
@@ -287,8 +288,8 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | `PaletteHeader` | 通常／削除待ちの予告つき／esc ラベルが「1 つ前に戻る」 |
 | `PaletteFooter` | ヒントのみ／トーストつき（ヒントは消えない） |
 | `ConnectSheet` | 入力待ち（画面下部中央の横長）／送信中／エラー／完了／**Enter で接続が送信される**／**変換中の Enter では送信されない**／**空のまま接続は押せない** |
-| `FilterBar` | 条件なし／2 条件が効いている（強調）／compact／プロジェクトが「すべて」でステータスが組み込みだけ／**選択肢は 1 つだけ選べる**／**neutral に戻すと強調が消える**／**「条件をすべて外す」でスコープは変わらない** |
-| `StatusStrip` | 全部 ready（1 行に畳む）／読み込み中を含む／エラーと再接続ボタン／**再接続を押すと onSpaceAction が呼ばれる** |
+| `FilterBar` | 条件なし／2 条件が効いている（強調）／compact／プロジェクトが「すべて」でステータスが組み込みだけ（スペースの項目は無い、D-20）／**選択肢は 1 つだけ選べる**／**neutral に戻すと強調が消える**／**「条件をすべて外す」でスコープは変わらない** |
+| `StatusStrip` | 全部 ready（1 行に畳む）／読み込み中を含む／エラーと再接続ボタン／**再接続を押すと onProgressAction が呼ばれる** |
 | `RecentQueries` | 5 件／0 件（描かない）／**クリックで onPick が呼ばれる** |
 | `CustomDomainForm` | 空／入力中／追加済み一覧／**不正なホストでは追加できない** |
 | `SpaceList` | 接続済み 3 件／要再接続を含む／0 件の案内／**削除は 1 回目で確認になり 2 回目で onDisconnect が呼ばれる** |
@@ -306,12 +307,12 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | S3 | 課題キーを入力中（`PROJ-12`） | 直接ジャンプ行が先頭で選択されアクセント面を持つ／⌘↵ で newTab: true |
 | S4 | 自由テキスト（`ログイン`） | 検索行が先頭／強い一致がある入力では候補が先頭で検索行が 2 番目 |
 | S5 | 検索中 | 検索行の直下に検索中の行があり選択されている／見出しの補足に進捗が出る |
-| S6 | 検索結果あり（全スペース） | 行にスペースバッジが出る／保留通知行の Enter で onAction が呼ばれる |
+| S6 | 検索結果あり | 見出しの補足に種別ごとの件数／保留通知行の Enter で onAction が呼ばれる |
 | S7 | 検索 0 件 | 案内行 → 広げる提案（アクセント）→ 本体検索 の順 |
 | S8 | スコープ削除待ち | 右端の段が取り消し線／予告が出る／フッターの ⌫ ラベルが変わる |
 | S9 | コマンド階層（`[space]` からスペースを切り替え） | 引数の行だけが並ぶ／esc ラベルが「1 つ前に戻る」／Esc で onEscape |
-| S10 | 未接続スペースがある全スペース検索 | 末尾に接続行が 1 つ。バナーは無い |
-| S11 | 一部スペースが認証切れ | 末尾に再接続行。他の結果は出ている |
+| S10 | 根（スペースを外した後） | 検索行が無い／接続済みスペースは space 行、未接続は connect 行／共通ページのセクションが出る（D-20） |
+| S11 | 認証切れ | 結果は無く再接続行だけ。パレット全体はエラー画面にならない（I6） |
 | S12 | コピー直後 | フッター右端にトースト、ヒントは消えない |
 | S13 | `#もば` でプロジェクト行を選択中 | フッターの ⇥ ラベルが「スコープに積む」／Tab で onTake、Enter で onAction |
 | — | 狭い幅（360） | ↵ が残り、補足が隠れ、パスがバッジだけになる |
@@ -325,9 +326,9 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | # | 状態 | 固有の検査（name） |
 |---|---|---|
 | P1 | 初期（前回の語と最近の検索） | 入力欄が空で ↑ を押すと onInputChange に直前の語が渡る |
-| P2 | 結果あり（幅 380、compact） | 行にスペースバッジが出る／⇥ は補完だけで積む行が無い |
-| P3 | スペース単位の逐次到着 | ステータス帯に読み込み中とエラーが並び、結果の行は動かない |
-| P4 | 0 件 | 条件を外す提案が先頭 → スコープ → 本体検索 |
+| P2 | 結果あり（幅 380、compact） | ⇥ は補完だけで積む行が無い／フィルターにスペースの項目が無い |
+| P3 | 種別単位の逐次到着 | ステータス帯に読み込み中とエラーが並び、結果の行は動かない |
+| P4 | 0 件 | 条件を外す提案が先頭 → プロジェクトを外す → 本体検索 |
 | P5 | フィルター変更直後 | onFilterChange が呼ばれ、結果は検索中の表示になる |
 
 ---

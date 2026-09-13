@@ -12,6 +12,7 @@ export type Labels = {
     escBack: string;
     armedNotice: string;
     rootScope: string;
+    rootPlaceholder: string;
   };
   keys: {
     open: string;
@@ -30,6 +31,8 @@ export type Labels = {
   };
   sections: {
     recent: string;
+    spaces: string;
+    commonPages: string;
     pagesOf: (project: string) => string;
     assigned: string;
     results: string;
@@ -49,6 +52,10 @@ export type Labels = {
     openDirect: string;
     recentSub: string;
     pageSub: string;
+    commonPageSub: string;
+    personalSettings: string;
+    apiKeySettings: string;
+    spaceSettings: string;
     typeHint: string;
     connectThis: string;
     connectSpace: (space: string) => string;
