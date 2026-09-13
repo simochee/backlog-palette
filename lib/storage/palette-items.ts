@@ -43,24 +43,6 @@ export const queryDict = storage.defineItem<QueryDictRecord[]>('local:queryDict'
   version: 1,
 });
 
-/**
- * 登録したスペース。id はホスト名（`demo.backlog.jp`、D-32）で apiKeys のキーと揃える。鍵は持たない。
- * label は表示名、icon は API から取ったスペース画像の data URL
- */
-export type SpaceRecord = {
-  id: string;
-  label: string;
-  icon?: string;
-  connectedAt: number;
-  /** 認証切れを検出したら立てる。パレットは connect / status 行で出す */
-  needsReconnect?: boolean;
-};
-
-export const spaces = storage.defineItem<SpaceRecord[]>('local:spaces', {
-  fallback: [],
-  version: 1,
-});
-
 export type Settings = {
   theme: 'system' | 'light' | 'dark';
   language: 'system' | 'ja' | 'en';

@@ -7,7 +7,6 @@ import type {
   ActivityRecord,
   QueryDictRecord,
   SearchHistoryRecord,
-  SpaceRecord,
   TransitionRecord,
 } from './palette-items';
 
@@ -49,14 +48,21 @@ export const queryDictSchema = z.object({
   at: z.number(),
 });
 
-/** id はホスト名（D-32）。apiKeys のキーと揃える */
+/**
+ * 接続済みスペース。item（local:spaces）は M4 の items.ts が所有し、形は ConnectedSpace と同じ。
+ * host が識別子（D-32）。鍵は持たない
+ */
 export const spaceSchema = z.object({
-  id: z.string().min(1),
-  label: z.string(),
+  host: z.string().min(1),
+  name: z.string(),
+  spaceKey: z.string().min(1),
   icon: z.string().optional(),
+  projectCount: z.number().int().nonnegative(),
   connectedAt: z.number(),
   needsReconnect: z.boolean().optional(),
 });
+
+export type ConnectedSpaceRow = z.infer<typeof spaceSchema>;
 
 export type DisplayCacheRow = z.infer<typeof displayCacheSchema>;
 
@@ -103,5 +109,5 @@ export const queryDictCollection = (item: StorageItemLike<QueryDictRecord[]>) =>
     schema: queryDictSchema,
   });
 
-export const spacesCollection = (item: StorageItemLike<SpaceRecord[]>) =>
-  createStorageCollection({ id: 'spaces', item, getKey: (row) => row.id, schema: spaceSchema });
+export const spacesCollection = (item: StorageItemLike<ConnectedSpaceRow[]>) =>
+  createStorageCollection({ id: 'spaces', item, getKey: (row) => row.host, schema: spaceSchema });

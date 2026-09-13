@@ -30,13 +30,16 @@ describe('コレクションのスキーマ', () => {
     ).toBe(true);
   });
 
-  it('スペースの記録は鍵を持たない', () => {
+  it('スペースの記録はホストが識別子で、鍵を持たない', () => {
     const parsed = spaceSchema.safeParse({
-      id: 'demo.backlog.jp',
-      label: 'デモ',
+      host: 'demo.backlog.jp',
+      name: 'デモ',
+      spaceKey: 'demo',
+      projectCount: 3,
       connectedAt: 1,
       apiKey: 'secret',
     });
+    expect(parsed.success).toBe(true);
     expect(parsed.success && 'apiKey' in parsed.data).toBe(false);
   });
 });
