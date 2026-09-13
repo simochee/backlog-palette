@@ -63,11 +63,7 @@ test.describe('S1 空状態（palette.md §9）', () => {
     await page.waitForURL('**/view/PROJ-142');
   });
 
-  test('接続済みなら担当中の課題が届いた時点で足される', async ({
-    page,
-    space,
-    seedConnected,
-  }) => {
+  test('接続済みなら担当中の課題が届いた時点で足される', async ({ page, space, seedConnected }) => {
     await seedConnected([{ host: SPACE_HOST, name: 'デモスペース' }]);
     const frame = await openPalette(page, space.url('/dashboard'));
 
