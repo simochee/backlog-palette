@@ -1,5 +1,5 @@
-import { type Persister, persistQueryClient } from '@tanstack/query-persist-client-core';
 import type { QueryClient } from '@tanstack/query-core';
+import { type Persister, persistQueryClient } from '@tanstack/query-persist-client-core';
 
 import { queryCache } from '@/lib/storage/items';
 
