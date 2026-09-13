@@ -43,7 +43,11 @@ export function view(labels: Labels, partial: StatePartial): PaletteView {
   const selectedId = partial.selectedId ?? partial.sections[0]?.rows[0]?.id;
   return {
     path: partial.path,
-    input: { value: input, placeholder: labels.palette.placeholder, completion: partial.completion },
+    input: {
+      value: input,
+      placeholder: labels.palette.placeholder,
+      completion: partial.completion,
+    },
     armedNotice: partial.armedNotice,
     escLabel: partial.escLabel ?? labels.palette.escClose,
     sections: partial.sections,
@@ -70,7 +74,13 @@ export const resultRows = (labels: Labels): RowView[] => [
   crossSpace(sampleIssues.password, spaces.nulab.label),
   crossSpace(sampleIssues.invoice, spaces.acme.label),
   crossSpace(
-    pageRow('login-history', 'ログイン履歴', labels, projects.web, `スペース設定 · ${labels.rows.pageSub}`),
+    pageRow(
+      'login-history',
+      'ログイン履歴',
+      labels,
+      projects.web,
+      `スペース設定 · ${labels.rows.pageSub}`,
+    ),
     spaces.nulab.label,
   ),
   {
@@ -86,7 +96,15 @@ export const resultRows = (labels: Labels): RowView[] => [
 export const loginPages = (labels: Labels): SectionView => ({
   id: 'pages',
   label: labels.sections.pages,
-  rows: [pageRow('login-history', 'ログイン履歴', labels, projects.web, `スペース設定 · ${labels.rows.pageSub}`)],
+  rows: [
+    pageRow(
+      'login-history',
+      'ログイン履歴',
+      labels,
+      projects.web,
+      `スペース設定 · ${labels.rows.pageSub}`,
+    ),
+  ],
 });
 
 /** S0 未接続で何も出せない */
@@ -107,10 +125,7 @@ export const s1 = (labels: Labels): PaletteView =>
 export const s1Empty = (labels: Labels): PaletteView =>
   view(labels, {
     path: projectPath,
-    sections: [
-      { id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] },
-      pagesSection(labels),
-    ],
+    sections: [{ id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }, pagesSection(labels)],
   });
 
 /** S2 ページ名を入力中（がんと） */
@@ -120,7 +135,11 @@ export const s2 = (labels: Labels): PaletteView =>
     input: 'がんと',
     completion: 'チャート',
     sections: [
-      { id: 'pages', label: labels.sections.pages, rows: [pageRow('gantt', 'ガントチャート', labels)] },
+      {
+        id: 'pages',
+        label: labels.sections.pages,
+        rows: [pageRow('gantt', 'ガントチャート', labels)],
+      },
       { id: 'search', rows: [searchRow('がんと', projects.web.name, labels)] },
     ],
   });
@@ -158,7 +177,12 @@ export const s5 = (labels: Labels): PaletteView =>
       {
         id: 'search',
         rows: [
-          searchRow('ログイン', spaces.nulab.label, labels, `${spaces.nulab.label} · ${labels.rows.searching}`),
+          searchRow(
+            'ログイン',
+            spaces.nulab.label,
+            labels,
+            `${spaces.nulab.label} · ${labels.rows.searching}`,
+          ),
         ],
       },
       {
@@ -170,4 +194,3 @@ export const s5 = (labels: Labels): PaletteView =>
       loginPages(labels),
     ],
   });
-

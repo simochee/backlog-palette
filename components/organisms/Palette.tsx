@@ -55,7 +55,9 @@ export function Palette(props: PaletteProps) {
             onKeyDown={handleKeyDown}
             inputRef={inputRef}
             listId={listId}
-            activeDescendant={selectedId === undefined ? undefined : optionDomId(listId, selectedId)}
+            activeDescendant={
+              selectedId === undefined ? undefined : optionDomId(listId, selectedId)
+            }
           />
         }
         list={

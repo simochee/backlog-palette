@@ -17,7 +17,15 @@ type PanelLayoutProps = {
  * サイドパネルの縦積み配置（surfaces.md §5.2）。幅が --bp-breakpoint-panel-compact 未満のとき
  * data-compact を立て、子はコンテナクエリではなく in-data-compact で密度を変える。
  */
-export function PanelLayout({ input, recent, filters, status, list, footer, ...aria }: PanelLayoutProps) {
+export function PanelLayout({
+  input,
+  recent,
+  filters,
+  status,
+  list,
+  footer,
+  ...aria
+}: PanelLayoutProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const width = useElementWidth(rootRef);
   const threshold = useTokenLength(rootRef, '--bp-breakpoint-panel-compact');

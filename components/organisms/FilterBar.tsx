@@ -102,7 +102,13 @@ function FieldMenu({
   );
 }
 
-export function FilterBar({ fields, onChange, onClearAll, compact = false, ...rest }: FilterBarProps) {
+export function FilterBar({
+  fields,
+  onChange,
+  onClearAll,
+  compact = false,
+  ...rest
+}: FilterBarProps) {
   const labels = useLabels(rest.labels);
   const anyActive = fields.some((field) => isFieldActive(field));
 

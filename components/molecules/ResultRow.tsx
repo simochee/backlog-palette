@@ -49,7 +49,9 @@ function RowBody({ row, selected, tone }: { row: RowView; selected: boolean; ton
       </div>
       {(row.sub !== undefined || row.marker !== undefined) && (
         <div className="flex min-w-0 items-center gap-1.5 text-sm text-subtle">
-          {row.marker !== undefined && <Badge label={row.marker.label} tone={row.marker.tone} dot />}
+          {row.marker !== undefined && (
+            <Badge label={row.marker.label} tone={row.marker.tone} dot />
+          )}
           {row.sub !== undefined && <span className="truncate @max-narrow:hidden">{row.sub}</span>}
         </div>
       )}

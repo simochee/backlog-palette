@@ -69,7 +69,11 @@ export function resolveKey(event: KeyLike, context: KeyContext): KeyDecision {
 
   if (event.key === 'Tab') {
     const hints = context.target?.hints ?? [];
-    if (!event.shiftKey && context.target && (hints.includes('complete') || hints.includes('stack')))
+    if (
+      !event.shiftKey &&
+      context.target &&
+      (hints.includes('complete') || hints.includes('stack'))
+    )
       return { type: 'take', id: context.target.id };
     return { type: 'none', preventDefault: true };
   }

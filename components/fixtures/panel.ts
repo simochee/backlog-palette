@@ -1,11 +1,19 @@
 import type { Labels } from '@/components/labels';
-import type { FilterField, PanelView, RowView, SectionView, SpaceProgress } from '@/components/types';
+import type {
+  FilterField,
+  PanelView,
+  RowView,
+  SectionView,
+  SpaceProgress,
+} from '@/components/types';
 
 import { projects, spaces, statuses } from './domain';
 import { deriveFooter } from './footer';
 import { externalRow, hintRow, pageRow, sampleIssues, searchingRow, widenRow } from './rows';
 
-type FilterOverrides = Partial<Record<'space' | 'project' | 'type' | 'status' | 'assignee' | 'updated', string>>;
+type FilterOverrides = Partial<
+  Record<'space' | 'project' | 'type' | 'status' | 'assignee' | 'updated', string>
+>;
 
 const neutral = 'all';
 
@@ -60,7 +68,11 @@ function statusField(labels: Labels, value: string): FilterField {
     options: [
       { id: neutral, label: labels.panel.options.all },
       { id: 'not-closed', label: labels.panel.options.notClosed },
-      ...Object.entries(statuses).map(([id, status]) => ({ id, label: status.label, tone: status.tone })),
+      ...Object.entries(statuses).map(([id, status]) => ({
+        id,
+        label: status.label,
+        tone: status.tone,
+      })),
     ],
   };
 }
@@ -133,7 +145,10 @@ export const paymentResults = (labels: Labels): RowView[] => [
   crossSpace(sampleIssues.payment, spaces.nulab.label),
   crossSpace(sampleIssues.password, spaces.nulab.label),
   crossSpace(sampleIssues.invoice, spaces.acme.label),
-  crossSpace(pageRow('billing', '請求設定', labels, projects.web, `スペース設定 · ${labels.rows.pageSub}`), spaces.nulab.label),
+  crossSpace(
+    pageRow('billing', '請求設定', labels, projects.web, `スペース設定 · ${labels.rows.pageSub}`),
+    spaces.nulab.label,
+  ),
   {
     id: 'wiki:payment-spec',
     kind: 'wiki',
@@ -215,7 +230,12 @@ export const p4 = (labels: Labels): PanelView =>
         id: 'results',
         rows: [
           hintRow('no-results', labels.rows.noResults),
-          { id: 'command:clear-filters', kind: 'command', title: labels.panel.clearFiltersRow, hints: ['enter'] },
+          {
+            id: 'command:clear-filters',
+            kind: 'command',
+            title: labels.panel.clearFiltersRow,
+            hints: ['enter'],
+          },
           widenRow(labels.palette.rootScope, labels),
           externalRow(labels),
         ],

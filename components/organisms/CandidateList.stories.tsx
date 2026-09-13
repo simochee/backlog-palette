@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, isMockFunction, userEvent, within } from 'storybook/test';
 import { type KeyboardEvent, useState } from 'react';
+import { expect, fn, isMockFunction, userEvent, within } from 'storybook/test';
 
 import { assignedSection, pagesSection, recentSection } from '@/components/fixtures/sections';
 import { ja } from '@/components/labels';
@@ -36,7 +36,11 @@ function Harness({ initialSelectedId, onSelectionChange, onAction }: HarnessProp
 
   return (
     <div className="rounded-surface bg-floating">
-      <input aria-label="操作" className="w-full px-3 py-2 outline-none" onKeyDown={handleKeyDown} />
+      <input
+        aria-label="操作"
+        className="w-full px-3 py-2 outline-none"
+        onKeyDown={handleKeyDown}
+      />
       <CandidateList
         id="candidates"
         sections={sections}
@@ -148,11 +152,17 @@ export const ActiveDescendantFollows: HarnessStory = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const listbox = canvas.getByRole('listbox');
-    await expect(listbox).toHaveAttribute('aria-activedescendant', optionDomId('candidates', first));
+    await expect(listbox).toHaveAttribute(
+      'aria-activedescendant',
+      optionDomId('candidates', first),
+    );
 
     await userEvent.click(canvas.getByLabelText('操作'));
     await userEvent.keyboard('{ArrowDown}');
 
-    await expect(listbox).toHaveAttribute('aria-activedescendant', optionDomId('candidates', second));
+    await expect(listbox).toHaveAttribute(
+      'aria-activedescendant',
+      optionDomId('candidates', second),
+    );
   },
 };

@@ -1,7 +1,10 @@
 import { type RefObject, useLayoutEffect, useState } from 'react';
 
 /** 要素に効いている --bp-* の長さトークンを px で読む。数値をコードに写さないための経路 */
-export function useTokenLength(ref: RefObject<HTMLElement | null>, token: string): number | undefined {
+export function useTokenLength(
+  ref: RefObject<HTMLElement | null>,
+  token: string,
+): number | undefined {
   const [length, setLength] = useState<number>();
 
   useLayoutEffect(() => {

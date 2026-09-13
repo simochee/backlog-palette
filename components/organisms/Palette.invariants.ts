@@ -42,7 +42,11 @@ async function pressAll(key: string, times: number) {
   for (let index = 0; index < times; index += 1) await userEvent.keyboard(`{${key}}`);
 }
 
-type FooterCheck = (input: HTMLInputElement, rows: readonly RowView[], target: Target) => Promise<void>;
+type FooterCheck = (
+  input: HTMLInputElement,
+  rows: readonly RowView[],
+  target: Target,
+) => Promise<void>;
 
 const selectedRow = (rows: readonly RowView[], view: InvariantView) =>
   rows.find((row) => row.id === view.selectedId);

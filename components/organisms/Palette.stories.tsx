@@ -105,7 +105,9 @@ export const S2: Story = {
   play: async ({ args, canvasElement }) => {
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
 
-    await expect(within(canvasElement).getByTestId('ghost-completion')).toHaveTextContent('がんとチャート');
+    await expect(within(canvasElement).getByTestId('ghost-completion')).toHaveTextContent(
+      'がんとチャート',
+    );
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.complete);
     await expect(sectionIds(canvasElement)).toEqual(['pages', 'search']);
 

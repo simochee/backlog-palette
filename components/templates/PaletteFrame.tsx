@@ -21,7 +21,9 @@ export function PaletteFrame({ header, list, footer, width, ...aria }: PaletteFr
       style={width === undefined ? undefined : { maxWidth: width }}
     >
       <div className="shrink-0 border-b border-border">{header}</div>
-      <div className="min-h-(--bp-size-row) max-h-(--bp-height-list-max) overflow-y-auto">{list}</div>
+      <div className="min-h-(--bp-size-row) max-h-(--bp-height-list-max) overflow-y-auto">
+        {list}
+      </div>
       <div className="h-(--bp-size-footer) shrink-0 border-t border-border">{footer}</div>
     </div>
   );

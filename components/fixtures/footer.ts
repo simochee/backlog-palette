@@ -1,11 +1,5 @@
 import type { Labels } from '@/components/labels';
-import type {
-  KeyHint,
-  KeyHintId,
-  PathSegmentView,
-  RowHint,
-  SectionView,
-} from '@/components/types';
+import type { KeyHint, KeyHintId, PathSegmentView, RowHint, SectionView } from '@/components/types';
 
 type HintOverrides = Partial<Record<KeyHintId, string>>;
 

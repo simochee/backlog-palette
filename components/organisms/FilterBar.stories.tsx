@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
 import { useState } from 'react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { filters } from '@/components/fixtures/panel';
 import { ja } from '@/components/labels';
@@ -43,7 +43,13 @@ export const BuiltinStatusesOnly: Story = {
   args: {
     fields: filters(ja).map((field) => {
       if (field.id !== 'status') return field;
-      return { id: field.id, label: field.label, value: field.value, neutralValue: field.neutralValue, options: field.options.slice(0, 6) };
+      return {
+        id: field.id,
+        label: field.label,
+        value: field.value,
+        neutralValue: field.neutralValue,
+        options: field.options.slice(0, 6),
+      };
     }),
   },
 };
@@ -52,9 +58,13 @@ export const SingleChoice: Story = {
   name: '選択肢は 1 つだけ選べる',
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: new RegExp(ja.panel.fields.type, 'u') }));
+    await userEvent.click(
+      canvas.getByRole('button', { name: new RegExp(ja.panel.fields.type, 'u') }),
+    );
 
-    const group = await within(document.body).findByRole('radiogroup', { name: ja.panel.fields.type });
+    const group = await within(document.body).findByRole('radiogroup', {
+      name: ja.panel.fields.type,
+    });
     await expect(within(group).getAllByRole('radio')).toHaveLength(4);
     await expect(within(document.body).getByText(ja.panel.singleChoice)).toBeVisible();
 
@@ -79,10 +89,14 @@ function Controlled({ initial }: { initial: FilterField[] }) {
     <FilterBar
       fields={fields}
       onChange={(fieldId, optionId) =>
-        setFields((current) => current.map((field) => withValue(field, fieldId === field.id ? optionId : field.value)))
+        setFields((current) =>
+          current.map((field) => withValue(field, fieldId === field.id ? optionId : field.value)),
+        )
       }
       onClearAll={() =>
-        setFields((current) => current.map((field) => withValue(field, field.neutralValue ?? field.value)))
+        setFields((current) =>
+          current.map((field) => withValue(field, field.neutralValue ?? field.value)),
+        )
       }
     />
   );
@@ -93,11 +107,14 @@ export const BackToNeutral: Story = {
   render: () => <Controlled initial={filters(ja, { type: 'issue' })} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = () => canvas.getByRole('button', { name: new RegExp(ja.panel.fields.type, 'u') });
+    const trigger = () =>
+      canvas.getByRole('button', { name: new RegExp(ja.panel.fields.type, 'u') });
     await expect(trigger()).toHaveAttribute('data-active', 'true');
 
     await userEvent.click(trigger());
-    const group = await within(document.body).findByRole('radiogroup', { name: ja.panel.fields.type });
+    const group = await within(document.body).findByRole('radiogroup', {
+      name: ja.panel.fields.type,
+    });
     await userEvent.click(within(group).getByRole('radio', { name: ja.panel.options.all }));
 
     await expect(trigger()).not.toHaveAttribute('data-active');

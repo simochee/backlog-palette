@@ -2,14 +2,7 @@ import type { Labels } from '@/components/labels';
 import type { PaletteView, RowView } from '@/components/types';
 
 import { projects, spaces } from './domain';
-import {
-  loginPages,
-  projectPath,
-  resultRows,
-  rootPath,
-  spacePath,
-  view,
-} from './palette';
+import { loginPages, projectPath, resultRows, rootPath, spacePath, view } from './palette';
 import {
   authExpiredRow,
   connectRow,
@@ -27,7 +20,13 @@ import { assignedSection, commandsSection, pagesSection, recentSection } from '.
 /** コマンド階層の引数行。command の後に space は積めないので stack のヒントを持たない */
 const argumentRow = (space: (typeof spaces)[keyof typeof spaces]): RowView => {
   const row = spaceRow(space);
-  return { id: row.id, kind: row.kind, title: row.title, sub: row.sub, hints: ['enter', 'modEnter'] };
+  return {
+    id: row.id,
+    kind: row.kind,
+    title: row.title,
+    sub: row.sub,
+    hints: ['enter', 'modEnter'],
+  };
 };
 
 /** S6 検索結果あり（全スペース） */
@@ -39,7 +38,12 @@ export const s6 = (labels: Labels): PaletteView => {
     hasResults: true,
     selectedId: rows[1]?.id,
     sections: [
-      { id: 'search', rows: [searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(3, 17))] },
+      {
+        id: 'search',
+        rows: [
+          searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(3, 17)),
+        ],
+      },
       {
         id: 'results',
         label: labels.sections.results,
@@ -60,7 +64,10 @@ export const s7 = (labels: Labels): PaletteView =>
     selectedId: `widen:${spaces.nulab.label}`,
     enterLabel: labels.keys.search,
     sections: [
-      { id: 'search', rows: [searchRow('ろぐいん', projects.web.name, labels, labels.sections.summary(1, 0))] },
+      {
+        id: 'search',
+        rows: [searchRow('ろぐいん', projects.web.name, labels, labels.sections.summary(1, 0))],
+      },
       {
         id: 'results',
         label: labels.sections.results,
@@ -105,7 +112,12 @@ export const s10 = (labels: Labels): PaletteView => {
     hasResults: true,
     selectedId: rows[0]?.id,
     sections: [
-      { id: 'search', rows: [searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(2, 17))] },
+      {
+        id: 'search',
+        rows: [
+          searchRow('ログイン', labels.palette.rootScope, labels, labels.sections.summary(2, 17)),
+        ],
+      },
       {
         id: 'results',
         label: labels.sections.results,

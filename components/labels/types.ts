@@ -80,7 +80,14 @@ export type Labels = {
     loading: string;
     statusLabel: string;
     clearFiltersRow: string;
-    fields: { space: string; project: string; type: string; status: string; assignee: string; updated: string };
+    fields: {
+      space: string;
+      project: string;
+      type: string;
+      status: string;
+      assignee: string;
+      updated: string;
+    };
     options: {
       all: string;
       allSpaces: string;

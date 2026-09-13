@@ -11,7 +11,13 @@ export function recentSection(labels: Labels): SectionView {
     meta: labels.sections.learned,
     rows: [
       { ...sampleIssues.payment, sub: `${projects.web.name} · ${labels.rows.recentSub}` },
-      pageRow('board', 'ボード', labels, projects.web, `${projects.web.name} · ${labels.rows.recentSub}`),
+      pageRow(
+        'board',
+        'ボード',
+        labels,
+        projects.web,
+        `${projects.web.name} · ${labels.rows.recentSub}`,
+      ),
       { ...sampleIssues.pushNotice, sub: `${projects.mobile.name} · ${labels.rows.recentSub}` },
       { ...projectRow(projects.helpdesk), sub: `プロジェクト · HELP · ${labels.rows.recentSub}` },
     ],
@@ -46,11 +52,11 @@ export function commandsSection(labels: Labels, issueKey?: string): SectionView 
     issueKey === undefined
       ? []
       : [
-        commandRow('copy-key', labels.rows.copyIssueKey, issueKey),
-        commandRow('copy-url', labels.rows.copyIssueUrl, issueKey),
-        commandRow('copy-title', labels.rows.copyIssueTitle, issueKey),
-        commandRow('copy-md', labels.rows.copyIssueMarkdown, issueKey),
-      ];
+          commandRow('copy-key', labels.rows.copyIssueKey, issueKey),
+          commandRow('copy-url', labels.rows.copyIssueUrl, issueKey),
+          commandRow('copy-title', labels.rows.copyIssueTitle, issueKey),
+          commandRow('copy-md', labels.rows.copyIssueMarkdown, issueKey),
+        ];
   return {
     id: 'commands',
     label: labels.sections.commands,
