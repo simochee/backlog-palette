@@ -1,11 +1,4 @@
-import type {
-  CommandSegment,
-  ProjectSegment,
-  Scope,
-  Segment,
-  SpaceSegment,
-  Stack,
-} from './types';
+import type { CommandSegment, ProjectSegment, Scope, Segment, SpaceSegment, Stack } from './types';
 
 export const emptyStack: Stack = { segments: [], armedForDelete: false };
 

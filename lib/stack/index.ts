@@ -12,11 +12,4 @@ export {
   spaceOf,
   stackOf,
 } from './stack';
-export type {
-  CommandSegment,
-  ProjectSegment,
-  Scope,
-  Segment,
-  SpaceSegment,
-  Stack,
-} from './types';
+export type { CommandSegment, ProjectSegment, Scope, Segment, SpaceSegment, Stack } from './types';
