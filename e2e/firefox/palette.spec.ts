@@ -10,7 +10,7 @@ test.describe('Firefox: パレットの注入と開閉', () => {
 
     const iframe = await tab.waitForSelector(PALETTE_FRAME, { timeout: 5000 });
     expect(await iframe?.evaluate((el) => el.getAttribute('src'))).toMatch(
-      /^moz-extension:\/\/.+\/palette\.html$/u,
+      /^moz-extension:\/\/.+\/palette\.html\?colorScheme=light$/u,
     );
     expect(await iframe?.evaluate((el) => (el as HTMLElement).style.display)).toBe('none');
     // 中身が読み込まれていること。about:blank のまま止まっていない
