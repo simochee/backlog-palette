@@ -1,5 +1,8 @@
 import type { Labels } from '@/components/labels';
 import type { FilterField } from '@/components/types';
+import type { ProjectRef } from '@/lib/backlog/entries';
+import type { StatusRecord } from '@/lib/backlog/queries';
+import { isBuiltinStatus } from '@/lib/backlog/statuses';
 import type { ConnectedSpace } from '@/lib/connect/connectSpace';
 import type { SearchScope } from '@/lib/share';
 
@@ -16,6 +19,34 @@ export type FilterSources = {
   projects: readonly { id: string; label: string }[];
   statuses: readonly { id: number; label: string }[];
 };
+
+type Choice<T> = { id: T; label: string };
+
+/** プロジェクトの id は projectKey（entrypoints/palette/context.ts の約束） */
+export function projectChoices(projects: readonly ProjectRef[]): Choice<string>[] {
+  return projects.map((project) => ({ id: project.projectKey, label: project.name }));
+}
+
+/**
+ * プロジェクトを選んでいればそのプロジェクトのステータス、「すべて」なら組み込み 4 種だけ
+ * （surfaces.md §5.3）。カスタムステータスはプロジェクトごとに ID が違い、横断では指せない
+ */
+export function statusChoices(
+  projectStatuses: readonly StatusRecord[] | undefined,
+  labels: Labels,
+): Choice<number>[] {
+  if (projectStatuses !== undefined)
+    return projectStatuses
+      .toSorted((a, b) => a.displayOrder - b.displayOrder)
+      .map((status) => ({ id: status.id, label: status.name }));
+  const { options } = labels.panel;
+  return [
+    { id: 1, label: options.statusOpen },
+    { id: 2, label: options.statusInProgress },
+    { id: 3, label: options.statusResolved },
+    { id: 4, label: options.statusClosed },
+  ];
+}
 
 function statusValue(search: PanelSearch): string {
   const { status } = search.conditions;
@@ -150,13 +181,22 @@ const isType = oneOf<Conditions['type']>(['all', 'issue', 'wiki', 'document']);
 const isAssignee = oneOf<Conditions['assignee']>(['all', 'me', 'unassigned']);
 const isUpdated = oneOf<Conditions['updated']>(['any', 'week', 'month', 'quarter']);
 
+/** カスタムステータスは選んだプロジェクトでしか通じない。スコープが変わったら外す */
+function statusAcross(status: Conditions['status']): Conditions['status'] {
+  return status.kind === 'status' && !isBuiltinStatus(status.statusId) ? { kind: 'all' } : status;
+}
+
 /** 1 項目の変更を検索状態に写す。条件はすべて AND、各条件は単一選択 */
 export function applyFilter(search: PanelSearch, fieldId: string, optionId: string): PanelSearch {
   const { conditions } = search;
   switch (fieldId) {
     case 'space':
     case 'project':
-      return { ...search, scope: scopeAfter(search.scope, fieldId, optionId) };
+      return {
+        ...search,
+        scope: scopeAfter(search.scope, fieldId, optionId),
+        conditions: { ...conditions, status: statusAcross(conditions.status) },
+      };
     case 'type':
       return isType(optionId)
         ? { ...search, conditions: { ...conditions, type: optionId } }

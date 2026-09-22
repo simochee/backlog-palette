@@ -1,3 +1,4 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
@@ -8,6 +9,7 @@ import { searchHistory } from '@/lib/storage/palette-items';
 import { panelCallbacks } from './callbacks.ts';
 import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
 import { backlog } from './backlog.ts';
+import { useFilterChoices } from './filterSources.ts';
 import { buildFilters } from './filters.ts';
 import { useHandoff } from './handoff.ts';
 import { rootRoute } from './route.ts';
@@ -105,6 +107,7 @@ function Panel({ context }: { context: PanelContext }) {
     context.learningEnabled,
   );
   const { labels } = context;
+  const choices = useFilterChoices(search.scope, labels);
 
   const view = buildPanelView({
     input,
@@ -114,8 +117,7 @@ function Panel({ context }: { context: PanelContext }) {
     filters: buildFilters(search, labels, {
       spaces: context.spaces,
       tabSpace: context.tabSpace,
-      projects: [],
-      statuses: [],
+      ...choices,
     }),
     filtersActive: isFiltersActive(search, context.tabSpace),
     toast,
@@ -143,5 +145,9 @@ function Panel({ context }: { context: PanelContext }) {
 export function PanelApp() {
   const context = usePanelContext();
   if (context === undefined) return null;
-  return <Panel context={context} />;
+  return (
+    <QueryClientProvider client={backlog.queryClient}>
+      <Panel context={context} />
+    </QueryClientProvider>
+  );
 }
