@@ -16,15 +16,18 @@ export function useRestoreLastSearch(
 ) {
   const initial = useRef(current);
   useEffect(() => {
-    if (canRun(initial.current)) return;
     let alive = true;
-    void Promise.all([panelRequest.getValue(), panelLastSearch.getValue()]).then(
-      ([request, last]) => {
-        if (!alive || request !== null || last === null) return;
-        if (tabSpace !== undefined && last.scope.spaceId !== tabSpace) return;
-        receive(fromSearchState(last));
-      },
-    );
+    const restore = async () => {
+      if (canRun(initial.current)) return;
+      const [request, last] = await Promise.all([
+        panelRequest.getValue(),
+        panelLastSearch.getValue(),
+      ]);
+      if (!alive || request !== null || last === null) return;
+      if (tabSpace !== undefined && last.scope.spaceId !== tabSpace) return;
+      receive(fromSearchState(last));
+    };
+    void restore();
     return () => {
       alive = false;
     };

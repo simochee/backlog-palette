@@ -1,59 +1,33 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { SidePanel } from '@/components/organisms/SidePanel';
-import type { ToastView } from '@/components/types';
-import { searchHistory } from '@/lib/storage/palette-items';
 
 import { backlog } from './backlog.ts';
 import { panelCallbacks } from './callbacks.ts';
-import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
-import { buildFilters } from './filters.ts';
-import { useFilterChoices } from './filterSources.ts';
+import type { PanelContext } from './context.ts';
+import { usePanelFilters } from './filterSources.ts';
 import { useHandoff } from './handoff.ts';
+import { usePanelContext, useRecentQueries, useToast } from './hooks.ts';
 import { useRememberSearch, useRestoreLastSearch } from './lastSearch.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
 import { usePanelSearch } from './usePanelSearch.ts';
-import { buildPanelView } from './view.ts';
-
-const TOAST_LIFETIME_MS = 2000;
-
-function usePanelContext(): PanelContext | undefined {
-  const [context, setContext] = useState<PanelContext>();
-  useEffect(() => {
-    void readPanelContext().then(setContext);
-  }, []);
-  return context;
-}
-
-function useRecentQueries(scope: PanelSearch['scope']): string[] {
-  const [history, setHistory] = useState<Awaited<ReturnType<typeof searchHistory.getValue>>>([]);
-  useEffect(() => {
-    void searchHistory.getValue().then(setHistory);
-    return searchHistory.watch((next) => {
-      setHistory(next);
-    });
-  }, []);
-  return useMemo(() => recentQueriesFor(history, scope), [history, scope]);
-}
-
-function useToast(): [ToastView | undefined, (toast: ToastView) => void] {
-  const [toast, setToast] = useState<ToastView>();
-  useEffect(() => {
-    const timer =
-      toast === undefined ? undefined : setTimeout(() => setToast(undefined), TOAST_LIFETIME_MS);
-    return () => {
-      if (timer !== undefined) clearTimeout(timer);
-    };
-  }, [toast]);
-  return [toast, setToast];
-}
+import { buildPanelView, type EmptyContext } from './view.ts';
 
 function isConditionsActive(search: PanelSearch): boolean {
   const { type, status, assignee, updated } = search.conditions;
   return type !== 'all' || status.kind !== 'all' || assignee !== 'all' || updated !== 'any';
+}
+
+function emptyContextOf(search: PanelSearch, context: PanelContext): EmptyContext {
+  const spaceId = search.scope?.spaceId;
+  return {
+    scope: search.scope,
+    spaceLabel: context.spaces.find((space) => space.host === spaceId)?.name ?? spaceId ?? '',
+    conditionsActive: isConditionsActive(search),
+  };
 }
 
 /** 既定のスコープはタブのスペース。URL に無ければ文脈から補う */
@@ -101,26 +75,15 @@ function Panel({ context }: { context: PanelContext }) {
     context.learningEnabled,
   );
   const { labels } = context;
-  const choices = useFilterChoices(search.scope, labels);
+  const filters = usePanelFilters(search, context);
 
   const view = buildPanelView({
     input,
     session,
     selectedId,
     recentQueries,
-    filters: buildFilters(search, labels, {
-      spaces: context.spaces,
-      tabSpace: context.tabSpace,
-      ...choices,
-    }),
-    empty: {
-      scope: search.scope,
-      spaceLabel:
-        context.spaces.find((space) => space.host === search.scope?.spaceId)?.name ??
-        search.scope?.spaceId ??
-        '',
-      conditionsActive: isConditionsActive(search),
-    },
+    filters,
+    empty: emptyContextOf(search, context),
     toast,
     labels,
   });
