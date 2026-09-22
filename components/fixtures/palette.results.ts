@@ -2,7 +2,15 @@ import type { Labels } from '@/components/labels';
 import type { PaletteView, RowView, SectionView } from '@/components/types';
 
 import { projects, type SpaceFixture, spaces } from './domain';
-import { loginPages, projectPath, resultRows, rootPath, spacePath, view } from './palette';
+import {
+  kindProgress,
+  loginPages,
+  projectPath,
+  resultRows,
+  rootPath,
+  spacePath,
+  view,
+} from './palette';
 import {
   authExpiredRow,
   connectRow,
@@ -18,13 +26,7 @@ import {
 } from './rows';
 import { assignedSection, commandsSection, pagesSection, recentSection } from './sections';
 
-/** 種別ごとの進捗。スペース横断はしない（D-20）ので単位は種別 */
-const kindsMeta = (labels: Labels): string =>
-  [
-    `${labels.panel.options.issue} 12`,
-    `${labels.panel.options.wiki} 3`,
-    `${labels.panel.options.document} 2`,
-  ].join(' · ');
+const kindsMeta = (labels: Labels): string => kindProgress(labels, ['12', '3', '2']);
 
 /** コマンド階層の引数行。command の後に space は積めないので stack のヒントを持たない */
 const argumentRow = (space: SpaceFixture): RowView => {
@@ -77,7 +79,11 @@ export const s6 = (labels: Labels): PaletteView => {
         id: 'results',
         label: labels.sections.results,
         meta: kindsMeta(labels),
-        rows: [noticeRow(2, labels), ...rows, externalRow(labels)],
+        rows: [
+          noticeRow(2, labels),
+          ...rows,
+          externalRow(labels, 'https://nulab.backlog.com/FindIssueAllOver.action'),
+        ],
       },
       loginPages(labels),
     ],

@@ -39,10 +39,7 @@ export const ja: Labels = {
     commands: 'コマンド',
     learned: 'よく開く順',
     more: (count) => `他 ${count} 件`,
-    loading: (space) => `${space} 読み込み中`,
-    countOf: (space, count) => `${space} ${count} 件`,
     count: (count) => `${count} 件`,
-    summary: (spaces, count) => `${spaces} スペース · ${count} 件`,
   },
   rows: {
     searchFor: (query) => `「${query}」を検索`,

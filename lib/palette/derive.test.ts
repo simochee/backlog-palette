@@ -50,7 +50,9 @@ describe('空状態（§9）', () => {
     expect(rowsOf(d, 'pages')).toHaveLength(5);
     expect(d.view.sections[1]?.meta).toBe(ja.sections.more(1));
   });
+});
 
+describe('空状態（§9）: 取得中と案内行', () => {
   it('担当課題は届く前から見出しと読み込み中の行が出て、届いたら件数つきで置き換わる', () => {
     const pending = run({}, { assigned: undefined });
     expect(sectionIds(pending)).toEqual(['recent', 'pages', 'assigned']);

@@ -83,7 +83,7 @@ const footerChecks: Record<KeyHint['id'], FooterCheck> = {
   async move(_input, rows, target) {
     const onSelectionChange = spy(target.spies.onSelectionChange, 'onSelectionChange');
     onSelectionChange.mockClear();
-    const selectable = rows.filter(canSelect);
+    const selectable = rows.filter((row) => canSelect(row));
     const index = selectable.findIndex((row) => row.id === selectedRow(rows, target)?.id);
     const next = selectable[index + 1];
     if (next === undefined) {
@@ -135,7 +135,7 @@ async function assertFooterKeys(input: HTMLInputElement, rows: readonly RowView[
  */
 async function assertRowEnter(rows: readonly RowView[], target: Target) {
   const onAction = spy(target.spies.onAction, 'onAction');
-  const selectable = rows.filter(canSelect);
+  const selectable = rows.filter((row) => canSelect(row));
   // 選べる行が 1 つも無い状態（取得中だけ）では、view が置いた選択がそのまま残る
   if (selectable.length === 0) return;
   await pressAll('ArrowUp', rows.length);
@@ -184,7 +184,7 @@ export async function assertPaletteInvariants(target: Target) {
   // 状態固有の検査がキーを送った後でも同じ前提から始めるため、選択を初期位置へ戻す。
   // 初期選択が動作を持たない行（§7.2 のプレースホルダ）のときは ↑↓ で戻せないので、
   // その位置から下で最初に選べる行に置く
-  const selectable = rows.filter(canSelect);
+  const selectable = rows.filter((row) => canSelect(row));
   const initialIndex = Math.max(
     0,
     selectable.findIndex((row) => row.id === target.view.selectedId),

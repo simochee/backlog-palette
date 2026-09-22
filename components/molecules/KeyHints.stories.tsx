@@ -58,9 +58,7 @@ export const OverflowKeepsOrder: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(visibleIds(canvasElement).length).toBeLessThan(allHintIds.length),
-    );
+    await waitFor(() => expect(visibleIds(canvasElement).length).toBeLessThan(allHintIds.length));
     const visible = visibleIds(canvasElement);
     await expect(visible).toEqual(allHintIds.slice(0, visible.length));
   },

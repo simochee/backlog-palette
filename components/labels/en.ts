@@ -39,10 +39,7 @@ export const en: Labels = {
     commands: 'Commands',
     learned: 'Most opened first',
     more: (count) => `${count} more`,
-    loading: (space) => `${space} loading`,
-    countOf: (space, count) => `${space} ${count}`,
     count: (count) => `${count}`,
-    summary: (spaces, count) => `${spaces} spaces · ${count} results`,
   },
   rows: {
     searchFor: (query) => `Search for “${query}”`,

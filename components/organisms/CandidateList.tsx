@@ -35,7 +35,7 @@ export function neighbourRow(
   delta: 1 | -1,
 ): RowView | undefined {
   const index = rows.findIndex((row) => row.id === selectedId);
-  if (index === -1) return rows.find(isSelectable);
+  if (index === -1) return rows.find((row) => isSelectable(row));
   for (let next = index + delta; next >= 0 && next < rows.length; next += delta) {
     const row = rows[next];
     if (row !== undefined && isSelectable(row)) return row;

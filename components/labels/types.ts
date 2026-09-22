@@ -42,10 +42,7 @@ export type Labels = {
     commands: string;
     learned: string;
     more: (count: number) => string;
-    loading: (space: string) => string;
-    countOf: (space: string, count: number) => string;
     count: (count: number) => string;
-    summary: (spaces: number, count: number) => string;
   };
   rows: {
     searchFor: (query: string) => string;
