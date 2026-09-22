@@ -61,6 +61,7 @@ export const ja: Labels = {
     spaceSettings: 'スペース設定',
     typeHint: 'ページ名や課題キーを入力してください',
     assignedFailed: '担当中の課題を取得できませんでした',
+    assignedOffline: 'オフラインのため担当中の課題を取得できませんでした',
     connectThis: 'このスペースを接続',
     connectSpace: (space) => `${space} は未接続 — 接続する`,
     authExpired: (space) => `${space} は認証が切れています — 再接続`,

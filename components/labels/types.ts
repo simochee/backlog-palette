@@ -64,6 +64,7 @@ export type Labels = {
     spaceSettings: string;
     typeHint: string;
     assignedFailed: string;
+    assignedOffline: string;
     connectThis: string;
     connectSpace: (space: string) => string;
     authExpired: (space: string) => string;

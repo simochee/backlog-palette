@@ -121,7 +121,8 @@ function assignedErrorRow(
       { kind: 'status', title: labels.rows.authExpired(space?.label ?? ''), tone: 'danger' },
       { type: 'connect', spaceId: space?.id },
     );
-  const title = error.kind === 'offline' ? labels.rows.offline : labels.rows.assignedFailed;
+  // 検索の offline 行（「接続すると再検索します」）は流用しない。担当課題は引き直さない
+  const title = error.kind === 'offline' ? labels.rows.assignedOffline : labels.rows.assignedFailed;
   return build('assigned:status', { kind: 'status', title, tone: 'danger' });
 }
 

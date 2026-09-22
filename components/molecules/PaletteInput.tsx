@@ -66,7 +66,7 @@ export function PaletteInput({
         onCompositionStart={() => setComposing(true)}
         onCompositionEnd={() => setComposing(false)}
         className={cn(
-          'relative h-full w-full min-w-0 border-0 bg-transparent p-0 font-body text-md text-default outline-none placeholder:text-subtle',
+          'relative h-full w-full min-w-0 border-0 bg-transparent p-0 font-body text-md text-ellipsis text-default outline-none placeholder:text-ellipsis placeholder:text-subtle',
           composing && 'underline decoration-1 decoration-dotted underline-offset-2',
         )}
       />

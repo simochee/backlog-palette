@@ -42,7 +42,11 @@ function cachedEntryOf(entry: DisplayCacheEntry): CachedEntry | undefined {
  */
 function projectsOf(cache: readonly DisplayCacheEntry[], context: OpenContext): ProjectEntry[] {
   const keys = new Map<string, string>();
-  for (const entry of cache) keys.set(`${entry.spaceHost}/${entry.projectKey}`, entry.spaceHost);
+  // 別名 Wiki（/alias/wiki/{id}）は URL にプロジェクトを持たない。飛ばさないと
+  // キーが "undefined" のプロジェクトが候補に並び、/projects/undefined へ飛ぶ
+  for (const entry of cache)
+    if (entry.projectKey !== undefined)
+      keys.set(`${entry.spaceHost}/${entry.projectKey}`, entry.spaceHost);
   if (context.projectKey !== undefined)
     keys.set(`${context.spaceHost}/${context.projectKey}`, context.spaceHost);
   return [...keys].map(([composite, spaceId]) => {

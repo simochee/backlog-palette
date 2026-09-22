@@ -61,6 +61,7 @@ export const en: Labels = {
     spaceSettings: 'Space settings',
     typeHint: 'Type a page name or an issue key',
     assignedFailed: 'Could not load your assigned issues',
+    assignedOffline: 'Offline — could not load your assigned issues',
     connectThis: 'Connect this space',
     connectSpace: (space) => `${space} is not connected — Connect`,
     authExpired: (space) => `${space} needs to sign in again — Reconnect`,

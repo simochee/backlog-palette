@@ -64,7 +64,7 @@ describe('空状態（§9）: 取得失敗', () => {
     expect(row?.hints).toContain('enter');
 
     const offline = run({}, { assigned: { kind: 'failed', error: { kind: 'offline' } } });
-    expect(rowsOf(offline, 'assigned')[0]?.title).toBe(ja.rows.offline);
+    expect(rowsOf(offline, 'assigned')[0]?.title).toBe(ja.rows.assignedOffline);
     expect(rowsOf(offline, 'assigned')[0]?.hints).toEqual([]);
   });
 
