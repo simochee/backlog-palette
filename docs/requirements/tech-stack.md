@@ -11,6 +11,7 @@ TanStack のエコシステムを軸にする。ライブラリは**層の規約
 |---|---|---|---|---|---|
 | 拡張の土台 | ビルド・manifest・エントリ | WXT | 0.21 | 安定 | 既定 |
 | UI | 描画 | React | 19 | 安定 | 既定 |
+| UI | メモ化 | React Compiler（`babel-plugin-react-compiler` を `@rolldown/plugin-babel` で載せる） | 1.0 | 安定 | T-12 |
 | UI | 見た目 | Tailwind CSS v4（`@tailwindcss/vite`）+ Lightning CSS（Vite の `css.transformer`）+ `--bp-*` トークン | 4.3 / 1.33 | 安定 | D-18 |
 | UI | アイコン | lucide-react | 1.45 | 安定 | 既定 |
 | UI | 入力欄と競合しない部品（Popover・Switch・RadioGroup。Phase 2 で AlertDialog） | Radix Primitives（`radix-ui`） | 1.6 | 安定 | D-17 |
@@ -178,3 +179,4 @@ HotkeyManager は使わない。入力欄にフォーカスがある状態での
 | 2026-09-13 | T-9 Form | 使う | 検証・送信中・エラーの表示を統一 |
 | 2026-09-13 | T-10 a11y 部品 | Radix Primitives。react-aria-components は採らない | D-17。Popover 級は自作せず、listbox を包まない headless primitives を使う |
 | 2026-09-13 | T-11 見た目 | Tailwind CSS v4 + Lightning CSS | D-18。トークンは `@theme inline` で写し、ダークはトークンの再定義だけで追従する |
+| 2026-09-23 | T-12 メモ化 | React Compiler（Babel 版）。`useMemo` / `useCallback` / `memo` は書かない。`panicThreshold: 'all_errors'` で、最適化から外れるコンポーネントがあればビルドを落とす | 依存配列を人が保守すると、漏れがそのまま古い値の参照になる。oxc の Rust 版は experimental で、有効にすると plugin-react が Fast Refresh を切る。安定して Fast Refresh と両立したら `react-compiler.config.ts` の 1 か所で差し替える |

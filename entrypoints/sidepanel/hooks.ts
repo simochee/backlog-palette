@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { ToastView } from '@/components/types';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
@@ -26,7 +26,7 @@ export function useRecentQueries(scope: PanelSearch['scope']): string[] {
       setHistory(next);
     });
   }, []);
-  return useMemo(() => recentQueriesFor(history, scope), [history, scope]);
+  return recentQueriesFor(history, scope);
 }
 
 export function useToast(): [ToastView | undefined, (toast: ToastView) => void] {

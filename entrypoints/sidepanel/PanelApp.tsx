@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { SidePanel } from '@/components/organisms/SidePanel';
@@ -43,26 +43,15 @@ function usePanelState(search: PanelSearch, tabSpace: string | undefined) {
   const [selectedId, setSelectedId] = useState<string>();
   const [toast, showToast] = useToast();
   const [focusToken, setFocusToken] = useState(0);
-  const update = useCallback(
-    (next: PanelSearch) => void navigate({ to: '/', search: next }),
-    [navigate],
-  );
-  const receive = useCallback(
-    (next: PanelSearch) => {
-      setInput(next.query);
-      update(next);
-    },
-    [update],
-  );
-  useHandoff(
-    useCallback(
-      (next: PanelSearch) => {
-        receive(next);
-        setFocusToken(Date.now());
-      },
-      [receive],
-    ),
-  );
+  const update = (next: PanelSearch) => void navigate({ to: '/', search: next });
+  const receive = (next: PanelSearch) => {
+    setInput(next.query);
+    update(next);
+  };
+  useHandoff((next: PanelSearch) => {
+    receive(next);
+    setFocusToken(Date.now());
+  });
   useRestoreLastSearch(search, tabSpace, receive);
   useRememberSearch(search);
   return { input, setInput, selectedId, setSelectedId, toast, showToast, update, focusToken };
@@ -71,7 +60,7 @@ function usePanelState(search: PanelSearch, tabSpace: string | undefined) {
 function Panel({ context }: { context: PanelContext }) {
   // Register に載せていないので useSearch の型は付かない。スキーマで検証して型を得る
   const raw = panelSearchSchema.parse(rootRoute.useSearch());
-  const search = useMemo(() => withDefaultScope(raw, context), [raw, context]);
+  const search = withDefaultScope(raw, context);
   const { input, setInput, selectedId, setSelectedId, toast, showToast, update, focusToken } =
     usePanelState(search, context.tabSpace);
   const recentQueries = useRecentQueries(search.scope);

@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useMemo } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 
 import { ja } from './ja';
 import type { Labels } from './types';
@@ -15,5 +15,5 @@ export function LabelsProvider({ labels, children }: { labels: Labels; children:
  */
 export function useLabels(override?: Partial<Labels>): Labels {
   const base = useContext(LabelsContext);
-  return useMemo(() => (override ? { ...base, ...override } : base), [base, override]);
+  return override ? { ...base, ...override } : base;
 }
