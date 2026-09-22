@@ -38,6 +38,7 @@ type ChromeStorage = {
       set: (items: Record<string, unknown>) => Promise<void>;
       remove: (key: string) => Promise<void>;
     };
+    session: { remove: (keys: readonly string[]) => Promise<void> };
   };
 };
 
@@ -58,6 +59,9 @@ export const OWNED_KEYS = [
   'searchHistory',
   'telemetry',
 ];
+
+/** storage.session に書く item。ブラウザを閉じるまで残るので、worker を共有するテストの間で漏れる */
+const OWNED_SESSION_KEYS = ['panelLastSearch'];
 
 export type ExtensionFixtures = {
   context: BrowserContext;
@@ -137,10 +141,14 @@ export const test = base.extend<ExtensionFixtures, WorkerFixtures>({
      * 次のテストへ状態を持ち越さない。消すのは自分が書く item だけ。
      * storage.local.clear() は設定まで消し、2 件目以降のテストを壊す（mvp の罠）。
      */
-    await serviceWorker.evaluate(async (keys) => {
-      const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
-      await Promise.all(keys.map((key) => api.storage.local.remove(key)));
-    }, OWNED_KEYS);
+    await serviceWorker.evaluate(
+      async ({ local, session }) => {
+        const api = (globalThis as unknown as { chrome: ChromeStorage }).chrome;
+        await Promise.all(local.map((key) => api.storage.local.remove(key)));
+        await api.storage.session.remove(session);
+      },
+      { local: OWNED_KEYS, session: OWNED_SESSION_KEYS },
+    );
   },
 
   readStorage: async ({ serviceWorker }, use) => {
