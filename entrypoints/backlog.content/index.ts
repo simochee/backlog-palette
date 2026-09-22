@@ -195,7 +195,7 @@ export default defineContentScript({
       // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する
       if (event.source !== iframe.contentWindow) return;
       if (event.origin !== extensionOrigin) return;
-      if (!isFromIframe(event.data)) return;
+      if (!isFromIframe(event.data) || event.data.t !== 'close') return;
       host.close();
     });
   },

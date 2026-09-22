@@ -1,5 +1,10 @@
 import type { ContentScriptContext } from '#imports';
-import { isConnectRequest, isMemoField, KEY_MEMO } from '@/lib/connect/page';
+import {
+  isConnectRequest,
+  isMemoField,
+  KEY_MEMO,
+  withoutConnectFragment,
+} from '@/lib/connect/page';
 import { isFromIframe, type ToIframe } from '@/lib/messaging/window';
 
 export const CONNECT_FRAME_ATTRIBUTE = 'data-backlog-palette-connect';
@@ -69,6 +74,18 @@ function createConnectFrame(src: string): HTMLIFrameElement {
   return iframe;
 }
 
+/*
+ * location.hash を書き換えない。履歴が 1 つ積まれ、戻ると #bp-connect の URL に戻って
+ * 貼り付けバーが出直す。空の hash を代入しても末尾に `#` が残る
+ */
+function forgetConnectRequest() {
+  window.history.replaceState(
+    window.history.state,
+    '',
+    withoutConnectFragment(window.location.href),
+  );
+}
+
 function showConnectBar(ctx: ContentScriptContext, src: string, extensionOrigin: string) {
   if (document.querySelector(`iframe[${CONNECT_FRAME_ATTRIBUTE}]`) !== null) return;
   const iframe = createConnectFrame(src);
@@ -86,6 +103,10 @@ function showConnectBar(ctx: ContentScriptContext, src: string, extensionOrigin:
     if (event.source !== iframe.contentWindow) return;
     if (event.origin !== extensionOrigin) return;
     if (!isFromIframe(event.data)) return;
+    if (event.data.t === 'connected') {
+      forgetConnectRequest();
+      return;
+    }
     iframe.remove();
   });
 }

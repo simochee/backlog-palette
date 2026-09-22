@@ -56,7 +56,7 @@ flowchart TB
     ST[("@wxt-dev/storage<br/>DB コレクション / Query の persister / 鍵")]
     SW["background<br/>インストール初期化 / alarms / 履歴取り込み"]
   end
-  CS <-->|postMessage open/close| PAL
+  CS <-->|postMessage open/close<br/>貼り付けバーは connected も（D-56）| PAL
   PAL & PANEL & OPT <-->|live query / persister| ST
   PAL & PANEL --->|backlog-js + Pacer| API["Backlog API（CORS 許可）"]
   SW <--> ST

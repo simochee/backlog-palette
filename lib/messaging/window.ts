@@ -3,7 +3,7 @@ import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
 /**
  * content script とパレット iframe の間の唯一の通信路。
  *
- * 受け付けるのは open / close の 2 種だけ（tech-stack.md §2）。
+ * ページへは open / close、ページからは close と、貼り付けバーだけが送る connected（D-56）。
  * 足すときはセキュリティ設計の変更として decisions.md に起票する。
  */
 
@@ -19,7 +19,7 @@ export type PageContext = {
 
 export type ToIframe = { t: 'open'; ctx: PageContext } | { t: 'close' };
 
-export type FromIframe = { t: 'close' };
+export type FromIframe = { t: 'close' } | { t: 'connected' };
 
 /** 登録済みスペースの origin かどうか。iframe 側が受けた open / close の送り主を検証する */
 export function isTrustedPageOrigin(origin: string, customHosts: readonly string[] = []): boolean {
@@ -42,5 +42,6 @@ export function isToIframe(value: unknown): value is ToIframe {
 }
 
 export function isFromIframe(value: unknown): value is FromIframe {
-  return readField(value, 't') === 'close';
+  const t = readField(value, 't');
+  return t === 'close' || t === 'connected';
 }

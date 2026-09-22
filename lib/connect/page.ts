@@ -15,6 +15,13 @@ export function isConnectRequest(href: string): boolean {
   return url?.pathname === API_SETTINGS_PATH && url.hash === `#${CONNECT_FRAGMENT}`;
 }
 
+/** 接続が済んだ後の URL。再読み込みで貼り付けバーが出直さないよう、接続のフラグメントだけを外す */
+export function withoutConnectFragment(href: string): string {
+  const url = new URL(href);
+  if (url.hash === `#${CONNECT_FRAGMENT}`) url.hash = '';
+  return url.href;
+}
+
 export type FieldHint = {
   name?: string;
   id?: string;

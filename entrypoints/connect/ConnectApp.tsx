@@ -41,6 +41,7 @@ export function ConnectApp() {
     const result = await connectSpace(spaceHost, apiKey, connectDeps);
     if (result.ok) {
       setState({ kind: 'done', spaceLabel: result.space.name });
+      hostChannel.send({ t: 'connected' });
       return;
     }
     const message =

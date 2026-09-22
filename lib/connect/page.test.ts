@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { apiKeyPageUrl, isConnectRequest, isMemoField } from './page';
+import { apiKeyPageUrl, isConnectRequest, isMemoField, withoutConnectFragment } from './page';
 
 describe('発行ページの判定', () => {
   it('接続行が開く URL は発行ページに #bp-connect を付けたもの', () => {
@@ -16,6 +16,20 @@ describe('発行ページの判定', () => {
     expect(isConnectRequest('https://demo.backlog.jp/EditApiSettings.action')).toBe(false);
     expect(isConnectRequest('https://demo.backlog.jp/dashboard#bp-connect')).toBe(false);
     expect(isConnectRequest('not a url')).toBe(false);
+  });
+});
+
+describe('接続後の URL', () => {
+  it('接続が済むと URL から #bp-connect が外れる', () => {
+    expect(
+      withoutConnectFragment('https://demo.backlog.jp/EditApiSettings.action#bp-connect'),
+    ).toBe('https://demo.backlog.jp/EditApiSettings.action');
+  });
+
+  it('接続のもの以外のフラグメントとクエリには触れない', () => {
+    expect(withoutConnectFragment('https://demo.backlog.jp/EditApiSettings.action?a=1#other')).toBe(
+      'https://demo.backlog.jp/EditApiSettings.action?a=1#other',
+    );
   });
 });
 
