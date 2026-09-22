@@ -16,6 +16,7 @@ import { hostChannel } from './hostChannel.ts';
 import { usePaletteSession } from './session.ts';
 
 const TOAST_LIFETIME_MS = 2000;
+const noop = () => {};
 
 /** Firefox はサイドバーをスクリプトから開けない。開いているときだけ出す判定は M6（surfaces.md §5.5） */
 const PANEL_AVAILABLE = import.meta.env.BROWSER !== 'firefox';
@@ -54,7 +55,7 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
  */
 function useRetryWhenOnline(offline: boolean, retry: () => void) {
   useEffect(() => {
-    if (!offline) return;
+    if (!offline) return noop;
     window.addEventListener('online', retry);
     return () => {
       window.removeEventListener('online', retry);

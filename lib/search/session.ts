@@ -112,6 +112,6 @@ export function errorOf(
 }
 
 /** オフラインで終わった種別がある。接続が戻ったら引き直す対象（palette.md §7.5） */
-export function endedOffline(session: SearchSession | undefined): boolean {
+export function endedOffline(session?: SearchSession): boolean {
   return session !== undefined && errorOf(session, 'offline') !== undefined;
 }

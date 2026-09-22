@@ -38,6 +38,29 @@ function useRetryWhenOnline(offline: boolean, retry: () => void) {
   }, [offline, retry]);
 }
 
+/*
+ * 検索が変わったら試行回数ごと作り直す。残すと、同じ検索に戻ったとき利用者の検索が数えられない。
+ * 引き直しも新しいセッションから始める。失敗したセッションに到着を重ねると、先に揃っていた
+ * 種別の行が二重に入る
+ */
+function useSearchStore(search: PanelSearch) {
+  const searchKey = JSON.stringify(search);
+  const [store, setStore] = useState<Store>(() => freshStore(search, searchKey, 0));
+  if (store.searchKey !== searchKey) setStore(freshStore(search, searchKey, 0));
+  const current = store.searchKey === searchKey ? store : freshStore(search, searchKey, 0);
+
+  const retry = useCallback(() => {
+    setStore((previous) =>
+      previous.searchKey === searchKey
+        ? freshStore(search, searchKey, previous.attempt + 1)
+        : previous,
+    );
+  }, [search, searchKey]);
+  useRetryWhenOnline(endedOffline(current.session), retry);
+
+  return { searchKey, attempt: current.attempt, session: current.session, setStore };
+}
+
 /**
  * URL の検索状態が変わるたびに検索を走らせ直す。到着は種別ごとに合流し、選択行より上に
  * 入る行は保留する（I4）。入力の途中では走らせない（Enter で明示的に起動、D-2）。
@@ -51,30 +74,12 @@ export function usePanelSearch(
   selectedId: string | undefined,
   learningEnabled: boolean,
 ) {
-  const searchKey = JSON.stringify(search);
-  const [store, setStore] = useState<Store>(() => freshStore(search, searchKey, 0));
-  // 検索が変わったら試行回数ごと作り直す。残すと、同じ検索に戻ったとき利用者の検索が数えられない
-  if (store.searchKey !== searchKey) setStore(freshStore(search, searchKey, 0));
-  const { attempt, session } =
-    store.searchKey === searchKey ? store : freshStore(search, searchKey, 0);
+  const { searchKey, attempt, session, setStore } = useSearchStore(search);
   const selected = useRef(selectedId);
 
   useEffect(() => {
     selected.current = selectedId;
   }, [selectedId]);
-
-  /*
-   * 引き直しは新しいセッションから始める。失敗したセッションに到着を重ねると、先に
-   * 揃っていた種別の行が二重に入る
-   */
-  const retry = useCallback(() => {
-    setStore((previous) =>
-      previous.searchKey === searchKey
-        ? freshStore(search, searchKey, previous.attempt + 1)
-        : previous,
-    );
-  }, [search, searchKey]);
-  useRetryWhenOnline(endedOffline(session), retry);
 
   useEffect(() => {
     if (!canRun(search)) return noop;
@@ -103,7 +108,7 @@ export function usePanelSearch(
     );
     // 入力が変わったら走っている検索を捨てる（palette.md §7.4）
     return cancel;
-  }, [search, searchKey, attempt, runner, learningEnabled]);
+  }, [search, searchKey, attempt, runner, learningEnabled, setStore]);
 
   const state = useCallback((): SearchState | undefined => {
     if (search.scope === undefined) return undefined;
