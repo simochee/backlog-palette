@@ -53,5 +53,5 @@ export async function navigate(url: string, target: NavigateTarget = 'current'):
 export async function openPaletteInCurrentTab(): Promise<void> {
   const tab = await readCurrentTab();
   if (tab?.id === undefined) return;
-  await sendToContent('openPalette', undefined, tab.id).catch(() => undefined);
+  await sendToContent('openPalette', undefined, tab.id).catch(() => {});
 }
