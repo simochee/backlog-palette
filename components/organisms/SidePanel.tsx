@@ -85,6 +85,18 @@ function PanelFilters({ props }: { props: SidePanelProps }) {
   );
 }
 
+/*
+ * パレットと違い window の focus では戻さない。パネルはフィルターバーにもフォーカスが
+ * 移る面で、戻すとフィルターを操作している最中に入力欄へ引き戻される
+ */
+function useFocusOnToken(inputRef: RefObject<HTMLInputElement | null>, focusToken: unknown) {
+  useEffect(() => {
+    inputRef.current?.focus();
+    // focusToken は effect の中で読まないが、値が変わったことが「検索を渡された」合図になる
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [inputRef, focusToken]);
+}
+
 export function SidePanel(props: SidePanelProps) {
   const labels = useLabels(props.labels);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,15 +104,7 @@ export function SidePanel(props: SidePanelProps) {
   const handleKeyDown = usePanelKeyHandler(props, listId);
   const { selectedId } = props;
 
-  /*
-   * パレットと違い window の focus では戻さない。パネルはフィルターバーにもフォーカスが
-   * 移る面で、戻すとフィルターを操作している最中に入力欄へ引き戻される
-   */
-  useEffect(() => {
-    inputRef.current?.focus();
-    // focusToken は effect の中で読まないが、値が変わったことが「検索を渡された」合図になる
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [props.focusToken]);
+  useFocusOnToken(inputRef, props.focusToken);
 
   const pickRecent = (query: string) => {
     props.onInputChange(query);
