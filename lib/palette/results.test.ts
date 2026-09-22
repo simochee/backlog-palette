@@ -199,6 +199,11 @@ describe('0 件と障害（§7.5・D-19・I6）', () => {
     expect(results(d)?.rows.map((r) => r.kind)).toEqual(['hint', 'panel', 'external']);
     expect(d.view.selectedId).toBe(PANEL_ROW_ID);
   });
+
+  it('パネルへ渡せない環境（サイドバーが閉じた Firefox）では詳細検索の行を出さない', () => {
+    const d = derive(empty, index, ja, { platform: 'mac', panelAvailable: false });
+    expect(results(d)?.rows.map((r) => r.kind)).toEqual(['hint', 'search', 'external']);
+  });
 });
 
 describe('障害は行に閉じる（§7.5・I6）', () => {

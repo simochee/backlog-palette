@@ -90,7 +90,13 @@ export function derive(
   options: DeriveOptions,
 ): DerivedPalette {
   const scope = scopeOf(state.stack);
-  const env: Env = { index, scope, labels, session: state.session };
+  const env: Env = {
+    index,
+    scope,
+    labels,
+    session: state.session,
+    panelAvailable: options.panelAvailable,
+  };
   const { sections, rows } = capSections(
     buildSections(state, env, scopeLabel(state.stack, labels)),
     labels,

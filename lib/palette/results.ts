@@ -23,7 +23,7 @@ import type { PaletteIndex, SpaceEntry } from './model';
 import { build, type Built } from './rows';
 import type { BuiltSection } from './sections';
 
-type Env = { index: PaletteIndex; scope: Scope; labels: Labels };
+type Env = { index: PaletteIndex; scope: Scope; labels: Labels; panelAvailable: boolean };
 
 function resultRow(row: ResultRow, labels: Labels): Built {
   const detail =
@@ -94,7 +94,7 @@ export function searchRowSub(
 
 /** 0 件の提案は スコープを広げる → 詳細検索 → 本体検索 の順で固定（§7.5・D-19） */
 function emptyRows(
-  { index, scope, labels }: Env,
+  { index, scope, labels, panelAvailable }: Env,
   session: SearchSession,
   space: SpaceEntry | undefined,
 ): Built[] {
@@ -107,12 +107,15 @@ function emptyRows(
         { type: 'search', query: session.query, scope: { kind: 'space', spaceId: scope.spaceId } },
       ),
     );
+  if (panelAvailable)
+    rows.push(
+      build(
+        PANEL_ROW_ID,
+        { kind: 'panel', title: labels.rows.toPanel, sub: labels.rows.toPanelSub },
+        { type: 'openPanel' },
+      ),
+    );
   rows.push(
-    build(
-      PANEL_ROW_ID,
-      { kind: 'panel', title: labels.rows.toPanel, sub: labels.rows.toPanelSub },
-      { type: 'openPanel' },
-    ),
     build(
       EXTERNAL_ROW_ID,
       {
