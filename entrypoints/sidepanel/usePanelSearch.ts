@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  arrive,
-  errorOf,
-  fail,
-  resultRowId,
-  type SearchSession,
-  startSession,
-} from '@/lib/search';
+import { arrive, errorOf, fail, resultRowId, type SearchSession, startSession } from '@/lib/search';
 import { type SearchState, searchState } from '@/lib/share';
 import { track } from '@/lib/telemetry/track';
 

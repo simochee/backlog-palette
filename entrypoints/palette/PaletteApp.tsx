@@ -57,7 +57,7 @@ function useResearchWhenOnline(
 ) {
   const offline = session !== undefined && errorOf(session, 'offline') !== undefined;
   useEffect(() => {
-    if (!offline) return undefined;
+    if (!offline) return;
     const research = () => {
       const last = pending.lastSearch;
       if (last !== undefined) restartSearch(last.query, last.scope, env, pending);
