@@ -69,7 +69,7 @@ describe('iframe が受けたテーマの検証', () => {
   });
 
   it('オブジェクトでなければテーマを持たない', () => {
-    expect(parseBacklogTheme(undefined)).toBeUndefined();
+    expect(parseBacklogTheme()).toBeUndefined();
     expect(parseBacklogTheme('#ea733b')).toBeUndefined();
   });
 });
