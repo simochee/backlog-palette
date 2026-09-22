@@ -1,6 +1,8 @@
 import type { QueryClient, QueryFunctionContext } from '@tanstack/query-core';
 import type { Option } from 'backlog-js';
 
+import { SECTION_CAP } from '@/lib/palette/sections';
+
 import {
   type DocumentLike,
   type Entry,
@@ -14,8 +16,11 @@ import { expandNotClosed, unionStatusIds } from './statuses';
 /** マスタは 1 日、担当課題は 5 分（tech-stack.md §3.1） */
 export const MASTER_STALE_MS = 24 * 60 * 60 * 1000;
 export const ASSIGNED_STALE_MS = 5 * 60 * 1000;
-/** 空状態の「担当中の課題」は 5 件（palette.md §9） */
-export const ASSIGNED_COUNT = 5;
+/**
+ * 空状態の「担当中の課題」の取得件数（palette.md §9）。表示上限と同じ値に縛る。
+ * 多く取っても捨てるだけで、見出しの件数が「総数」か「打ち切り」かも判定できなくなる
+ */
+export const ASSIGNED_COUNT = SECTION_CAP;
 
 export type StatusRecord = { id: number; name: string; color: string; displayOrder: number };
 

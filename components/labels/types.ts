@@ -13,6 +13,7 @@ export type Labels = {
     armedNotice: (segment: string) => string;
     rootScope: string;
     rootPlaceholder: string;
+    commandPlaceholder: (command: string) => string;
   };
   keys: {
     open: string;
@@ -22,10 +23,12 @@ export type Labels = {
     newTab: string;
     move: string;
     back: (segment: string) => string;
+    backShort: string;
     complete: string;
     stack: string;
     descend: string;
     copyUrl: string;
+    copyUrlShort: string;
     toPanel: string;
   };
   sections: {
@@ -34,6 +37,7 @@ export type Labels = {
     commonPages: string;
     pagesOf: (project: string) => string;
     assigned: string;
+    thisIssue: string;
     results: string;
     pages: string;
     projects: string;
@@ -57,6 +61,7 @@ export type Labels = {
     apiKeySettings: string;
     spaceSettings: string;
     typeHint: string;
+    assignedFailed: string;
     connectThis: string;
     connectSpace: (space: string) => string;
     authExpired: (space: string) => string;
@@ -77,6 +82,7 @@ export type Labels = {
     copyIssueTitle: string;
     copyIssueMarkdown: string;
     switchSpace: string;
+    copyIssue: (key: string) => string;
   };
   panel: {
     title: string;

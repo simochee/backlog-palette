@@ -1,5 +1,6 @@
 import type { Badge } from '@/components/types';
 import type { ActivityEvent, QueryDictEvent, TransitionEvent } from '@/lib/rank';
+import type { SearchError } from '@/lib/search/types';
 import type { Scope } from '@/lib/stack/types';
 
 /**
@@ -55,6 +56,15 @@ export type CachedEntry = {
 
 export type CurrentIssue = { key: string; title: string; url: string };
 
+/**
+ * 担当課題。空状態で API が要る唯一の材料なので、取得中と失敗を状態として持つ。
+ * `undefined` で失敗も表すと、取れなかったときに「読み込み中」が回り続ける（I6）
+ */
+export type AssignedState =
+  | { kind: 'loading' }
+  | { kind: 'ready'; rows: readonly CachedEntry[] }
+  | { kind: 'failed'; error: SearchError };
+
 export type PaletteIndex = {
   spaces: readonly SpaceEntry[];
   projects: readonly ProjectEntry[];
@@ -64,8 +74,8 @@ export type PaletteIndex = {
   /** 本体の課題検索へ逃がす URL（§7.3 の上限超過・§7.5 の 0 件） */
   externalSearchUrl: (scope: Scope, query: string) => string;
   cache: readonly CachedEntry[];
-  /** 担当課題。API から届くまでは undefined（空状態は待たずに描く） */
-  assigned: readonly CachedEntry[] | undefined;
+  /** 担当課題。届くまでは loading（空状態は待たずに描く）、取れなければ failed */
+  assigned: AssignedState;
   /** 行動ログ。entityId は `issue:PROJ-1` `project:1` `page:board` の形 */
   activity: readonly ActivityEvent[];
   transitions: readonly TransitionEvent[];

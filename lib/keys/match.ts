@@ -51,6 +51,7 @@ export function toKeyHints(bindings: readonly KeyBinding[], platform: Platform):
     id: binding.id,
     keys: displayKeys(binding, platform),
     label: binding.label,
+    ...(binding.shortLabel === undefined ? {} : { shortLabel: binding.shortLabel }),
     priority: binding.priority,
   }));
 }

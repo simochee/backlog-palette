@@ -19,7 +19,7 @@ import {
 import { argumentSections, emptySections, rootSections } from './empty';
 import type { PaletteIndex, SpaceEntry } from './model';
 import { resultsSection, searchRowSub } from './results';
-import { directJumpRow, entityRow, searchRow } from './rows';
+import { type Built, directJumpRow, entityRow, searchRow } from './rows';
 import { type BuiltSection, SECTION_CAP } from './sections';
 import type { PaletteState } from './state';
 
@@ -74,6 +74,29 @@ function rootTextSections(env: Env, query: NormalizedQuery): BuiltSection[] {
   ];
 }
 
+const navigateUrl = (built: Built): string | undefined =>
+  built.action?.type === 'navigate' ? built.action.url : undefined;
+
+/**
+ * 検索結果に出た対象は候補から落とす。同じ課題が結果と候補に 2 度並ぶと、
+ * 「どちらを押しても同じ」ことを利用者が確かめる手段が無い。落とすのは検索行より下なので
+ * 選択行は動かない（I4）
+ */
+function withoutShown(
+  candidates: BuiltSection[],
+  results: BuiltSection | undefined,
+): BuiltSection[] {
+  if (results === undefined) return candidates;
+  const shown = new Set(results.rows.flatMap((built) => navigateUrl(built) ?? []));
+  return candidates.map((section) => ({
+    ...section,
+    rows: section.rows.filter((built) => {
+      const url = navigateUrl(built);
+      return url === undefined || !shown.has(url);
+    }),
+  }));
+}
+
 /** 自由語: 強いローカル一致があれば候補が先、無ければ検索行が先（§4・D-26） */
 function textSections(env: Env, term: string, scopeName: string): BuiltSection[] {
   const { index, scope, labels } = env;
@@ -82,10 +105,13 @@ function textSections(env: Env, term: string, scopeName: string): BuiltSection[]
   const pages = matchAll(pageSectionCandidates(env), query, index);
   const commands = matchAll(commandCandidates(env), query, index);
   const search = searchSections(env, term, scopeName);
-  const candidates = [
-    toSection('pages', pages, labels.sections.pages, SECTION_CAP),
-    toSection('commands', commands, labels.sections.commands, SECTION_CAP),
-  ];
+  const candidates = withoutShown(
+    [
+      toSection('pages', pages, labels.sections.pages, SECTION_CAP),
+      toSection('commands', commands, labels.sections.commands, SECTION_CAP),
+    ],
+    search[1],
+  );
   const strong = pages.some((m: Matched) => m.strong) || commands.some((m: Matched) => m.strong);
   // 検索中は結果が検索行の直下に入り、候補はその下に残る（D-3）。強い一致でも順序は変えない
   return strong && env.session === undefined
@@ -134,7 +160,8 @@ function currentProjectKey(stack: Stack): string | undefined {
 }
 
 export function buildSections(state: PaletteState, env: Env, scopeName: string): BuiltSection[] {
-  if (activeCommand(state.stack) !== undefined) return argumentSections(env);
+  const command = activeCommand(state.stack);
+  if (command !== undefined) return argumentSections(env, command);
   const intent = parseQuery(state.input, {
     currentProjectKey: currentProjectKey(state.stack),
     knownProjectKeys: new Set(env.index.projects.map((p) => p.key)),

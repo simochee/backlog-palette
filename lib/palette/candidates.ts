@@ -109,27 +109,43 @@ export const switchSpaceCommand: CommandSegment = {
   label: '',
 };
 
-/** コピー 4 種は課題ページのときだけ、スペースを切り替えはスコープが [space] のときだけ（§4） */
-export function commandCandidates({ index, scope, labels }: Env): Candidate[] {
-  const candidates: Candidate[] = [];
+export const copyIssueCommand: CommandSegment = {
+  kind: 'command',
+  commandId: 'copy-issue',
+  label: '',
+};
+
+/** コピーの 4 種。語を打ったときは直接、空状態では 2 段階コマンドの引数として出す */
+export function copyCandidates({ index, labels }: Env, section: string): Candidate[] {
   const issue = index.currentIssue;
-  if (issue !== undefined) {
-    const copies: [string, string, string][] = [
-      ['copy-key', labels.rows.copyIssueKey, issue.key],
-      ['copy-url', labels.rows.copyIssueUrl, issue.url],
-      ['copy-title', labels.rows.copyIssueTitle, `${issue.key} ${issue.title}`],
-      ['copy-md', labels.rows.copyIssueMarkdown, `[${issue.key} ${issue.title}](${issue.url})`],
-    ];
-    for (const [id, title, text] of copies)
-      candidates.push({
-        built: copyCommandRow(id, title, issue.key, text),
-        target: { text: title },
-        stable: true,
-        context: 'other',
-        activityId: entityId('command', id),
-        pinExact: true,
-      });
-  }
+  if (issue === undefined) return [];
+  const copies: [string, string, string][] = [
+    ['copy-key', labels.rows.copyIssueKey, issue.key],
+    ['copy-url', labels.rows.copyIssueUrl, issue.url],
+    ['copy-title', labels.rows.copyIssueTitle, `${issue.key} ${issue.title}`],
+    ['copy-md', labels.rows.copyIssueMarkdown, `[${issue.key} ${issue.title}](${issue.url})`],
+  ];
+  return copies.map(([id, title, text]) => ({
+    built: copyCommandRow(section, id, title, issue.key, text),
+    target: { text: title },
+    stable: true,
+    context: 'other',
+    activityId: entityId('command', id),
+    pinExact: true,
+  }));
+}
+
+/** 空状態に置く「{課題キー} をコピー ›」。押すと copyCandidates が引数として並ぶ（§8・§9） */
+export function copyIssueRow({ index, labels }: Env): Built | undefined {
+  const issue = index.currentIssue;
+  if (issue === undefined) return undefined;
+  return descendCommandRow({ ...copyIssueCommand, label: labels.rows.copyIssue(issue.key) });
+}
+
+/** コピー 4 種は課題ページのときだけ、スペースを切り替えはスコープが [space] のときだけ（§4） */
+export function commandCandidates(env: Env): Candidate[] {
+  const { scope, labels } = env;
+  const candidates: Candidate[] = [...copyCandidates(env, 'commands')];
   if (scope.kind === 'space')
     candidates.push({
       built: descendCommandRow({ ...switchSpaceCommand, label: labels.rows.switchSpace }),

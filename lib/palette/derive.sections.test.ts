@@ -88,10 +88,10 @@ describe('空状態（§9）の残り', () => {
       id: `X-${i}`,
       key: `X-${i}`,
     }));
-    const d = run({}, { assigned: many, activity: [] });
+    const d = run({}, { assigned: { kind: 'ready', rows: many }, activity: [] });
     expect(section(d, 'assigned')?.rows).toHaveLength(5);
-    expect(section(d, 'assigned')?.meta).toContain(ja.sections.count(7));
-    expect(section(d, 'assigned')?.meta).toContain(ja.sections.more(2));
+    // 取得件数は表示上限で打ち切られるので「N 件」は総数にならない。溢れだけを言う
+    expect(section(d, 'assigned')?.meta).toBe(ja.sections.more(2));
   });
 });
 

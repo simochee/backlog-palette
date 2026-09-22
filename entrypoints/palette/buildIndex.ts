@@ -106,7 +106,7 @@ export async function buildIndex(input: IndexInput): Promise<PaletteIndex> {
     spaces: spacesOf(connected, context),
     projects: projectsOf(cache, context),
     cache: cache.flatMap((entry) => cachedEntryOf(entry) ?? []),
-    assigned: undefined,
+    assigned: { kind: 'loading' },
     activity: [...log, ...visitsAsActivity(cache)],
     transitions: history,
     queryDict: learned,

@@ -14,6 +14,8 @@ export type KeyBinding = {
   /** フッターに出すキー */
   display: readonly Hotkey[];
   label: string;
+  /** 幅が足りないときの短い言い方（§6・D-44） */
+  shortLabel?: string;
   /** 幅が足りないとき大きい方から落とす。↵ は必ず残る（§6） */
   priority: number;
 };
@@ -42,20 +44,22 @@ const priorities: Record<KeyHintId, number> = {
   copyUrl: 6,
 };
 
-function binding(id: KeyHintId, hotkeys: readonly Hotkey[], label: string): KeyBinding;
+type BindingExtras = { display?: readonly Hotkey[]; shortLabel?: string };
+
 function binding(
   id: KeyHintId,
   hotkeys: readonly Hotkey[],
   label: string,
-  display: readonly Hotkey[],
-): KeyBinding;
-function binding(
-  id: KeyHintId,
-  hotkeys: readonly Hotkey[],
-  label: string,
-  display: readonly Hotkey[] = hotkeys,
+  extras: BindingExtras = {},
 ): KeyBinding {
-  return { id, hotkeys, display, label, priority: priorities[id] };
+  return {
+    id,
+    hotkeys,
+    display: extras.display ?? hotkeys,
+    label,
+    ...(extras.shortLabel === undefined ? {} : { shortLabel: extras.shortLabel }),
+    priority: priorities[id],
+  };
 }
 
 /** ↵ の文言は行による: 開く／検索／適用／接続（§6）。載っていない種別は「開く」 */
@@ -96,17 +100,25 @@ export function deriveBindings(state: KeyState, labels: Labels): KeyBinding[] {
 
   if (state.rowCount > 1)
     bindings.push(
-      binding('move', ['ArrowUp', 'ArrowDown', 'Control+N', 'Control+P'], labels.keys.move, [
-        'ArrowUp',
-        'ArrowDown',
-      ]),
+      binding('move', ['ArrowUp', 'ArrowDown', 'Control+N', 'Control+P'], labels.keys.move, {
+        display: ['ArrowUp', 'ArrowDown'],
+      }),
     );
   // 削除待ちかどうかで文言を変えない。1 回目か 2 回目かはヘッダーの予告と取り消し線が言う（§8）
   if (state.popLabel !== undefined)
-    bindings.push(binding('back', ['Backspace'], labels.keys.back(state.popLabel)));
+    bindings.push(
+      binding('back', ['Backspace'], labels.keys.back(state.popLabel), {
+        shortLabel: labels.keys.backShort,
+      }),
+    );
   if (state.hasInput && state.panelAvailable)
     bindings.push(binding('toPanel', ['Mod+ArrowRight'], labels.keys.toPanel));
-  if (state.hasResults) bindings.push(binding('copyUrl', ['Mod+Shift+C'], labels.keys.copyUrl));
+  if (state.hasResults)
+    bindings.push(
+      binding('copyUrl', ['Mod+Shift+C'], labels.keys.copyUrl, {
+        shortLabel: labels.keys.copyUrlShort,
+      }),
+    );
 
   return bindings.toSorted((a, b) => a.priority - b.priority);
 }

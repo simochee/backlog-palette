@@ -12,7 +12,14 @@ import {
   searchingRow,
   searchRow,
 } from './rows';
-import { assignedSection, pagesSection, recentSection } from './sections';
+import {
+  assignedFailedSection,
+  assignedLoadingSection,
+  assignedSection,
+  pagesSection,
+  recentSection,
+  thisIssueSection,
+} from './sections';
 
 /** 根はスペースを積んでいない状態。検索はせず、移動先のスペースと共通ページだけ（D-20） */
 export const rootPath: PathSegmentView[] = [];
@@ -45,6 +52,7 @@ export type StatePartial = {
   input?: string;
   completion?: string;
   sections: SectionView[];
+  placeholder?: string;
   selectedId?: string;
   hasResults?: boolean;
   enterLabel?: string;
@@ -62,7 +70,7 @@ export function view(labels: Labels, partial: StatePartial): PaletteView {
     path: partial.path,
     input: {
       value: input,
-      placeholder: labels.palette.placeholder,
+      placeholder: partial.placeholder ?? labels.palette.placeholder,
       completion: partial.completion,
     },
     armedNotice: partial.armedNotice,
@@ -101,10 +109,14 @@ export const resultRows = (): RowView[] => [
 ];
 
 /** 「ログイン」に前方一致するページは無い。表示キャッシュにある課題が弱い一致として並ぶ */
+/**
+ * 「ログイン」の候補。検索結果に出た対象は候補から落とすので、ここに並ぶのは
+ * 結果に含まれなかった表示キャッシュ由来の課題（D-3: 候補は結果の下に残る）
+ */
 export const loginPages = (labels: Labels): SectionView => ({
   id: 'pages',
   label: labels.sections.pages,
-  rows: [{ ...sampleIssues.login, id: `cache:${sampleIssues.login.id}` }],
+  rows: [{ ...sampleIssues.loginRedirect, id: `cache:${sampleIssues.loginRedirect.id}` }],
 });
 
 /** S0 未接続で何も出せない */
@@ -114,11 +126,34 @@ export const s0 = (labels: Labels): PaletteView =>
     sections: [{ id: 'connect', rows: [connectRow(undefined, labels)] }],
   });
 
-/** S1 空状態（履歴あり） */
+/** S1 空状態（履歴あり）。課題ページから開いたので「この課題」が 2 段目に入る */
 export const s1 = (labels: Labels): PaletteView =>
   view(labels, {
     path: projectPath,
-    sections: [recentSection(labels), pagesSection(labels), assignedSection(labels)],
+    sections: [
+      recentSection(labels),
+      thisIssueSection(labels, 'PROJ-142'),
+      pagesSection(labels),
+      assignedSection(labels),
+    ],
+  });
+
+/** S1'' 担当課題が届く前。見出しと読み込み中の行が先に出る（D-38） */
+export const s1Loading = (labels: Labels): PaletteView =>
+  view(labels, {
+    path: projectPath,
+    sections: [recentSection(labels), pagesSection(labels), assignedLoadingSection(labels)],
+  });
+
+/** S1''' 担当課題の取得に失敗。読み込み中のままにせず理由を行にする（I6・D-38） */
+export const s1Failed = (labels: Labels): PaletteView =>
+  view(labels, {
+    path: projectPath,
+    sections: [
+      recentSection(labels),
+      pagesSection(labels),
+      assignedFailedSection(labels, spaces.nulab.label),
+    ],
   });
 
 /** S1' 空状態（履歴なし） */
@@ -151,7 +186,7 @@ export const s3 = (labels: Labels): PaletteView =>
     input: 'PROJ-12',
     sections: [
       { id: 'direct', rows: [directJumpRow('PROJ-12', labels)] },
-      { id: 'issues', label: '前方一致する課題', rows: [sampleIssues.password] },
+      { id: 'issues', label: labels.sections.issues('PROJ-12'), rows: [sampleIssues.password] },
       { id: 'search', rows: [searchRow('PROJ-12', projects.web.name, labels)] },
     ],
   });

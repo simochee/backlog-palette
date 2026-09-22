@@ -30,8 +30,14 @@ const rowsOf = (d: DerivedPalette, section: string) =>
 const titles = (d: DerivedPalette, section: string) => rowsOf(d, section).map((r) => r.title);
 
 describe('空状態（§9）', () => {
-  it('最近開いた → プロジェクトのページ → 担当中の課題 の順に並ぶ', () => {
-    expect(sectionIds(run({}))).toEqual(['recent', 'pages', 'assigned']);
+  it('最近開いた → この課題 → プロジェクトのページ → 担当中の課題 の順に並ぶ', () => {
+    expect(sectionIds(run({}))).toEqual(['recent', 'issue', 'pages', 'assigned']);
+  });
+
+  it('「この課題」は課題ページのときだけ出て、先頭には来ない（先頭は戻る先）', () => {
+    expect(sectionIds(run({}, { currentIssue: undefined }))).not.toContain('issue');
+    expect(sectionIds(run({}))[0]).toBe('recent');
+    expect(rowsOf(run({}), 'issue')[0]?.hints).toContain('descend');
   });
 
   it('最近開いたは頻度 × 直近性の順で、補足に「学習で並び替え」', () => {
@@ -48,14 +54,14 @@ describe('空状態（§9）', () => {
   it('ページは 5 件で切れ、切れた分は補足の「他 N 件」になる', () => {
     const d = run({});
     expect(rowsOf(d, 'pages')).toHaveLength(5);
-    expect(d.view.sections[1]?.meta).toBe(ja.sections.more(1));
+    expect(d.view.sections.find((s) => s.id === 'pages')?.meta).toBe(ja.sections.more(1));
   });
 });
 
 describe('空状態（§9）: 取得中と案内行', () => {
   it('担当課題は届く前から見出しと読み込み中の行が出て、届いたら件数つきで置き換わる', () => {
-    const pending = run({}, { assigned: undefined });
-    expect(sectionIds(pending)).toEqual(['recent', 'pages', 'assigned']);
+    const pending = run({}, { assigned: { kind: 'loading' } });
+    expect(sectionIds(pending)).toEqual(['recent', 'issue', 'pages', 'assigned']);
     expect(rowsOf(pending, 'assigned')).toHaveLength(1);
     expect(rowsOf(pending, 'assigned')[0]?.hints).toEqual([]);
 
@@ -64,14 +70,28 @@ describe('空状態（§9）: 取得中と案内行', () => {
   });
 
   it('思い出せるものが無ければページの下に案内行が出て、案内行は動作を持たない', () => {
-    const d = run({}, { activity: [], assigned: [] });
-    expect(sectionIds(d)).toEqual(['pages', 'hint']);
+    const d = run({}, { activity: [], assigned: { kind: 'ready', rows: [] } });
+    expect(sectionIds(d)).toEqual(['issue', 'pages', 'hint']);
     expect(rowsOf(d, 'hint')[0]?.hints).toEqual([]);
+  });
+});
+
+describe('空状態（§9）: 取得失敗', () => {
+  it('担当課題が取れなかったら、読み込み中のままにせず理由を行にする', () => {
+    const unauthorized = run({}, { assigned: { kind: 'failed', error: { kind: 'unauthorized' } } });
+    const row = rowsOf(unauthorized, 'assigned')[0];
+    expect(row?.kind).toBe('status');
+    expect(row?.title).toBe(ja.rows.authExpired(nulab.label));
+    expect(row?.hints).toContain('enter');
+
+    const offline = run({}, { assigned: { kind: 'failed', error: { kind: 'offline' } } });
+    expect(rowsOf(offline, 'assigned')[0]?.title).toBe(ja.rows.offline);
+    expect(rowsOf(offline, 'assigned')[0]?.hints).toEqual([]);
   });
 
   it('案内行を出すかは履歴だけで決まり、担当課題が後から届いても消えない', () => {
-    const pending = run({}, { activity: [], assigned: undefined });
-    const arrived = run({}, { activity: [], assigned: [login] });
+    const pending = run({}, { activity: [], assigned: { kind: 'loading' } });
+    const arrived = run({}, { activity: [], assigned: { kind: 'ready', rows: [login] } });
     expect(sectionIds(pending).at(-1)).toBe('hint');
     expect(sectionIds(arrived).at(-1)).toBe('hint');
   });
@@ -86,7 +106,7 @@ describe('空状態（§9）: 取得中と案内行', () => {
   });
 
   it('既定の選択は動作を持つ最初の行で、案内行や読み込み中の行には止まらない', () => {
-    const d = run({}, { activity: [], assigned: undefined });
+    const d = run({}, { activity: [], assigned: { kind: 'loading' } });
     const selected = d.view.sections
       .flatMap((s) => s.rows)
       .find((row) => row.id === d.view.selectedId);

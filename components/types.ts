@@ -66,6 +66,8 @@ export type KeyHint = {
   id: KeyHintId;
   keys: readonly string[];
   label: string;
+  /** 幅が足りないときに使う短い言い方。無ければ label をそのまま使う */
+  shortLabel?: string;
   priority: number;
 };
 

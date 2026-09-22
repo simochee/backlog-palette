@@ -45,7 +45,7 @@ function RowBody({ row, selected, tone }: { row: RowView; selected: boolean; ton
           className={cn(
             'truncate',
             selected && 'font-semibold',
-            tone === 'danger' && 'text-danger',
+            tone === 'danger' && 'text-marker-danger-fg',
             row.kind === 'hint' && 'text-subtle',
           )}
         >

@@ -43,6 +43,8 @@ const view = (state: PaletteState): DerivedPalette =>
   derive(state, index, ja, { platform: 'mac', panelAvailable: true });
 const results = (d: DerivedPalette) => d.view.sections.find((s) => s.id === 'results');
 const ids = (d: DerivedPalette) => d.view.sections.map((s) => s.id);
+const codes = (d: DerivedPalette, id: string) =>
+  (d.view.sections.find((s) => s.id === id)?.rows ?? []).map((r) => r.code);
 
 describe('起動直後（§7.2）', () => {
   it('検索結果は検索行の直下に入り、候補はその下に残る', () => {
@@ -213,6 +215,32 @@ describe('障害は行に閉じる（§7.5・I6）', () => {
     const d = view(failed);
     expect(results(d)?.rows[0]?.title).toBe(ja.rows.rateLimited(nulab.label, 42));
     expect(d.actions.get(statusRowId('nulab'))).toEqual({ type: 'retry' });
+  });
+});
+
+describe('検索結果と候補の重なり', () => {
+  it('検索結果に出た対象は候補セクションから落ちる', () => {
+    const arrived = reduce(started, {
+      type: 'resultsArrived',
+      kind: 'issue',
+      rows: [
+        {
+          kind: 'issue',
+          id: 'PROJ-118',
+          key: 'PROJ-118',
+          title: 'ログイン画面のバリデーションが日本語入力で崩れる',
+          projectName: web.name,
+          url: 'https://nulab.backlog.com/view/PROJ-118',
+          updatedAt: 1,
+          titleMatched: true,
+        },
+      ],
+    });
+    expect(codes(view(started), 'pages')).toContain('PROJ-118');
+
+    const d = view(arrived);
+    expect(codes(d, 'results')).toContain('PROJ-118');
+    expect(codes(d, 'pages')).not.toContain('PROJ-118');
   });
 
   it('オフラインでは検索行の補足が変わるだけで、選択は動かない', () => {
