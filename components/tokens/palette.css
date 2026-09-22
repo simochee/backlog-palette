@@ -28,7 +28,8 @@
 
   --bp-text-default: #1f2937;
   --bp-text-subtle: #5f6673;
-  --bp-text-disabled: #9ca3af;
+  /* 使うのは区切りの「/」と銘だけ。読ませる文字には text-subtle を使う */
+  --bp-text-disabled: #8b93a1;
   --bp-text-inverse: #ffffff;
 
   --bp-border-default: #e5e7eb;
@@ -39,6 +40,12 @@
   --bp-kbd-border: #d1d5db;
   --bp-kbd-text: #374151;
 
+  /*
+   * marker の 6 tone は Tailwind の既定スケール（slate/sky/green/violet/amber/red の
+   * 100・700・500）をそのまま使う。独自に選び直さないのは、この組が地の色に対して
+   * AA を満たすことが検証済みで、6 つの tone すべてで同じ明度差を保つ手間を省けるため。
+   * 役割の名前（info が青である必要はない）は --bp-marker-* の側が持つ
+   */
   --bp-marker-neutral-bg: #f1f5f9;
   --bp-marker-neutral-fg: #475569;
   --bp-marker-neutral-dot: #94a3b8;
@@ -128,7 +135,7 @@
 
   --bp-text-default: #e5e7eb;
   --bp-text-subtle: #a6afbe;
-  --bp-text-disabled: #6b7280;
+  --bp-text-disabled: #7d8698;
   --bp-text-inverse: #111318;
 
   --bp-border-default: #2c313c;

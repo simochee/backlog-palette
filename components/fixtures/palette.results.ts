@@ -102,7 +102,6 @@ export const s7 = (labels: Labels): PaletteView =>
       {
         id: 'results',
         label: labels.sections.results,
-        meta: labels.sections.count(0),
         rows: [
           hintRow('no-results', labels.rows.noResults),
           widenRow(spaces.nulab.label, labels),
@@ -125,7 +124,7 @@ export const s8 = (labels: Labels): PaletteView =>
 export const s9 = (labels: Labels): PaletteView =>
   view(labels, {
     path: [...spacePath, { id: 'command', label: labels.rows.switchSpace }],
-    placeholder: labels.palette.commandPlaceholder(labels.rows.switchSpace),
+    placeholder: labels.palette.commandPlaceholder,
     escLabel: labels.palette.escBack,
     sections: [
       {

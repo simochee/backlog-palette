@@ -30,6 +30,17 @@ const rowsOf = (d: DerivedPalette, section: string) =>
 const titles = (d: DerivedPalette, section: string) => rowsOf(d, section).map((r) => r.title);
 
 describe('空状態（§9）: 期限', () => {
+  it('完了した課題には期限の警告を出さない', () => {
+    const done = {
+      ...login,
+      dueDate: new Date(index.now - 24 * 60 * 60 * 1000).toISOString(),
+      status: { label: '完了', tone: 'done' as const },
+    };
+    expect(
+      rowsOf(run({}, { assigned: { kind: 'ready', rows: [done] } }), 'assigned')[0]?.due,
+    ).toBeUndefined();
+  });
+
   it('担当課題のうち期限が近いものだけ、行に期限が出る（並びは変えない）', () => {
     const soon = { ...login, dueDate: new Date(index.now + 2 * 24 * 60 * 60 * 1000).toISOString() };
     const far = {
@@ -53,7 +64,7 @@ describe('空状態（§9）: 取得失敗', () => {
     expect(row?.hints).toContain('enter');
 
     const offline = run({}, { assigned: { kind: 'failed', error: { kind: 'offline' } } });
-    expect(rowsOf(offline, 'assigned')[0]?.title).toBe(ja.rows.offline);
+    expect(rowsOf(offline, 'assigned')[0]?.title).toBe(ja.rows.assignedOffline);
     expect(rowsOf(offline, 'assigned')[0]?.hints).toEqual([]);
   });
 

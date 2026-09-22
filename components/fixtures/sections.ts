@@ -83,7 +83,7 @@ export function assignedSection(labels: Labels): SectionView {
     meta: labels.sections.count(3),
     rows: [
       { ...sampleIssues.login, due: { label: labels.rows.overdue, tone: 'danger' } },
-      { ...sampleIssues.release, due: { label: labels.rows.dueOn(9, 25), tone: 'warning' } },
+      { ...sampleIssues.pushNotice, due: { label: labels.rows.dueOn(9, 25), tone: 'warning' } },
       sampleIssues.invoice,
     ],
   };

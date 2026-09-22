@@ -13,7 +13,7 @@ export type Labels = {
     armedNotice: (segment: string) => string;
     rootScope: string;
     rootPlaceholder: string;
-    commandPlaceholder: (command: string) => string;
+    commandPlaceholder: string;
   };
   keys: {
     open: string;
@@ -64,6 +64,7 @@ export type Labels = {
     spaceSettings: string;
     typeHint: string;
     assignedFailed: string;
+    assignedOffline: string;
     connectThis: string;
     connectSpace: (space: string) => string;
     authExpired: (space: string) => string;

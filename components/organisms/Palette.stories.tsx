@@ -225,7 +225,7 @@ export const S12: Story = {
 };
 
 export const S13: Story = {
-  name: 'S13 #もば でプロジェクト行を選択中 — フッターの ⇥ ラベルが「スコープに積む」／Tab で onTake、Enter で onAction',
+  name: 'S13 #もば でプロジェクト行を選択中 — フッターの ⇥ ラベルが「ここに絞り込む」／Tab で onTake、Enter で onAction',
   args: s13(ja),
   play: async ({ args, canvasElement }) => {
     await expect(hintLabel(canvasElement, 'take')).toContain(ja.keys.stack);

@@ -38,6 +38,20 @@ export const Issue: Story = {
   args: { row: { ...sampleIssues.payment, space: { label: spaces.nulab.label } } },
 };
 
+export const Overdue: Story = {
+  name: '期限切れの課題は危険色の期限が並ぶ',
+  args: {
+    row: { ...sampleIssues.login, due: { label: ja.rows.overdue, tone: 'danger' } },
+  },
+};
+
+export const DueSoon: Story = {
+  name: '期限が 7 日以内の課題は警告色の日付が並ぶ',
+  args: {
+    row: { ...sampleIssues.login, due: { label: ja.rows.dueOn(9, 25), tone: 'warning' } },
+  },
+};
+
 export const Page: Story = {
   name: 'ページ',
   args: { row: pageRow('board', 'ボード', projects.web.name) },
