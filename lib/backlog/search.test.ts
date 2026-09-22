@@ -97,27 +97,6 @@ describe('課題の検索', () => {
     });
   });
 
-  it('未割り当ての課題（assignee が null）が混ざっても、検索は失敗せず行を返す', async () => {
-    const { api, queryClient, search } = setup();
-    api.getIssues.mockResolvedValueOnce([
-      ...ISSUES,
-      {
-        projectId: 101,
-        issueKey: 'PROJ-150',
-        summary: 'ログインの文言',
-        issueType: { name: 'タスク', color: '#7ea800' },
-        status: { id: 1, name: '未対応' },
-        assignee: null,
-        updatedUser: user,
-        updated,
-      },
-    ]);
-
-    const rows = await queryClient.query(search.issues('ログイン', web));
-
-    expect(rows.map((row) => row.key)).toContain('PROJ-150');
-  });
-
   it('同じ語と範囲で再び引いても API を叩かない', async () => {
     const { api, queryClient, search } = setup();
 
@@ -143,6 +122,29 @@ describe('課題の検索', () => {
     expect(api.getIssues).toHaveBeenCalledWith(
       expect.objectContaining({ projectId: [101, 102, 103], statusId: [1], assigneeId: [7] }),
     );
+  });
+});
+
+describe('未割り当ての課題', () => {
+  it('未割り当ての課題（assignee が null）が混ざっても、検索は失敗せず行を返す', async () => {
+    const { api, queryClient, search } = setup();
+    api.getIssues.mockResolvedValueOnce([
+      ...ISSUES,
+      {
+        projectId: 101,
+        issueKey: 'PROJ-150',
+        summary: 'ログインの文言',
+        issueType: { name: 'タスク', color: '#7ea800' },
+        status: { id: 1, name: '未対応' },
+        assignee: null,
+        updatedUser: user,
+        updated,
+      },
+    ]);
+
+    const rows = await queryClient.query(search.issues('ログイン', web));
+
+    expect(rows.map((row) => row.key)).toContain('PROJ-150');
   });
 });
 

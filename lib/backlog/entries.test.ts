@@ -34,7 +34,9 @@ describe('課題を行の形にする', () => {
       url: 'https://demo.backlog.jp/view/PROJ-123',
     });
   });
+});
 
+describe('担当者の無い課題', () => {
   it('担当者が無い課題は assignee を持たない', () => {
     const issue = {
       projectId: 101,
