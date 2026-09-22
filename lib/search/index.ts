@@ -2,6 +2,7 @@ export * from './ids';
 export {
   arrive,
   compareRows,
+  endedOffline,
   errorOf,
   fail,
   isDone,

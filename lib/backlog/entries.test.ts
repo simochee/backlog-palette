@@ -34,7 +34,9 @@ describe('課題を行の形にする', () => {
       url: 'https://demo.backlog.jp/view/PROJ-123',
     });
   });
+});
 
+describe('担当者の無い課題', () => {
   it('担当者が無い課題は assignee を持たない', () => {
     const issue = {
       projectId: 101,
@@ -42,6 +44,21 @@ describe('課題を行の形にする', () => {
       summary: 's',
       issueType: { name: 'タスク', color: '#7ea800' },
       status: { id: 1, name: '未対応' },
+      updatedUser: user('鈴木'),
+      updated: '2026-09-10T00:00:00Z',
+    };
+
+    expect(issueEntry(HOST, issue, project)).not.toHaveProperty('assignee');
+  });
+
+  it('API が未割り当てを null で返した課題も assignee を持たない', () => {
+    const issue = {
+      projectId: 101,
+      issueKey: 'PROJ-2',
+      summary: 's',
+      issueType: { name: 'タスク', color: '#7ea800' },
+      status: { id: 1, name: '未対応' },
+      assignee: null,
       updatedUser: user('鈴木'),
       updated: '2026-09-10T00:00:00Z',
     };

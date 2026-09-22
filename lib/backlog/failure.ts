@@ -3,6 +3,7 @@ import { Error as BacklogErrors } from 'backlog-js';
 import type { SearchError } from '@/lib/search/types';
 
 import { RateLimitExceededError, readRateObservation } from './rateLimit';
+import { TransportError } from './transportError';
 
 /** API 呼び出しの失敗を行に閉じるための分類（I6、palette.md §7.5）。検索の SearchError と同じ */
 export type ApiFailure = SearchError;
@@ -11,11 +12,6 @@ function secondsUntilReset(response: Response, now: number): number {
   const { reset } = readRateObservation(response);
   if (reset === undefined) return 60;
   return Math.max(1, Math.ceil(reset - now / 1000));
-}
-
-// Node の navigator は onLine を持たない。無いときに「オフライン」と誤判定しないための in 検査
-function isOffline(): boolean {
-  return typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine;
 }
 
 /** 鍵を持たないスペースへ問い合わせた。パレットでは未接続・再接続の行になる */
@@ -44,7 +40,6 @@ export function toApiFailure(error: unknown, now: number = Date.now()): ApiFailu
     }
     return { kind: 'failed' };
   }
-  // fetch はネットワーク断で TypeError を投げる。onLine が false ならそれを信じる
-  if (isOffline() || error instanceof TypeError) return { kind: 'offline' };
+  if (error instanceof TransportError) return { kind: 'offline' };
   return { kind: 'failed' };
 }
