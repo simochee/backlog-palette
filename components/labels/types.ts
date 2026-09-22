@@ -121,6 +121,11 @@ export type Labels = {
       issue: string;
       wiki: string;
       document: string;
+      /** 組み込み 4 種の名前。プロジェクトが「すべて」のときはマスタを引かずにこれを出す */
+      statusOpen: string;
+      statusInProgress: string;
+      statusResolved: string;
+      statusClosed: string;
     };
     /** 種別の取得が失敗した（5xx など）。再接続でもレート超過でもない */
     failed: string;

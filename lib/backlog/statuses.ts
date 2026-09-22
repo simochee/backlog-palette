@@ -4,6 +4,13 @@
  */
 export const CLOSED_STATUS_ID = 4;
 
+export const BUILTIN_STATUS_IDS = [1, 2, 3, CLOSED_STATUS_ID] as const;
+
+/** 組み込み 4 種か。組み込みの ID だけが、プロジェクトを変えても同じステータスを指す */
+export function isBuiltinStatus(id: number): boolean {
+  return (BUILTIN_STATUS_IDS as readonly number[]).includes(id);
+}
+
 export type StatusRef = { id: number };
 
 /** プロジェクト ID → そのプロジェクトのステータス一覧 */
