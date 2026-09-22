@@ -26,7 +26,7 @@ type Input = {
 type RowCallbacks = Pick<PaletteCallbacks, 'onAction' | 'onTake'>;
 
 /** 行 id → 動作の解決は derive が済ませている。ここは Map を引いて実行するだけ（I1 を container で破らない） */
-function useRowCallbacks({ store, derived, env, pending }: Input): RowCallbacks {
+function rowCallbacks({ store, derived, env, pending }: Input): RowCallbacks {
   const onAction = (id: string, opts: { newTab: boolean }) => {
     const action = derived.actions.get(id);
     if (action === undefined) return;
@@ -42,9 +42,9 @@ function useRowCallbacks({ store, derived, env, pending }: Input): RowCallbacks 
 }
 
 /** presenter のコールバックを Store のアクションと行の動作に写す */
-export function usePaletteCallbacks(input: Input): PaletteCallbacks {
+export function paletteCallbacks(input: Input): PaletteCallbacks {
   const { store, env, pending, stack, close } = input;
-  const rows = useRowCallbacks(input);
+  const rows = rowCallbacks(input);
 
   return {
     ...rows,

@@ -13,4 +13,4 @@ export { entityId } from './model';
 export { reduce } from './reduce';
 export type { RowAction } from './rows';
 export { initialState, type PaletteAction, type PaletteState, type TakeTarget } from './state';
-export { createPaletteStore, type PaletteStore } from './store';
+export { createPaletteStore, type PaletteStore, type Readable } from './store';

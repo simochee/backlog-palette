@@ -1,7 +1,9 @@
+import { createStore } from '@tanstack/store';
+
 import type { Labels } from '@/components/labels';
 import { toApiFailure } from '@/lib/backlog/failure';
 import { resolveLanguage } from '@/lib/i18n/language';
-import type { AssignedState, PaletteIndex } from '@/lib/palette';
+import type { AssignedState, PaletteIndex, Readable } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
 import { settings } from '@/lib/storage/palette-items';
 
@@ -30,8 +32,11 @@ export type PaletteSession = {
   /** 共有 URL で開いたときに復元する検索（palette.md §7.6） */
   restore: Restore | undefined;
   runner: SearchRunner;
-  /** 担当課題。API から届いたら空状態の末尾に足す（palette.md §9）。未接続なら undefined のまま */
-  assigned: Promise<AssignedState>;
+  /**
+   * 担当課題。API から届いたら空状態の末尾に足す（palette.md §9）。
+   * promise にして use() で待つと、届くまでパレットごと描けない。表示キャッシュだけで先に描く
+   */
+  assigned: Readable<AssignedState>;
 };
 
 /*
@@ -47,6 +52,12 @@ async function assignedFor(host: string, connected: boolean): Promise<AssignedSt
   } catch (error) {
     return { kind: 'failed', error: toApiFailure(error) };
   }
+}
+
+function assignedStoreFor(host: string, connected: boolean): Readable<AssignedState> {
+  const store = createStore<AssignedState>({ kind: 'loading' });
+  void assignedFor(host, connected).then((state) => store.setState(() => state));
+  return store;
 }
 
 export async function createSession(): Promise<PaletteSession | undefined> {
@@ -67,6 +78,6 @@ export async function createSession(): Promise<PaletteSession | undefined> {
     stack: initialStackOf(context, connected.get(context.spaceHost)),
     restore: restoreFrom(context.href, context.spaceHost),
     runner: backlog.runner,
-    assigned: assignedFor(context.spaceHost, connected.has(context.spaceHost)),
+    assigned: assignedStoreFor(context.spaceHost, connected.has(context.spaceHost)),
   };
 }
