@@ -404,3 +404,49 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 | 1 つの OAuth クライアントで複数スペースを認可できるか | ● **できる。**あるスペースで登録した client_id を、他のスペースの認可エンドポイントにそのまま使える |
 
 **含意**: スペースを増やすたびの OAuth アプリ登録が要らない。2 つ目以降のスペースも「接続」1 回で繋がるので、スペース横断（実装プラン §1）が OAuth のまま成立する。
+
+## 7. ページの見た目（プロジェクトテーマ）
+
+出典: `https://assets.backlog.com/playassets/1.84.0/styles/ReactApp.css`（● 2026-09-23 に取得して読んだ。
+版が上がると URL の `1.84.0` が変わる）と、実機の DevTools（● 2026-09-23、theme-orange）。
+
+### 7.1 宣言のされ方
+
+| 事実 | 内容 |
+|---|---|
+| 既定値 | `:root` にデザイントークン一式を宣言する。テーマ変数の既定は緑（Main `#4caf93` / Accent `#2c9a7a` / Link `#00836b` ほか） |
+| プロジェクトテーマ | `body:not(.Page--error):not(.Page--add-space).theme-<name>` が `--defaultColor*` を上書きする |
+| テーマ名 | aqua / azuki / black / gray / orange / pink / purple / sakura / ultramarine / army / ethnic / leopard / pink-leopard / acrylic（14 種）。クラスが無ければ `:root` の緑 |
+| ダークモード | 祖先に `.dark-mode` があると `.dark-mode body:not(...)` が text / border / background 系と `--defaultColor*` を再定義する。テーマごとの上書きもある（`.dark-mode body:not(...).theme-<name>`）。ダークのテーマ上書きは Main / Accent / Accent-rgb / Link だけで、Base / Base-rgb / Base-2 は全テーマ共通で `[class*=theme-]` が面の色に寄せる。Sub-1 はライトのテーマ値が残る |
+| 値の形 | 色は `#rrggbb`（大文字小文字は混在）。`-rgb` 付きは `r,g,b`（空白なし）。ダークの Base / Base-2 は `var(--backgroundColor*)` 参照で、computed style では解決後の hex が返る |
+| 片寄った変数 | `--defaultColorMainInverse` はダークの black / gray / army / acrylic にだけある |
+
+theme-orange の値（ライト / ダーク）:
+
+| 変数 | ライト | ダーク |
+|---|---|---|
+| `--defaultColorMain` | `#ea733b` | `#d4642f` |
+| `--defaultColorAccent` | `#de5514` | `#C3542D` |
+| `--defaultColorAccent-rgb` | `222,85,20` | `210,93,60` |
+| `--defaultColorBase` | `#f3e6e2` | `#3e3e3e`（`var(--backgroundColorWeak)`） |
+| `--defaultColorBase-rgb` | `243,230,226` | `62,62,62` |
+| `--defaultColorBase-2` | `#f7ebe9` | `#333333`（`var(--backgroundColorSchemeBase)`） |
+| `--defaultColorLink` | `#c14524` | `#ff9454` |
+| `--defaultColorSub-1` | `#ECA08B` | `#ECA08B` |
+| `--backgroundColorSchemeBase` | `#ffffff` | `#333333` |
+
+### 7.2 Backlog 本体での使い分け（ReactApp.css の参照箇所から）
+
+| 変数 | 主な使われ方 |
+|---|---|
+| Accent | 主ボタンの塗りと縁（`.button--primary`）、アイコンの fill、選択中の下線。参照数が最多 |
+| Accent-rgb | 選択面 `rgba(…, .25)`（`.selectbox--multiple__item.is_selected`）、ホバー面 `rgba(…, .075)`〜`.2` |
+| `--backgroundColorSchemeBase` | 主ボタンの文字色（Accent の塗りの上） |
+| Link | リンク文字色、入力欄フォーカスの縁と `box-shadow: 0 0 3px` |
+| Base / Base-2 | 淡い面（選択済み絵文字、既定ボタンのホバー面） |
+| Main | ヘッダーなど面の塗り。参照は少ない |
+| Sub-1 | 一部の縁と面。参照は少ない |
+
+未確認:
+
+- `.dark-mode` が付く要素（セレクタからは body の祖先としか言えない）
