@@ -1,5 +1,6 @@
 import type { FrameLocator, Page } from '@playwright/test';
 
+import { ja } from '../components/labels/ja.ts';
 import { expect, HOTKEY, PALETTE_FRAME, test } from './fixtures/extension.ts';
 
 async function openPalette(page: Page, path: string): Promise<FrameLocator> {
@@ -14,7 +15,9 @@ async function openPalette(page: Page, path: string): Promise<FrameLocator> {
 const row = (frame: FrameLocator, title: string) =>
   frame.getByRole('option').filter({ has: frame.getByTitle(title, { exact: true }) });
 
-const pagesSection = (frame: FrameLocator) => frame.getByRole('group', { name: /^ページ/u });
+/** 見出しは辞書から引く。文言を直書きすると、改名したとき E2E だけが黙って落ちる */
+const pagesSection = (frame: FrameLocator) =>
+  frame.getByRole('group', { name: new RegExp(`^${ja.sections.pages}`, 'u') });
 
 /**
  * 「と」はドキュメント・プロジェクト設定・プロジェクトホーム・ガントチャートに部分一致し、
