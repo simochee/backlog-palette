@@ -176,6 +176,16 @@ describe('失敗の分類（応答以外）', () => {
     expect(failure).toEqual({ kind: 'offline' });
   });
 
+  it('応答は届いたが本文が JSON として読めないときはオフラインにならない', async () => {
+    const { fetch } = fakeFetch(
+      () => new Response('<html>', { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
+
+    const failure = await client(fetch).getMyself().catch(toApiFailure);
+
+    expect(failure).toEqual({ kind: 'failed' });
+  });
+
   it('応答を受け取った後の加工で投げた TypeError はオフラインにならない', () => {
     expect(toApiFailure(new TypeError("Cannot read properties of null (reading 'name')"))).toEqual({
       kind: 'failed',
