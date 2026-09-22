@@ -23,7 +23,7 @@ export async function openingSearch(
     rememberSearch(handedOff);
     return handedOff;
   }
-  if (current.scope !== undefined) return undefined;
+  if (canRun(current)) return undefined;
   const last = await panelLastSearch.getValue();
   if (last === null) return undefined;
   if (tabSpace !== undefined && last.scope.spaceId !== tabSpace) return undefined;
