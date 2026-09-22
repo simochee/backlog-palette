@@ -1,5 +1,6 @@
 import { createStore, type Store } from '@tanstack/store';
 
+import type { FocusHandle } from '@/components/types';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import type { HostChannel } from '@/lib/messaging/hostChannel';
 import { createPaletteStore, type PaletteStore } from '@/lib/palette';
@@ -20,7 +21,7 @@ import { paletteTelemetry } from './telemetry.ts';
  */
 const PANEL_ALWAYS_AVAILABLE = import.meta.env.BROWSER !== 'firefox';
 
-/** openedAt は開いた時刻。presenter が入力欄へフォーカスを戻す合図に使う */
+/** openedAt は開いた時刻。サイドバーの開閉の答えがどの open のものかを見分ける */
 export type Surface = { open: boolean; openedAt: number; panelAvailable: boolean };
 
 /** スペースの URL でなければ null。パレットを持たない（I7） */
@@ -116,12 +117,39 @@ function closeOnPaletteHotkey(close: () => void): void {
   );
 }
 
+type HostHandlers = { show: (colorScheme: string | undefined) => void; hide: () => void };
+
+function listenToHost(channel: HostChannel, { show, hide }: HostHandlers): void {
+  channel.subscribe((message) => {
+    if (message.t === 'theme')
+      applyBacklogTheme(document.documentElement, parseBacklogTheme(message.theme));
+    else if (message.t === 'close') hide();
+    else show(message.ctx.colorScheme);
+  });
+}
+
+/** presenter の focus() の置き場。描画を待たずに、open を受けた時点で呼べるようにする */
+function createFocusSlot() {
+  let handle: FocusHandle | null = null;
+  return {
+    focus: () => handle?.focus(),
+    attach: (next: FocusHandle | null) => {
+      handle = next;
+      return () => {
+        handle = null;
+      };
+    },
+  };
+}
+
 export type PaletteController = {
   session: Readable<Supplied>;
   surface: Readable<Surface>;
   store: PaletteStore;
   pending: Pending;
   close: () => void;
+  /** presenter の ref に渡す。open を受けた時点で、描画を待たずに入力欄へフォーカスを戻す */
+  attachPalette: (handle: FocusHandle | null) => () => void;
 };
 
 /**
@@ -143,6 +171,7 @@ export function startPaletteController(channel: HostChannel): PaletteController 
     panelAvailable: PANEL_ALWAYS_AVAILABLE,
   });
   const supply = createSessionSupply();
+  const input = createFocusSlot();
 
   const hide = () => {
     surface.setState((previous) => ({ ...previous, open: false }));
@@ -158,16 +187,12 @@ export function startPaletteController(channel: HostChannel): PaletteController 
     const openedAt = Date.now();
     surface.setState(() => ({ open: true, openedAt, panelAvailable: PANEL_ALWAYS_AVAILABLE }));
     if (!PANEL_ALWAYS_AVAILABLE) void askPanelAvailable(surface, openedAt);
+    input.focus();
     paletteTelemetry.opened();
     supply.whenReady((session) => applyOpen(session, { channel, store, pending, close }));
   };
 
-  channel.subscribe((message) => {
-    if (message.t === 'theme')
-      applyBacklogTheme(document.documentElement, parseBacklogTheme(message.theme));
-    else if (message.t === 'close') hide();
-    else show(message.ctx.colorScheme);
-  });
+  listenToHost(channel, { show, hide });
   /*
    * 用意は iframe の読み込み時と閉じた時にしか走らない。同じページの貼り付けバーで接続すると、
    * 次の ⌘K が接続前に用意した「未接続」の材料で開いてしまうため、接続の変化でも用意し直す
@@ -175,5 +200,12 @@ export function startPaletteController(channel: HostChannel): PaletteController 
   watchConnectedSpaces(() => void supply.refresh());
   closeOnPaletteHotkey(close);
 
-  return { session: supply.current, surface, store, pending, close };
+  return {
+    session: supply.current,
+    surface,
+    store,
+    pending,
+    close,
+    attachPalette: input.attach,
+  };
 }

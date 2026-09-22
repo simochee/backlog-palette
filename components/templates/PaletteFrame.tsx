@@ -1,4 +1,4 @@
-import { type ReactNode, useRef } from 'react';
+import type { ReactNode } from 'react';
 
 import { useHasMoreBelow } from '@/components/hooks/useHasMoreBelow';
 
@@ -15,8 +15,7 @@ type PaletteFrameProps = {
  * 幅は min(--bp-width-palette, 親の幅) で、親の左右余白は Overlay が持つ。
  */
 export function PaletteFrame({ header, list, footer, width, ...aria }: PaletteFrameProps) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const hasMoreBelow = useHasMoreBelow(listRef);
+  const [hasMoreBelow, listRef] = useHasMoreBelow();
 
   return (
     <div

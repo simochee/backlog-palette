@@ -48,9 +48,9 @@ function useRetryWhenOnline(offline: boolean, retry: () => void) {
 type OpenPaletteProps = { session: PaletteSession; controller: PaletteController };
 
 function OpenPalette({ session, controller }: OpenPaletteProps) {
-  const { store, pending, close } = controller;
+  const { store, pending, close, attachPalette } = controller;
   const { labels, context, runner } = session;
-  const { open, openedAt, panelAvailable } = useSelector(controller.surface);
+  const { open, panelAvailable } = useSelector(controller.surface);
   const state = useSelector(store);
   const assigned = useSelector(session.assigned);
   // 担当課題は届いた時点で索引に足す。届くまでは表示キャッシュだけで描く（palette.md §9）
@@ -78,7 +78,7 @@ function OpenPalette({ session, controller }: OpenPaletteProps) {
 
   return (
     <LabelsProvider labels={labels}>
-      <Palette {...derived.view} {...callbacks} focusToken={openedAt} />
+      <Palette {...derived.view} {...callbacks} ref={attachPalette} />
     </LabelsProvider>
   );
 }

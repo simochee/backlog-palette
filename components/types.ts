@@ -14,6 +14,9 @@ export const rowKinds = [
   'external',
   'hint',
 ] as const;
+/** 入力欄へフォーカスを戻す口。container が「開いた」「検索を渡された」時点で呼ぶ */
+export type FocusHandle = { focus: () => void };
+
 export type RowKind = (typeof rowKinds)[number];
 
 export const tones = ['neutral', 'info', 'success', 'done', 'warning', 'danger'] as const;

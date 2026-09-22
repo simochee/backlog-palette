@@ -1,7 +1,6 @@
-import { type ReactNode, useRef } from 'react';
+import type { ReactNode } from 'react';
 
-import { useElementWidth } from '@/components/hooks/useElementWidth';
-import { useTokenLength } from '@/components/hooks/useTokenLength';
+import { useNarrowerThan } from '@/components/hooks/useNarrowerThan';
 
 type PanelLayoutProps = {
   input: ReactNode;
@@ -26,10 +25,7 @@ export function PanelLayout({
   footer,
   ...aria
 }: PanelLayoutProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const width = useElementWidth(rootRef);
-  const threshold = useTokenLength(rootRef, '--bp-breakpoint-panel-compact');
-  const compact = width !== undefined && threshold !== undefined && width < threshold;
+  const [compact, rootRef] = useNarrowerThan('--bp-breakpoint-panel-compact');
 
   return (
     <div

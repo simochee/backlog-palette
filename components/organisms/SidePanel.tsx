@@ -1,5 +1,13 @@
 import { Search } from 'lucide-react';
-import { type KeyboardEvent, type RefObject, useEffect, useId, useRef } from 'react';
+import {
+  type KeyboardEvent,
+  type Ref,
+  type RefObject,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 
 import { type Labels, useLabels } from '@/components/labels';
 import { PaletteInput } from '@/components/molecules/PaletteInput';
@@ -9,7 +17,7 @@ import { PaletteFooter } from '@/components/organisms/PaletteFooter';
 import { RecentQueries } from '@/components/organisms/RecentQueries';
 import { StatusStrip } from '@/components/organisms/StatusStrip';
 import { PanelLayout } from '@/components/templates/PanelLayout';
-import type { PanelView } from '@/components/types';
+import type { FocusHandle, PanelView } from '@/components/types';
 
 import { usePanelKeyHandler } from './SidePanel.handler';
 
@@ -30,8 +38,8 @@ export type SidePanelProps = PanelView &
   SidePanelCallbacks & {
     labels?: Partial<Labels>;
     compact?: boolean;
-    /** 値が変わるたびに入力欄へフォーカスを戻す。container はパレットから検索を渡されるたびに新しい値を渡す */
-    focusToken?: unknown;
+    /** container はパレットから検索を渡されるたびに focus() を呼ぶ */
+    ref?: Ref<FocusHandle>;
   };
 
 function SearchField({
@@ -89,22 +97,21 @@ function PanelFilters({ props }: { props: SidePanelProps }) {
  * パレットと違い window の focus では戻さない。パネルはフィルターバーにもフォーカスが
  * 移る面で、戻すとフィルターを操作している最中に入力欄へ引き戻される
  */
-function useFocusOnToken(inputRef: RefObject<HTMLInputElement | null>, focusToken: unknown) {
+function useFocusOnMount(inputRef: RefObject<HTMLInputElement | null>) {
   useEffect(() => {
     inputRef.current?.focus();
-    // focusToken は effect の中で読まないが、値が変わったことが「検索を渡された」合図になる
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [inputRef, focusToken]);
+  }, [inputRef]);
 }
 
-export function SidePanel(props: SidePanelProps) {
+export function SidePanel({ ref, ...props }: SidePanelProps) {
   const labels = useLabels(props.labels);
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = `${useId()}list`;
   const handleKeyDown = usePanelKeyHandler(props, listId);
   const { selectedId } = props;
 
-  useFocusOnToken(inputRef, props.focusToken);
+  useFocusOnMount(inputRef);
+  useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
 
   const pickRecent = (query: string) => {
     props.onInputChange(query);
