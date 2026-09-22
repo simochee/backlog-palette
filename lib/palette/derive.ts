@@ -83,6 +83,16 @@ function armedSegment(state: PaletteState) {
   return state.stack.armedForDelete ? state.stack.segments.at(-1) : undefined;
 }
 
+function envOf(
+  state: PaletteState,
+  index: PaletteIndex,
+  labels: Labels,
+  options: DeriveOptions,
+): Env {
+  const scope = scopeOf(state.stack);
+  return { index, scope, labels, session: state.session, panelAvailable: options.panelAvailable };
+}
+
 export function derive(
   state: PaletteState,
   index: PaletteIndex,
@@ -90,7 +100,7 @@ export function derive(
   options: DeriveOptions,
 ): DerivedPalette {
   const scope = scopeOf(state.stack);
-  const env: Env = { index, scope, labels, session: state.session };
+  const env = envOf(state, index, labels, options);
   const { sections, rows } = capSections(
     buildSections(state, env, scopeLabel(state.stack, labels)),
     labels,

@@ -13,13 +13,36 @@ import { type ActionEnv, type Pending, restartSearch } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import type { PaletteSession } from './createSession.ts';
 import { hostChannel } from './hostChannel.ts';
+import { isPanelAvailable } from './panel.ts';
 import { usePaletteSession } from './session.ts';
 
 const TOAST_LIFETIME_MS = 2000;
 const noop = () => {};
 
-/** Firefox はサイドバーをスクリプトから開けない。開いているときだけ出す判定は M6（surfaces.md §5.5） */
-const PANEL_AVAILABLE = import.meta.env.BROWSER !== 'firefox';
+/*
+ * Firefox はサイドバーをスクリプトから開けないので、開いているときだけ ⌘→ と panel 行を出す
+ * （surfaces.md §5.5）。材料は開く前に用意しておくので、開閉は開いた時点で訊き直す。
+ * 答えが届くまでは出さない。出してから消すと、押せないキーを一瞬見せることになる（I2）
+ */
+const PANEL_ALWAYS_AVAILABLE = import.meta.env.BROWSER !== 'firefox';
+
+function usePanelAvailable(openedAt: number): boolean {
+  const [answer, setAnswer] = useState({ openedAt: -1, available: false });
+  useEffect(() => {
+    let alive = true;
+    const ask = async () => {
+      if (PANEL_ALWAYS_AVAILABLE) return;
+      const available = await isPanelAvailable();
+      if (alive) setAnswer({ openedAt, available });
+    };
+    void ask();
+    return () => {
+      alive = false;
+    };
+  }, [openedAt]);
+  // 前に開いたときの答えは使わない。その後にサイドバーが閉じているかもしれない
+  return PANEL_ALWAYS_AVAILABLE || (answer.openedAt === openedAt && answer.available);
+}
 
 function useCloseOnHotkey(close: () => void) {
   useEffect(() => {
@@ -95,13 +118,13 @@ type OpenPaletteProps = {
 function OpenPalette({ session, store, pending, open, openedAt, close }: OpenPaletteProps) {
   const { labels, context, runner } = session;
   const index = useIndexWithAssigned(session);
+  const panelAvailable = usePanelAvailable(openedAt);
   const state = useSelector(store, (snapshot) => snapshot);
   useToastExpiry(store, state.toast);
 
   const derived = useMemo(
-    () =>
-      derive(state, index, labels, { platform: detectPlatform(), panelAvailable: PANEL_AVAILABLE }),
-    [state, index, labels],
+    () => derive(state, index, labels, { platform: detectPlatform(), panelAvailable }),
+    [state, index, labels, panelAvailable],
   );
   const env = useMemo<ActionEnv>(
     () => ({

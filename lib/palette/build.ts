@@ -23,7 +23,14 @@ import { type Built, directJumpRow, entityRow, searchRow } from './rows';
 import { type BuiltSection, SECTION_CAP } from './sections';
 import type { PaletteState } from './state';
 
-export type Env = { index: PaletteIndex; scope: Scope; labels: Labels; session?: SearchSession };
+export type Env = {
+  index: PaletteIndex;
+  scope: Scope;
+  labels: Labels;
+  session?: SearchSession;
+  /** サイドパネルへ渡せるか。渡せないときは 0 件の panel 行を出さない（surfaces.md §5.5・I2） */
+  panelAvailable: boolean;
+};
 
 function currentSpace(index: PaletteIndex, scope: Scope): SpaceEntry | undefined {
   return scope.kind === 'root' ? undefined : index.spaces.find((s) => s.id === scope.spaceId);
