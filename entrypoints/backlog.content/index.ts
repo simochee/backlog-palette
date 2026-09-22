@@ -4,6 +4,7 @@ import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/ba
 import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
 import { SHARE_FRAGMENT_KEY } from '@/lib/share';
+import { BACKLOG_DARK_MODE_CLASS, type ColorScheme } from '@/lib/theme/colorScheme';
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
@@ -17,7 +18,13 @@ import { summaryFromTitle } from './title.ts';
  */
 function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameElement {
   const iframe = document.createElement('iframe');
-  iframe.src = src;
+  /*
+   * テーマは open でも届くが、open は iframe を表示した後に非同期で着く。それだけだと
+   * ダークの Backlog で最初の ⌘K に一瞬ライトが写るので、読み込む時点の値も URL で渡す
+   */
+  const url = new URL(src);
+  url.searchParams.set('colorScheme', readColorScheme());
+  iframe.src = url.href;
   iframe.dataset.backlogPalette = '';
   /*
    * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
@@ -41,6 +48,10 @@ function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameEle
   return iframe;
 }
 
+function readColorScheme(): ColorScheme {
+  return document.documentElement.classList.contains(BACKLOG_DARK_MODE_CLASS) ? 'dark' : 'light';
+}
+
 const ISSUE_PATH = /^\/view\/([A-Z][A-Z0-9_]*-\d+)/u;
 
 function readPageContext(): PageContext {
@@ -52,6 +63,7 @@ function readPageContext(): PageContext {
     spaceKey: spaceKeyOf(origin),
     projectKey: issueKey?.slice(0, issueKey.lastIndexOf('-')),
     issueKey,
+    colorScheme: readColorScheme(),
   };
 }
 

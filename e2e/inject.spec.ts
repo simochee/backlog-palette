@@ -6,7 +6,7 @@ test.describe('パレット iframe の先行注入', () => {
 
     const iframe = page.locator(PALETTE_FRAME);
     await iframe.waitFor({ state: 'attached' });
-    await expect(iframe).toHaveAttribute('src', /^chrome-extension:\/\/.+\/palette\.html$/u);
+    await expect(iframe).toHaveAttribute('src', /^chrome-extension:\/\/.+\/palette\.html\?colorScheme=light$/u);
     await expect(iframe).toBeHidden();
 
     // use_dynamic_url: true でも content script が組んだ静的 URL で中身が読み込まれること

@@ -4,6 +4,7 @@ import type { HostChannel } from '@/lib/messaging/hostChannel';
 import { createPaletteStore, type PaletteStore } from '@/lib/palette';
 
 import { type Pending, restartSearch } from './actions.ts';
+import { applyBacklogColorScheme } from './colorScheme.ts';
 import { createSession, type PaletteSession } from './createSession.ts';
 import { handOffToPanel } from './panel.ts';
 import { watchConnectedSpaces } from './spaces.ts';
@@ -61,6 +62,23 @@ function useSessionSupply() {
   return { session, latest, inflight, refresh };
 }
 
+function openWhenReady(
+  latest: PaletteSession | null,
+  inflight: Promise<PaletteSession | undefined> | null,
+  open: (ready: PaletteSession | null) => void,
+) {
+  /*
+   * 用意済みなら同期で開く。await を挟むと、その間に打たれた文字が入力欄に入った後で
+   * open が届き、状態のリセットで消える
+   */
+  if (latest !== null) {
+    open(latest);
+    return;
+  }
+  // 用意の途中に open が来ることもある。「まだ無い」を「スペースではない」と取り違えない
+  void inflight?.then((ready) => open(ready ?? null));
+}
+
 /**
  * content script の open / close に合わせて、パレットの材料を用意し続ける。
  *
@@ -97,18 +115,11 @@ export function usePaletteSession(channel: HostChannel) {
         void refresh();
         return;
       }
+      // 読み込み後に Backlog 側でテーマを切り替えていても、開くたびに追いつく
+      applyBacklogColorScheme(message.ctx.colorScheme);
       setOpenedAt(Date.now());
       paletteTelemetry.opened();
-      /*
-       * 用意済みなら同期で開く。await を挟むと、その間に打たれた文字が入力欄に入った後で
-       * open が届き、状態のリセットで消える
-       */
-      if (latest.current !== null) {
-        open(latest.current);
-        return;
-      }
-      // 用意の途中に open が来ることもある。「まだ無い」を「スペースではない」と取り違えない
-      void inflight.current?.then((ready) => open(ready ?? null));
+      openWhenReady(latest.current, inflight.current, open);
     });
     return () => {
       unwatchConnections();
