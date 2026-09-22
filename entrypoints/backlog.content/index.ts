@@ -4,6 +4,7 @@ import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/ba
 import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
 import { SHARE_FRAGMENT_KEY } from '@/lib/share';
+import { readBacklogTheme } from '@/lib/theme/backlogTheme';
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
@@ -55,7 +56,14 @@ function readPageContext(): PageContext {
   };
 }
 
-type PaletteFrame = { show: () => void; hide: () => void };
+/** Backlog 本体のダークモードは `.dark-mode body` で変数を再定義する（backlog-facts.md §7） */
+function readPageTheme() {
+  const style = getComputedStyle(document.body);
+  const scheme = document.querySelector('.dark-mode body') === null ? 'light' : 'dark';
+  return readBacklogTheme((name) => style.getPropertyValue(name), scheme);
+}
+
+type PaletteFrame = { show: () => void; hide: () => void; syncTheme: () => void };
 
 function createPaletteFrameControl(
   iframe: HTMLIFrameElement,
@@ -64,8 +72,15 @@ function createPaletteFrameControl(
   const send = (message: ToIframe) => {
     iframe.contentWindow?.postMessage(message, extensionOrigin);
   };
+  const syncTheme = () => send({ t: 'theme', theme: readPageTheme() });
   return {
+    syncTheme,
     show: () => {
+      /*
+       * 読み込み時と遷移時にも送っているが、開く直前にも読み直す。Backlog は SPA で、
+       * body のテーマクラスが wxt:locationchange より後に付け替わることがある
+       */
+      syncTheme();
       iframe.style.display = 'block';
       /*
        * 親からも iframe 要素にフォーカスを移す。iframe の中で input.focus() を
@@ -112,6 +127,8 @@ function createPaletteHost(
 
   ctx.addEventListener(iframe, 'load', () => {
     isLoaded = true;
+    // 開いてから送ると、表示された最初のフレームが既定の配色になる（D-57）
+    frame.syncTheme();
     if (!hasPendingOpen) return;
     hasPendingOpen = false;
     frame.show();
@@ -165,7 +182,9 @@ export default defineContentScript({
     document.documentElement.append(iframe);
     ctx.onInvalidated(() => iframe.remove());
 
-    const host = createPaletteHost(ctx, iframe, createPaletteFrameControl(iframe, extensionOrigin));
+    const frame = createPaletteFrameControl(iframe, extensionOrigin);
+    const host = createPaletteHost(ctx, iframe, frame);
+    ctx.addEventListener(window, 'wxt:locationchange', frame.syncTheme);
 
     /*
      * キャプチャ段階で受ける。Backlog 本体がバブリングで ⌘K を使っていても

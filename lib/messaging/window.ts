@@ -1,9 +1,11 @@
 import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
+import type { BacklogTheme } from '@/lib/theme/backlogTheme';
 
 /**
  * content script とパレット iframe の間の唯一の通信路。
  *
- * ページへは open / close、ページからは close と、貼り付けバーだけが送る connected（D-56）。
+ * ページへは open / close とプロジェクトテーマの theme（D-57）、ページからは close と、
+ * 貼り付けバーだけが送る connected（D-56）。
  * 足すときはセキュリティ設計の変更として decisions.md に起票する。
  */
 
@@ -17,7 +19,11 @@ export type PageContext = {
   issueKey?: string;
 };
 
-export type ToIframe = { t: 'open'; ctx: PageContext } | { t: 'close' };
+/** theme の中身は受け手が parseBacklogTheme で検証し直す。ここでは形だけを見る */
+export type ToIframe =
+  | { t: 'open'; ctx: PageContext }
+  | { t: 'close' }
+  | { t: 'theme'; theme: BacklogTheme | undefined };
 
 export type FromIframe = { t: 'close' } | { t: 'connected' };
 
@@ -37,7 +43,7 @@ function isPageContext(value: unknown): value is PageContext {
 
 export function isToIframe(value: unknown): value is ToIframe {
   const t = readField(value, 't');
-  if (t === 'close') return true;
+  if (t === 'close' || t === 'theme') return true;
   return t === 'open' && isPageContext(readField(value, 'ctx'));
 }
 

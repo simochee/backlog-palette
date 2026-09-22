@@ -1,0 +1,25 @@
+/*
+ * Backlog のテーマ変数（--defaultColor* ほか）を --bp-* から直接参照する。
+ * 変数は content script がページの body で解決した値を、iframe のルートに同じ名前で置く（D-57）。
+ * 色はこちらで持たない。ここに書くのはどの変数をどのトークンに当てるかだけで、
+ * 当て方は Backlog 本体の ReactApp.css での使い分けに合わせる（backlog-facts.md §7.2）。
+ *
+ * data-backlog-theme には値がどちらの配色のものかが入る。パレットの配色と一致するときだけ当てる。
+ * Backlog がライトでパレットがダーク（またはその逆）のときは、白地向けの値をダークの面に
+ * 置くことになるため既定色のまま。
+ * 子孫側のセレクタも並べるのは、palette.css と同じく data-color-scheme がルート以外
+ * （Storybook のラッパーなど）に付く場合に、そこで再宣言される既定色より詳細度で勝つため。
+ */
+[data-backlog-theme='light'][data-color-scheme='light'],
+[data-backlog-theme='light'] [data-color-scheme='light'],
+[data-backlog-theme='dark'][data-color-scheme='dark'],
+[data-backlog-theme='dark'] [data-color-scheme='dark'] {
+  --bp-accent: var(--defaultColorAccent);
+  --bp-accent-strong: var(--defaultColorLink);
+  --bp-accent-text: var(--backgroundColorSchemeBase);
+  /* Backlog の -rgb 変数は「r,g,b」のカンマ区切りなので、スラッシュ構文の rgb() には渡せない */
+  --bp-row-hover: rgba(var(--defaultColorAccent-rgb), 0.075);
+  --bp-row-selected: rgba(var(--defaultColorAccent-rgb), 0.25);
+  --bp-row-accent: var(--defaultColorBase-2);
+  --bp-focus-ring: var(--defaultColorLink);
+}
