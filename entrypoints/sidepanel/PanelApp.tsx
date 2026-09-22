@@ -83,6 +83,7 @@ function usePanelState(search: PanelSearch, tabSpace: string | undefined) {
   const [input, setInput] = useState(search.query);
   const [selectedId, setSelectedId] = useState<string>();
   const [toast, showToast] = useToast();
+  const [focusToken, setFocusToken] = useState(0);
   const update = useCallback(
     (next: PanelSearch) => void navigate({ to: '/', search: next }),
     [navigate],
@@ -94,20 +95,26 @@ function usePanelState(search: PanelSearch, tabSpace: string | undefined) {
     },
     [update],
   );
-  useHandoff(receive);
+  useHandoff(
+    useCallback(
+      (next: PanelSearch) => {
+        receive(next);
+        setFocusToken(Date.now());
+      },
+      [receive],
+    ),
+  );
   useRestoreLastSearch(search, tabSpace, receive);
   useRememberSearch(search);
-  return { input, setInput, selectedId, setSelectedId, toast, showToast, update };
+  return { input, setInput, selectedId, setSelectedId, toast, showToast, update, focusToken };
 }
 
 function Panel({ context }: { context: PanelContext }) {
   // Register に載せていないので useSearch の型は付かない。スキーマで検証して型を得る
   const raw = panelSearchSchema.parse(rootRoute.useSearch());
   const search = useMemo(() => withDefaultScope(raw, context), [raw, context]);
-  const { input, setInput, selectedId, setSelectedId, toast, showToast, update } = usePanelState(
-    search,
-    context.tabSpace,
-  );
+  const { input, setInput, selectedId, setSelectedId, toast, showToast, update, focusToken } =
+    usePanelState(search, context.tabSpace);
   const recentQueries = useRecentQueries(search.scope);
   usePaletteHotkey();
   const { session, state } = usePanelSearch(
@@ -153,7 +160,7 @@ function Panel({ context }: { context: PanelContext }) {
 
   return (
     <LabelsProvider labels={labels}>
-      <SidePanel {...view} {...callbacks} />
+      <SidePanel {...view} {...callbacks} focusToken={focusToken} />
     </LabelsProvider>
   );
 }
