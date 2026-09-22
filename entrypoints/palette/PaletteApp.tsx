@@ -6,9 +6,11 @@ import { Palette } from '@/components/organisms/Palette';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { detectPlatform } from '@/lib/keys';
 import { type AssignedState, derive, type PaletteIndex, type PaletteStore } from '@/lib/palette';
+import { errorOf } from '@/lib/search';
+import type { SearchSession } from '@/lib/search/types';
 import { scopeOf } from '@/lib/stack/stack';
 
-import type { ActionEnv, Pending } from './actions.ts';
+import { type ActionEnv, type Pending, restartSearch, type SearchEnv } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import type { PaletteSession } from './createSession.ts';
 import { hostChannel } from './hostChannel.ts';
@@ -45,6 +47,26 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
       if (timer !== undefined) clearTimeout(timer);
     };
   }, [store, toast]);
+}
+
+/** オフラインで終わった検索は、接続が戻ったら同じ語とスコープで引き直す（palette.md §7.5） */
+function useResearchWhenOnline(
+  session: SearchSession | undefined,
+  pending: Pending,
+  env: SearchEnv,
+) {
+  const offline = session !== undefined && errorOf(session, 'offline') !== undefined;
+  useEffect(() => {
+    if (!offline) return undefined;
+    const research = () => {
+      const last = pending.lastSearch;
+      if (last !== undefined) restartSearch(last.query, last.scope, env, pending);
+    };
+    window.addEventListener('online', research);
+    return () => {
+      window.removeEventListener('online', research);
+    };
+  }, [offline, pending, env]);
 }
 
 /** 担当課題は届いた時点で索引に足す。届くまでは表示キャッシュだけで描く（palette.md §9） */
@@ -100,6 +122,7 @@ function OpenPalette({ session, store, pending, openedAt, close }: OpenPalettePr
     }),
     [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
+  useResearchWhenOnline(state.session, pending, env);
   const callbacks = usePaletteCallbacks({
     store,
     derived,
