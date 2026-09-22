@@ -73,9 +73,11 @@ export function usePaletteSession(channel: HostChannel) {
   const [pending] = useState<Pending>(() => ({ search: undefined, lastSearch: undefined }));
   /** 開いた時刻。presenter が入力欄へフォーカスを戻す合図に使う */
   const [openedAt, setOpenedAt] = useState(0);
+  const [open, setOpen] = useState(false);
   const { session, latest, inflight, refresh } = useSessionSupply();
 
   const close = useCallback(() => {
+    setOpen(false);
     channel.send({ t: 'close' });
     void refresh();
   }, [channel, refresh]);
@@ -94,9 +96,11 @@ export function usePaletteSession(channel: HostChannel) {
     const unwatchConnections = watchConnectedSpaces(() => void refresh());
     const unsubscribe = channel.subscribe((message) => {
       if (message.t === 'close') {
+        setOpen(false);
         void refresh();
         return;
       }
+      setOpen(true);
       setOpenedAt(Date.now());
       paletteTelemetry.opened();
       /*
@@ -116,5 +120,5 @@ export function usePaletteSession(channel: HostChannel) {
     };
   }, [channel, refresh, close, store, pending, latest, inflight]);
 
-  return { session, store, pending, openedAt, close };
+  return { session, store, pending, open, openedAt, close };
 }

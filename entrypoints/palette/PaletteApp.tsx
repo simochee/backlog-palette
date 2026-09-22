@@ -1,16 +1,15 @@
 import { useSelector } from '@tanstack/react-store';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { detectPlatform } from '@/lib/keys';
 import { type AssignedState, derive, type PaletteIndex, type PaletteStore } from '@/lib/palette';
-import { errorOf } from '@/lib/search';
-import type { SearchSession } from '@/lib/search/types';
+import { endedOffline } from '@/lib/search';
 import { scopeOf } from '@/lib/stack/stack';
 
-import { type ActionEnv, type Pending, restartSearch, type SearchEnv } from './actions.ts';
+import { type ActionEnv, type Pending, restartSearch } from './actions.ts';
 import { usePaletteCallbacks } from './callbacks.ts';
 import type { PaletteSession } from './createSession.ts';
 import { hostChannel } from './hostChannel.ts';
@@ -49,24 +48,18 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
   }, [store, toast]);
 }
 
-/** オフラインで終わった検索は、接続が戻ったら同じ語とスコープで引き直す（palette.md §7.5） */
-function useResearchWhenOnline(
-  session: SearchSession | undefined,
-  pending: Pending,
-  env: SearchEnv,
-) {
-  const offline = session !== undefined && errorOf(session, 'offline') !== undefined;
+/*
+ * 閉じている間も描き続けるので（PaletteApp の注記）、開閉を見ないと閉じたパレットが
+ * 接続の回復で API を叩く。Backlog のタブの数だけ iframe があるので、その数だけ走る
+ */
+function useRetryWhenOnline(offline: boolean, retry: () => void) {
   useEffect(() => {
-    if (!offline) return;
-    const research = () => {
-      const last = pending.lastSearch;
-      if (last !== undefined) restartSearch(last.query, last.scope, env, pending);
-    };
-    window.addEventListener('online', research);
+    if (!offline) return undefined;
+    window.addEventListener('online', retry);
     return () => {
-      window.removeEventListener('online', research);
+      window.removeEventListener('online', retry);
     };
-  }, [offline, pending, env]);
+  }, [offline, retry]);
 }
 
 /** 担当課題は届いた時点で索引に足す。届くまでは表示キャッシュだけで描く（palette.md §9） */
@@ -93,11 +86,12 @@ type OpenPaletteProps = {
   session: PaletteSession;
   store: PaletteStore;
   pending: Pending;
+  open: boolean;
   openedAt: number;
   close: () => void;
 };
 
-function OpenPalette({ session, store, pending, openedAt, close }: OpenPaletteProps) {
+function OpenPalette({ session, store, pending, open, openedAt, close }: OpenPaletteProps) {
   const { labels, context, runner } = session;
   const index = useIndexWithAssigned(session);
   const state = useSelector(store, (snapshot) => snapshot);
@@ -122,7 +116,12 @@ function OpenPalette({ session, store, pending, openedAt, close }: OpenPalettePr
     }),
     [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
-  useResearchWhenOnline(state.session, pending, env);
+  // オフラインで終わった検索は、接続が戻ったら同じ語とスコープで引き直す（palette.md §7.5、D-58）
+  const retry = useCallback(() => {
+    const last = pending.lastSearch;
+    if (last !== undefined) restartSearch(last.query, last.scope, env, pending, 'reconnect');
+  }, [pending, env]);
+  useRetryWhenOnline(open && endedOffline(state.session), retry);
   const callbacks = usePaletteCallbacks({
     store,
     derived,
@@ -147,7 +146,7 @@ function OpenPalette({ session, store, pending, openedAt, close }: OpenPalettePr
  * `open` を待ってから描くと、iframe が表示された直後の打鍵が入力欄に届かない
  */
 export function PaletteApp() {
-  const { session, store, pending, openedAt, close } = usePaletteSession(hostChannel);
+  const { session, store, pending, open, openedAt, close } = usePaletteSession(hostChannel);
   useCloseOnHotkey(close);
   if (session === undefined) return null;
   return (
@@ -155,6 +154,7 @@ export function PaletteApp() {
       session={session}
       store={store}
       pending={pending}
+      open={open}
       openedAt={openedAt}
       close={close}
     />

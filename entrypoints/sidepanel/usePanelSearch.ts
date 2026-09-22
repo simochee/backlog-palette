@@ -10,20 +10,14 @@ import { canRun, type PanelSearch } from './searchParams.ts';
 
 type Store = { key: string; session: SearchSession | undefined };
 
-const keyOf = (search: PanelSearch, attempt: number) => `${JSON.stringify(search)}#${attempt}`;
+type Retried = { searchKey: string; attempt: number };
 const noop = () => {};
 
 function initialSession(search: PanelSearch): SearchSession | undefined {
   return canRun(search) ? startSession(search.query, search.scope) : undefined;
 }
 
-/*
- * オフラインで終わった検索は、接続が戻ったら引き直す（palette.md §7.5）。試行回数をキーに
- * 混ぜて新しいセッションから始める。失敗したセッションに到着を重ねると、先に揃っていた
- * 種別の行が二重に入る
- */
-function useRetryWhenOnline(session: SearchSession | undefined, retry: () => void) {
-  const offline = session !== undefined && errorOf(session, 'offline') !== undefined;
+function useRetryWhenOnline(offline: boolean, retry: () => void) {
   useEffect(() => {
     if (!offline) return noop;
     window.addEventListener('online', retry);
@@ -31,6 +25,24 @@ function useRetryWhenOnline(session: SearchSession | undefined, retry: () => voi
       window.removeEventListener('online', retry);
     };
   }, [offline, retry]);
+}
+
+/*
+ * 接続が戻ったら引き直す（palette.md §7.5、D-58）。試行回数をキーに混ぜて新しい
+ * セッションから始める。失敗したセッションに到着を重ねると、先に揃っていた種別の
+ * 行が二重に入る。試行回数は検索ごとに数え、0 回目だけを利用者の検索として記録する
+ */
+function useAttempt(searchKey: string, session: SearchSession | undefined): number {
+  const [retried, setRetried] = useState<Retried>({ searchKey, attempt: 0 });
+  const attempt = retried.searchKey === searchKey ? retried.attempt : 0;
+  const retry = useCallback(() => {
+    setRetried((previous) => ({
+      searchKey,
+      attempt: (previous.searchKey === searchKey ? previous.attempt : 0) + 1,
+    }));
+  }, [searchKey]);
+  useRetryWhenOnline(endedOffline(session), retry);
+  return attempt;
 }
 
 /**
@@ -46,12 +58,12 @@ export function usePanelSearch(
   selectedId: string | undefined,
   learningEnabled: boolean,
 ) {
-  const [attempt, setAttempt] = useState(0);
-  const key = keyOf(search, attempt);
-  const [store, setStore] = useState<Store>({ key, session: undefined });
+  const searchKey = JSON.stringify(search);
+  const [store, setStore] = useState<Store>({ key: `${searchKey}#0`, session: undefined });
+  const current = store.key.startsWith(`${searchKey}#`) ? store.session : undefined;
+  const attempt = useAttempt(searchKey, current);
+  const key = `${searchKey}#${attempt}`;
   const session = store.key === key ? store.session : initialSession(search);
-  const retry = useCallback(() => setAttempt((previous) => previous + 1), []);
-  useRetryWhenOnline(session, retry);
   const selected = useRef(selectedId);
 
   useEffect(() => {
@@ -61,8 +73,10 @@ export function usePanelSearch(
   useEffect(() => {
     if (!canRun(search)) return noop;
     const { query, scope, conditions } = search;
-    if (learningEnabled) void recordSearch(query, scope, Date.now());
-    track({ type: 'panelSearchStarted' });
+    if (attempt === 0) {
+      if (learningEnabled) void recordSearch(query, scope, Date.now());
+      track({ type: 'panelSearchStarted' });
+    }
     const cancel = runner.run(
       query,
       scope,
@@ -82,7 +96,7 @@ export function usePanelSearch(
     );
     // 入力が変わったら走っている検索を捨てる（palette.md §7.4）
     return cancel;
-  }, [search, key, runner, learningEnabled]);
+  }, [search, key, attempt, runner, learningEnabled]);
 
   const state = useCallback((): SearchState | undefined => {
     if (search.scope === undefined) return undefined;
