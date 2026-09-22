@@ -21,7 +21,7 @@ export type IssueLike = {
   summary: string;
   issueType: { name: string; color: string };
   status: { id: number; name: string };
-  // backlog-js の型は undefined 想定だが、API は未割り当ての課題に null を返す
+  // backlog-js の型は undefined 想定だが、API は未割り当ての課題に null を返す（backlog-facts.md §3.2）
   assignee?: Named | null;
   dueDate?: string | null;
   updatedUser: Named;
