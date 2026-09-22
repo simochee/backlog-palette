@@ -19,3 +19,11 @@ export function applyColorScheme(
 ) {
   root.dataset.colorScheme = resolveColorScheme(theme, prefersDark);
 }
+
+/** Backlog 本体はダークモードのとき `<html>` に `dark-mode` を付ける（backlog-facts.md） */
+export const BACKLOG_DARK_MODE_CLASS = 'dark-mode';
+
+/** ページから届いた値は信用しない。dark と名乗ったときだけ dark にする */
+export function colorSchemeFrom(value: unknown): ColorScheme {
+  return value === 'dark' ? 'dark' : 'light';
+}
