@@ -27,8 +27,9 @@ function useEscapeCloses() {
 
 /** 送信 1 回の結果を次の状態として返す。送信中は useActionState の pending が表す */
 async function connect(apiKey: string, labels: Labels): Promise<ConnectSheetState> {
-  const spaceHost = await resolveSpaceHostFromTab();
-  if (spaceHost === undefined) return { kind: 'error', message: labels.connect.failed };
+  // タブが読めないのも「繋げなかった」。Action から投げると、境界の無い root ごと消える
+  const spaceHost = await resolveSpaceHostFromTab().catch(() => null);
+  if (typeof spaceHost !== 'string') return { kind: 'error', message: labels.connect.failed };
   const result = await connectSpace(spaceHost, apiKey, connectDeps);
   if (result.ok) {
     hostChannel.send({ t: 'connected' });

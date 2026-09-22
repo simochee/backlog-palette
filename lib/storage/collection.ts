@@ -78,6 +78,8 @@ class Mirror<T extends object, TKey extends string | number> {
   /** 初期読み込みは getValue、他の拡張ページの変更は item.watch で購読する */
   sync(params: SyncParams<T>): () => void {
     this.params = params;
+    // 片付け（cleanup）で DB の中身は捨てられる。known を残すと差分が空になり、読み直しても空のまま
+    this.known.clear();
     let unwatch: (() => void) | undefined;
     void (async () => {
       this.apply(this.toMap(await this.item.getValue()));

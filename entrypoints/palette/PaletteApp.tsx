@@ -52,8 +52,9 @@ function OpenPalette({ session, controller }: OpenPaletteProps) {
   const { labels, context, runner } = session;
   const { open, openedAt, panelAvailable } = useSelector(controller.surface);
   const state = useSelector(store);
+  const assigned = useSelector(session.assigned);
   // 担当課題は届いた時点で索引に足す。届くまでは表示キャッシュだけで描く（palette.md §9）
-  const index = { ...session.index, assigned: useSelector(session.assigned) };
+  const index = { ...session.index, assigned };
   useToastExpiry(store, state.toast);
 
   const derived = derive(state, index, labels, { platform: detectPlatform(), panelAvailable });

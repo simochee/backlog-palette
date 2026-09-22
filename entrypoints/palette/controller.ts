@@ -2,7 +2,8 @@ import { createStore, type Store } from '@tanstack/store';
 
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import type { HostChannel } from '@/lib/messaging/hostChannel';
-import { createPaletteStore, type PaletteStore, type Readable } from '@/lib/palette';
+import { createPaletteStore, type PaletteStore } from '@/lib/palette';
+import type { Readable } from '@/lib/store';
 import { applyBacklogTheme, parseBacklogTheme } from '@/lib/theme/backlogTheme';
 
 import { type Pending, restartSearch } from './actions.ts';
@@ -46,8 +47,9 @@ function createSessionSupply() {
   };
 
   /*
-   * 用意済みなら同期で渡す。await を挟むと、その間に打たれた文字が入力欄に入った後で
-   * open が届き、状態のリセットで消える。用意の途中に open が来たら、その用意を待つ
+   * 一度でも用意が終わっていれば、進行中の用意し直しは待たず、直前の材料で同期に渡す。
+   * await を挟むと、その間に打たれた文字が入力欄に入った後で open が届き、状態のリセットで
+   * 消える。まだ一度も終わっていないときだけ、進行中の用意を待つ
    */
   const whenReady = (receive: (session: Supplied) => void) => {
     if (settled) receive(current.state);

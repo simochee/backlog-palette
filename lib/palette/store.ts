@@ -3,9 +3,6 @@ import { createStore, type Store } from '@tanstack/store';
 import { reduce } from './reduce';
 import { initialState, type PaletteAction, type PaletteState } from './state';
 
-/** 購読と読み取りだけを渡す形。書き込みは持ち主（Store を作った側）に閉じる */
-export type Readable<T> = Pick<Store<T>, 'get' | 'subscribe'>;
-
 export type PaletteStore = Store<PaletteState> & { dispatch: (action: PaletteAction) => void };
 
 /** Store は @tanstack/store。遷移は reduce に閉じ、Store は状態を持って通知するだけ */

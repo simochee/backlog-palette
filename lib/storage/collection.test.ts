@@ -100,3 +100,14 @@ describe('他の拡張ページとの同期', () => {
     expect(collection.toArray.map((r) => r.title)).toEqual(['B']);
   });
 });
+
+describe('購読が途切れた後の同期し直し', () => {
+  it('コレクションを片付けてから読み直しても、storage の行が揃う', async () => {
+    const { item } = fakeItem([{ id: 'a', title: 'A' }]);
+    const collection = createStorageCollection(options('t6', item));
+    await collection.preload();
+    await collection.cleanup();
+    await collection.preload();
+    expect(rows(collection)).toEqual(['a']);
+  });
+});

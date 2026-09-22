@@ -15,7 +15,6 @@ applyBacklogColorScheme(new URLSearchParams(window.location.search).get('colorSc
 const root = document.querySelector('#root');
 if (root === null) throw new Error('#root が無い');
 
-// ページの寿命と同じだけ購読する。effect に置くと StrictMode の再実行で open を 2 回処理する
 const controller = startPaletteController(hostChannel);
 
 createRoot(root).render(
