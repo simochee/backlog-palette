@@ -201,6 +201,7 @@ effect で取得して `useState` に入れたりしない。
 | 送信して結果の状態を出す | `useActionState` を `startTransition` の中で呼ぶ |
 | effect から最新の props / state を読む | `useEffectEvent`。ref に写す effect は書かない |
 | 描き始めた後に届くデータ（担当課題など） | TanStack Store に置き、`useSelector` で読む。`use()` で待つと届くまで全体が描けない |
+| 届いた瞬間に打鍵を受けなければならない材料（パレット） | TanStack Store に置く。Suspense は中身の表示を最大 300ms まとめて遅らせ、その間の打鍵が落ちる |
 
 effect は外の世界（DOM・タイマー・`window` のイベント）との同期にだけ使う。
 パレットの open のように、打鍵より先に同期で終えなければならない購読は、effect ではなく
