@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { ToastView } from '@/components/types';
+import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { searchHistory } from '@/lib/storage/palette-items';
+import { openPaletteInCurrentTab } from '@/lib/tabs';
 
 import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
 import type { PanelSearch } from './searchParams.ts';
@@ -37,4 +39,17 @@ export function useToast(): [ToastView | undefined, (toast: ToastView) => void] 
     };
   }, [toast]);
   return [toast, setToast];
+}
+
+/** パネルの ⌘K はタブのパレットを開く（surfaces.md §5.4、P1）。パネル内のフォーカス移動には使わない */
+export function usePaletteHotkey() {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing || !isPaletteHotkey(event, navigator.platform)) return;
+      event.preventDefault();
+      void openPaletteInCurrentTab();
+    };
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+  }, []);
 }

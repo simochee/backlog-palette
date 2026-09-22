@@ -2,6 +2,7 @@ import { browser, defineContentScript } from '#imports';
 import type { ContentScriptContext } from '#imports';
 import { BACKLOG_SPACE_MATCHES, NOT_A_SPACE_MATCHES, spaceKeyOf } from '@/lib/backlog/host';
 import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
+import { onMessage } from '@/lib/messaging/content';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
 import { SHARE_FRAGMENT_KEY } from '@/lib/share';
 import { readBacklogTheme } from '@/lib/theme/backlogTheme';
@@ -220,6 +221,7 @@ export default defineContentScript({
 
     setupConnectPage(ctx, browser.runtime.getURL('/connect.html'), extensionOrigin);
     openOnSharedSearch(ctx, host);
+    ctx.onInvalidated(onMessage('openPalette', () => host.open()));
 
     ctx.addEventListener(window, 'message', (event) => {
       // 送信元が自分の iframe であることと、拡張の origin であることの両方を確認する

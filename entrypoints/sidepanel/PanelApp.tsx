@@ -9,7 +9,7 @@ import { panelCallbacks } from './callbacks.ts';
 import type { PanelContext } from './context.ts';
 import { usePanelFilters } from './filterSources.ts';
 import { useHandoff } from './handoff.ts';
-import { usePanelContext, useRecentQueries, useToast } from './hooks.ts';
+import { usePaletteHotkey, usePanelContext, useRecentQueries, useToast } from './hooks.ts';
 import { useRememberSearch, useRestoreLastSearch } from './lastSearch.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
@@ -68,6 +68,7 @@ function Panel({ context }: { context: PanelContext }) {
     context.tabSpace,
   );
   const recentQueries = useRecentQueries(search.scope);
+  usePaletteHotkey();
   const { session, state } = usePanelSearch(
     search,
     backlog.runner,

@@ -1,5 +1,6 @@
 import { browser } from '#imports';
 import { sendMessage } from '@/lib/messaging/background';
+import { sendMessage as sendToContent } from '@/lib/messaging/content';
 import type { CurrentTab, NavigateTarget } from '@/lib/tabs/types';
 
 export type { CurrentTab, NavigateTarget } from '@/lib/tabs/types';
@@ -43,4 +44,14 @@ export async function navigate(url: string, target: NavigateTarget = 'current'):
     return;
   }
   await browser.tabs.update(tab.id, { url });
+}
+
+/**
+ * アクティブなタブのパレットを開く。Backlog 以外のタブには content script が居らず
+ * 受け手が無いので、送れなかったことは失敗として扱わない（⌘K を奪わない面、D-10）
+ */
+export async function openPaletteInCurrentTab(): Promise<void> {
+  const tab = await readCurrentTab();
+  if (tab?.id === undefined) return;
+  await sendToContent('openPalette', undefined, tab.id).catch(() => {});
 }
