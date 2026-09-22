@@ -216,6 +216,11 @@ export function applyFilter(search: PanelSearch, fieldId: string, optionId: stri
   }
 }
 
+/** 0 件の「プロジェクトを外す」。フィルターバーでプロジェクトを「すべて」に戻すのと同じ */
+export function removeProject(search: PanelSearch): PanelSearch {
+  return applyFilter(search, 'project', ALL);
+}
+
 /** 「条件をすべて外す」。スコープ（スペース・プロジェクト）は外さない（surfaces.md §5.3） */
 export function clearConditions(search: PanelSearch): PanelSearch {
   return {

@@ -2,14 +2,14 @@ import type { Labels } from '@/components/labels';
 import type { SidePanelCallbacks } from '@/components/organisms/SidePanel';
 import type { ToastView } from '@/components/types';
 import { apiKeyPageUrl } from '@/lib/connect/page';
-import { resultRowId, type SearchSession } from '@/lib/search';
+import { EXTERNAL_ROW_ID, resultRowId, type SearchSession, WIDEN_ROW_ID } from '@/lib/search';
 import { buildShareUrl, type SearchState } from '@/lib/share';
 import { navigate as openUrl } from '@/lib/tabs';
 import { track } from '@/lib/telemetry/track';
 
-import { applyFilter, clearConditions } from './filters.ts';
+import { applyFilter, clearConditions, removeProject } from './filters.ts';
 import type { PanelSearch } from './searchParams.ts';
-import { CLEAR_FILTERS_ROW_ID, needsReconnect } from './view.ts';
+import { CLEAR_FILTERS_ROW_ID, externalUrlOf, needsReconnect } from './view.ts';
 
 export type CallbackEnv = {
   search: PanelSearch;
@@ -38,6 +38,15 @@ export function panelCallbacks(env: CallbackEnv): SidePanelCallbacks {
     onAction: (id, { newTab }) => {
       if (id === CLEAR_FILTERS_ROW_ID) {
         update(clearConditions(search));
+        return;
+      }
+      if (id === WIDEN_ROW_ID) {
+        update(removeProject(search));
+        return;
+      }
+      // 行の補足が「新しいタブで開く」と約束しているので ⌘ の有無に関わらず新しいタブ
+      if (id === EXTERNAL_ROW_ID && search.scope !== undefined) {
+        void openUrl(externalUrlOf(search.scope), 'new');
         return;
       }
       const row = rowOf(id);

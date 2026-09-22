@@ -6,11 +6,11 @@ import { SidePanel } from '@/components/organisms/SidePanel';
 import type { ToastView } from '@/components/types';
 import { searchHistory } from '@/lib/storage/palette-items';
 
+import { backlog } from './backlog.ts';
 import { panelCallbacks } from './callbacks.ts';
 import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
-import { backlog } from './backlog.ts';
-import { useFilterChoices } from './filterSources.ts';
 import { buildFilters } from './filters.ts';
+import { useFilterChoices } from './filterSources.ts';
 import { useHandoff } from './handoff.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
@@ -50,18 +50,9 @@ function useToast(): [ToastView | undefined, (toast: ToastView) => void] {
   return [toast, setToast];
 }
 
-function isFiltersActive(search: PanelSearch, tabSpace: string | undefined): boolean {
+function isConditionsActive(search: PanelSearch): boolean {
   const { type, status, assignee, updated } = search.conditions;
-  const scopeChanged =
-    search.scope !== undefined &&
-    (search.scope.kind === 'project' || search.scope.spaceId !== tabSpace);
-  return (
-    scopeChanged ||
-    type !== 'all' ||
-    status.kind !== 'all' ||
-    assignee !== 'all' ||
-    updated !== 'any'
-  );
+  return type !== 'all' || status.kind !== 'all' || assignee !== 'all' || updated !== 'any';
 }
 
 /** 既定のスコープはタブのスペース。URL に無ければ文脈から補う */
@@ -119,7 +110,14 @@ function Panel({ context }: { context: PanelContext }) {
       tabSpace: context.tabSpace,
       ...choices,
     }),
-    filtersActive: isFiltersActive(search, context.tabSpace),
+    empty: {
+      scope: search.scope,
+      spaceLabel:
+        context.spaces.find((space) => space.host === search.scope?.spaceId)?.name ??
+        search.scope?.spaceId ??
+        '',
+      conditionsActive: isConditionsActive(search),
+    },
     toast,
     labels,
   });

@@ -8,8 +8,10 @@ import type {
   ToastView,
 } from '@/components/types';
 import { deriveBindings, detectPlatform, toKeyHints } from '@/lib/keys';
+import { externalSearchUrl } from '@/lib/nav';
 import {
   errorOf,
+  EXTERNAL_ROW_ID,
   isEmpty,
   NO_RESULTS_ROW_ID,
   type ResultRow,
@@ -18,7 +20,9 @@ import {
   type SearchKind,
   searchKinds,
   type SearchSession,
+  WIDEN_ROW_ID,
 } from '@/lib/search';
+import type { SearchScope } from '@/lib/share';
 
 export const CLEAR_FILTERS_ROW_ID = 'command:clear-filters';
 
@@ -66,27 +70,67 @@ export function progressOf(session: SearchSession, labels: Labels): SearchProgre
   });
 }
 
-/** 0 件の提案は 条件を外す → （プロジェクトを外す）→ 本体検索 の順（surfaces.md §5.4）。本体検索は M6 後半 */
+/** 0 件の提案を組むのに要る文脈。スペース名は接続済みの一覧から、無ければホストのまま */
+export type EmptyContext = {
+  scope: SearchScope | undefined;
+  spaceLabel: string;
+  /** 種別・ステータス・担当者・更新日のどれかが効いている。スコープは含めない（外す行が別にある） */
+  conditionsActive: boolean;
+};
+
+function emptyRows({ scope, spaceLabel, conditionsActive }: EmptyContext, labels: Labels) {
+  const suggestions: RowView[] = [];
+  if (conditionsActive)
+    suggestions.push({
+      id: CLEAR_FILTERS_ROW_ID,
+      kind: 'command',
+      title: labels.panel.clearFiltersRow,
+      hints: ['enter'],
+    });
+  if (scope?.kind === 'project')
+    suggestions.push({
+      id: WIDEN_ROW_ID,
+      kind: 'search',
+      title: labels.rows.widenTo(spaceLabel),
+      hints: ['enter'],
+    });
+  if (scope !== undefined)
+    suggestions.push({
+      id: EXTERNAL_ROW_ID,
+      kind: 'external',
+      title: labels.rows.openExternal,
+      sub: labels.rows.openExternalSub(spaceLabel),
+      hints: ['enter'],
+    });
+  const [first, ...rest] = suggestions;
+  const hint: RowView = {
+    id: NO_RESULTS_ROW_ID,
+    kind: 'hint',
+    title: labels.rows.noResults,
+    hints: [],
+  };
+  return first === undefined ? [hint] : [hint, { ...first, tone: 'accent' as const }, ...rest];
+}
+
+/** 本体の課題検索ページ。語を渡すパラメータは台帳で未確認なので、ページだけ開く（lib/nav） */
+export function externalUrlOf(scope: SearchScope): string {
+  return externalSearchUrl({
+    origin: `https://${scope.spaceId}`,
+    ...(scope.kind === 'project' ? { projectKey: scope.projectId } : {}),
+  });
+}
+
+/**
+ * 0 件の提案は 条件を外す → プロジェクトを外す → 本体検索 の順（surfaces.md §5.4）。
+ * 効いている条件を先頭に置くのは原因の切り分けのため。強調は先頭の提案だけに付ける
+ */
 export function sectionsOf(
   session: SearchSession | undefined,
   labels: Labels,
-  filtersActive: boolean,
+  empty: EmptyContext,
 ): SectionView[] {
   if (session === undefined) return [];
-  if (isEmpty(session)) {
-    const rows: RowView[] = [
-      { id: NO_RESULTS_ROW_ID, kind: 'hint', title: labels.rows.noResults, hints: [] },
-    ];
-    if (filtersActive)
-      rows.push({
-        id: CLEAR_FILTERS_ROW_ID,
-        kind: 'command',
-        title: labels.panel.clearFiltersRow,
-        hints: ['enter'],
-        tone: 'accent',
-      });
-    return [{ id: 'results', rows }];
-  }
+  if (isEmpty(session)) return [{ id: 'results', rows: emptyRows(empty, labels) }];
   return [{ id: 'results', rows: session.rows.map((row) => resultRowView(row, labels)) }];
 }
 
@@ -119,14 +163,14 @@ export type ViewInput = {
   selectedId: string | undefined;
   recentQueries: readonly string[];
   filters: PanelView['filters'];
-  filtersActive: boolean;
+  empty: EmptyContext;
   toast: ToastView | undefined;
   labels: Labels;
 };
 
 export function buildPanelView(view: ViewInput): PanelView {
   const { session, labels } = view;
-  const sections = sectionsOf(session, labels, view.filtersActive);
+  const sections = sectionsOf(session, labels, view.empty);
   const rows = sections.flatMap((s) => s.rows);
   const selectedId = rows.some((row) => row.id === view.selectedId) ? view.selectedId : rows[0]?.id;
   const hasResults = session !== undefined && session.rows.length > 0;
