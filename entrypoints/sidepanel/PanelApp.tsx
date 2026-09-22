@@ -13,20 +13,20 @@ import { usePanelContext, useRecentQueries, useToast } from './hooks.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
 import { usePanelSearch } from './usePanelSearch.ts';
-import { buildPanelView } from './view.ts';
+import { buildPanelView, type EmptyContext } from './view.ts';
 
-function isFiltersActive(search: PanelSearch, tabSpace: string | undefined): boolean {
+function isConditionsActive(search: PanelSearch): boolean {
   const { type, status, assignee, updated } = search.conditions;
-  const scopeChanged =
-    search.scope !== undefined &&
-    (search.scope.kind === 'project' || search.scope.spaceId !== tabSpace);
-  return (
-    scopeChanged ||
-    type !== 'all' ||
-    status.kind !== 'all' ||
-    assignee !== 'all' ||
-    updated !== 'any'
-  );
+  return type !== 'all' || status.kind !== 'all' || assignee !== 'all' || updated !== 'any';
+}
+
+function emptyContextOf(search: PanelSearch, context: PanelContext): EmptyContext {
+  const spaceId = search.scope?.spaceId;
+  return {
+    scope: search.scope,
+    spaceLabel: context.spaces.find((space) => space.host === spaceId)?.name ?? spaceId ?? '',
+    conditionsActive: isConditionsActive(search),
+  };
 }
 
 /** 既定のスコープはタブのスペース。URL に無ければ文脈から補う */
@@ -80,7 +80,7 @@ function Panel({ context }: { context: PanelContext }) {
     selectedId,
     recentQueries,
     filters,
-    filtersActive: isFiltersActive(search, context.tabSpace),
+    empty: emptyContextOf(search, context),
     toast,
     labels,
   });
