@@ -188,6 +188,15 @@ import { browser, defineBackground } from '#imports';
 oxlint の `react-hooks/exhaustive-deps` はコンパイラのメモ化を知らない。effect の中で
 呼ぶ関数が「毎回変わる」と言われたら、`useCallback` で包むのではなく `useEffectEvent` にする。
 
+要素を測る hooks（`components/hooks/`）は cleanup を返す callback ref で書いている。
+callback ref が描画のたびに張り直されないのは、コンパイラがその関数をメモ化するから。
+コンパイラを外すと、描画のたびに購読を張り直して測り直す。
+
+`ref` に渡した値は、コンパイラと oxlint の `react/refs` が ref として扱う。`props` や
+`controller` のようなオブジェクトの一部を `ref={props.ref}` の形で渡すと、持ち主の
+オブジェクトごと ref とみなされ、描画中にほかのプロパティを読むのが違反になる。
+`ref` は分割代入で取り出してから渡す。
+
 ### 非同期の扱い
 
 container は Async React の形で書く。「読み込み前」を `undefined` で描き分けたり、
