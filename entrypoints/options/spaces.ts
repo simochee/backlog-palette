@@ -37,14 +37,12 @@ function without<T>(record: Record<string, T>, host: string): Record<string, T> 
  * 削除は鍵・スペースの記録・レート枠・そのスペースの表示キャッシュを消す（surfaces.md §2）。
  * 行動ログや検索履歴はスペースを持たないので残る。
  *
- * 記録はコレクションから消すので、一覧からは storage への書き込みを待たずに消える。
- * 鍵より先に記録が消える瞬間があるが、「接続済み」の根拠は鍵なので、パレットには
- * ホスト名のまま接続済みに見えるだけで、未接続の鍵を使うことは無い
+ * 記録より先に鍵を消す。記録を先に消して鍵の削除が失敗すると、一覧に出ないので
+ * 消せない鍵が残り、パレットはその鍵で接続済みのまま API を叩き続ける
  */
 export async function disconnectSpace(host: string): Promise<void> {
-  const removal = connectedSpaces.delete(host);
   await removeApiKey(host);
-  await removal.isPersisted.promise;
+  await connectedSpaces.delete(host).isPersisted.promise;
   await rateLimits.setValue(without(await rateLimits.getValue(), host));
   const cached = await displayCache.getValue();
   await displayCache.setValue(cached.filter((entry) => entry.spaceHost !== host));
