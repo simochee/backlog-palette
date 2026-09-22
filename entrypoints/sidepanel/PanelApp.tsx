@@ -7,10 +7,10 @@ import { searchHistory } from '@/lib/storage/palette-items';
 
 import { panelCallbacks } from './callbacks.ts';
 import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
+import { backlog } from './backlog.ts';
 import { buildFilters } from './filters.ts';
 import { useHandoff } from './handoff.ts';
 import { rootRoute } from './route.ts';
-import { emptyPanelRunner } from './runner.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
 import { usePanelSearch } from './usePanelSearch.ts';
 import { buildPanelView } from './view.ts';
@@ -100,7 +100,7 @@ function Panel({ context }: { context: PanelContext }) {
   const recentQueries = useRecentQueries(search.scope);
   const { session, state } = usePanelSearch(
     search,
-    emptyPanelRunner,
+    backlog.runner,
     selectedId,
     context.learningEnabled,
   );
