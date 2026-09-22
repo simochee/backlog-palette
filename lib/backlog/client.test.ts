@@ -154,6 +154,16 @@ describe('失敗の分類（応答以外）', () => {
     ).resolves.toMatchObject({ kind: 'rateLimited' });
   });
 
+  it('その他のエラー応答は failed になる', async () => {
+    const { fetch } = fakeFetch(() => json({ errors: [] }, { status: 500 }));
+
+    const failure = await client(fetch).getMyself().catch(toApiFailure);
+
+    expect(failure).toEqual({ kind: 'failed' });
+  });
+});
+
+describe('オフラインは応答が届いたかどうかで決まる', () => {
   it('ネットワーク断は offline になる', async () => {
     const fetch = (() =>
       Promise.reject(new TypeError('Failed to fetch'))) as typeof globalThis.fetch;
@@ -163,11 +173,33 @@ describe('失敗の分類（応答以外）', () => {
     expect(failure).toEqual({ kind: 'offline' });
   });
 
-  it('その他のエラー応答は failed になる', async () => {
-    const { fetch } = fakeFetch(() => json({ errors: [] }, { status: 500 }));
+  it('background に委譲した fetch の失敗も、TypeError の形を失っていても offline になる', async () => {
+    const fetch = (() =>
+      Promise.reject(
+        Object.assign(new Error('NetworkError when attempting to fetch resource.'), {
+          name: 'TypeError',
+        }),
+      )) as typeof globalThis.fetch;
+
+    const failure = await client(fetch).getMyself().catch(toApiFailure);
+
+    expect(failure).toEqual({ kind: 'offline' });
+  });
+
+  it('応答は届いたが本文が JSON として読めないときはオフラインにならない', async () => {
+    const { fetch } = fakeFetch(
+      () =>
+        new Response('<html>', { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
 
     const failure = await client(fetch).getMyself().catch(toApiFailure);
 
     expect(failure).toEqual({ kind: 'failed' });
+  });
+
+  it('応答を受け取った後の加工で投げた TypeError はオフラインにならない', () => {
+    expect(toApiFailure(new TypeError("Cannot read properties of null (reading 'name')"))).toEqual({
+      kind: 'failed',
+    });
   });
 });

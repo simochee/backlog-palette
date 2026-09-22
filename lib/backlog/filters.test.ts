@@ -47,6 +47,12 @@ describe('パネルの条件の展開', () => {
     expect(unassigned.postFilter(issue('田中'))).toBe(false);
   });
 
+  it('担当者「未設定」は API が null で返した未割り当ての課題も残す', () => {
+    const unassigned = planIssueSearch({ ...defaultConditions, assignee: 'unassigned' }, context);
+
+    expect(unassigned.postFilter({ ...issue(), assignee: null })).toBe(true);
+  });
+
   it('更新日の範囲は今日から日数を引いた yyyy-MM-dd になる', () => {
     expect(planIssueSearch({ ...defaultConditions, updated: 'week' }, context).params).toEqual({
       updatedSince: '2026-09-06',
