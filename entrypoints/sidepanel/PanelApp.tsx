@@ -1,16 +1,16 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Suspense, use, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { SidePanel } from '@/components/organisms/SidePanel';
 
 import { backlog } from './backlog.ts';
 import { panelCallbacks } from './callbacks.ts';
-import type { PanelContext } from './context.ts';
+import { type PanelContext, readPanelContextOnce } from './context.ts';
 import { usePanelFilters } from './filterSources.ts';
 import { useHandoff } from './handoff.ts';
-import { usePaletteHotkey, usePanelContext, useRecentQueries, useToast } from './hooks.ts';
-import { useRememberSearch, useRestoreLastSearch } from './lastSearch.ts';
+import { usePaletteHotkey, useRecentQueries, useToast } from './hooks.ts';
+import { rememberSearch } from './lastSearch.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
 import { usePanelSearch } from './usePanelSearch.ts';
@@ -36,33 +36,32 @@ function withDefaultScope(search: PanelSearch, context: PanelContext): PanelSear
   return { ...search, scope: { kind: 'space', spaceId: context.tabSpace } };
 }
 
-/** 入力・選択・トースト・URL の更新。パレットからの受け渡しと前回の復元は入力と URL の両方に写す */
-function usePanelState(search: PanelSearch, tabSpace: string | undefined) {
+/** 入力・選択・トースト・URL の更新。開いている間の受け渡しは入力と URL の両方に写す */
+function usePanelState(search: PanelSearch) {
   const navigate = rootRoute.useNavigate();
   const [input, setInput] = useState(search.query);
   const [selectedId, setSelectedId] = useState<string>();
   const [toast, showToast] = useToast();
   const [focusToken, setFocusToken] = useState(0);
-  const update = (next: PanelSearch) => void navigate({ to: '/', search: next });
-  const receive = (next: PanelSearch) => {
+  const update = (next: PanelSearch) => {
+    rememberSearch(next);
+    void navigate({ to: '/', search: next });
+  };
+  useHandoff((next) => {
     setInput(next.query);
     update(next);
-  };
-  useHandoff((next: PanelSearch) => {
-    receive(next);
     setFocusToken(Date.now());
   });
-  useRestoreLastSearch(search, tabSpace, receive);
-  useRememberSearch(search);
   return { input, setInput, selectedId, setSelectedId, toast, showToast, update, focusToken };
 }
 
-function Panel({ context }: { context: PanelContext }) {
+function Panel() {
+  const context = use(readPanelContextOnce());
   // Register に載せていないので useSearch の型は付かない。スキーマで検証して型を得る
   const raw = panelSearchSchema.parse(rootRoute.useSearch());
   const search = withDefaultScope(raw, context);
   const { input, setInput, selectedId, setSelectedId, toast, showToast, update, focusToken } =
-    usePanelState(search, context.tabSpace);
+    usePanelState(search);
   const recentQueries = useRecentQueries(search.scope);
   usePaletteHotkey();
   const { session, state } = usePanelSearch(
@@ -102,13 +101,16 @@ function Panel({ context }: { context: PanelContext }) {
   );
 }
 
-/** サイドパネルの container（surfaces.md §5）。状態は URL の検索状態と、この階層の useState だけ */
+/**
+ * サイドパネルの container（surfaces.md §5）。状態は URL の検索状態と、この階層の useState だけ。
+ * 文脈と開いたときの検索は route が描く前に揃え、検索の履歴は Suspense で待つ
+ */
 export function PanelApp() {
-  const context = usePanelContext();
-  if (context === undefined) return null;
   return (
     <QueryClientProvider client={backlog.queryClient}>
-      <Panel context={context} />
+      <Suspense fallback={null}>
+        <Panel />
+      </Suspense>
     </QueryClientProvider>
   );
 }

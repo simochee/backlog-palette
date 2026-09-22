@@ -1,32 +1,40 @@
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
-import type { SearchState } from '@/lib/share';
 import { panelRequest } from '@/lib/storage/panel-items';
 
 import { fromSearchState, type PanelSearch } from './searchParams.ts';
 
-type Receive = (search: PanelSearch) => void;
-
 /**
  * パレットの `⌘→`・0 件の panel 行・条件つき共有 URL から渡された検索を受け取る
  * （surfaces.md §5.1）。読んだら消す: 面をまたぐ 1 回きりの受け渡しで、残すと次に
- * 開いたときにも復元されてしまう。開いている間に渡し直されたときは watch で受ける
+ * 開いたときにも復元されてしまう
  */
-export function useHandoff(receive: Receive) {
+export async function takePanelRequest(): Promise<PanelSearch | undefined> {
+  const request = await panelRequest.getValue();
+  if (request === null) return undefined;
+  await panelRequest.setValue(null);
+  return fromSearchState(request.state);
+}
+
+/**
+ * 開いている間に渡し直された検索を受ける。開いた時点の受け渡しは route の beforeLoad が
+ * 先に取るが、そこから購読までの間に書かれた分を落とさないよう、購読の開始時にも 1 度読む
+ */
+export function useHandoff(receive: (search: PanelSearch) => void) {
+  const onReceive = useEffectEvent(receive);
   useEffect(() => {
     let alive = true;
-    const take = async (request: { state: SearchState; at: number } | null) => {
-      if (request === null || !alive) return;
-      await panelRequest.setValue(null);
-      receive(fromSearchState(request.state));
+    const take = async () => {
+      const search = await takePanelRequest();
+      if (alive && search !== undefined) onReceive(search);
     };
-    void panelRequest.getValue().then(take);
+    void take();
     const unwatch = panelRequest.watch((next) => {
-      void take(next);
+      if (next !== null) void take();
     });
     return () => {
       alive = false;
       unwatch();
     };
-  }, [receive]);
+  }, []);
 }

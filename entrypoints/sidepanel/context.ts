@@ -38,6 +38,13 @@ export async function readPanelContext(): Promise<PanelContext> {
   };
 }
 
+/*
+ * 開いた時点で 1 度だけ読む。検索を変えるたびに読み直すと、別のタブへ移ったときに
+ * 既定のスコープが勝手に変わる。route の beforeLoad と container が同じ promise を読む
+ */
+let opened: Promise<PanelContext> | undefined;
+export const readPanelContextOnce = (): Promise<PanelContext> => (opened ??= readPanelContext());
+
 export const RECENT_QUERY_LIMIT = 5;
 const HISTORY_LIMIT = 50;
 

@@ -1,5 +1,7 @@
-import { createRootRoute } from '@tanstack/react-router';
+import { createRootRoute, redirect } from '@tanstack/react-router';
 
+import { readPanelContextOnce } from './context.ts';
+import { openingSearch } from './lastSearch.ts';
 import { panelSearchSchema } from './searchParams.ts';
 
 /*
@@ -9,4 +11,12 @@ import { panelSearchSchema } from './searchParams.ts';
  */
 export const rootRoute = createRootRoute({
   validateSearch: (raw) => panelSearchSchema.parse(raw),
+  beforeLoad: async ({ search, cause }) => {
+    if (cause !== 'enter') return;
+    const { tabSpace } = await readPanelContextOnce();
+    const opening = await openingSearch(search, tabSpace);
+    // TanStack Router の redirect は Response を投げて遷移させる設計。Error ではない
+    // oxlint-disable-next-line typescript/only-throw-error
+    if (opening !== undefined) throw redirect({ to: '/', search: opening, replace: true });
+  },
 });

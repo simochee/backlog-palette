@@ -1,32 +1,24 @@
+import { useLiveSuspenseQuery } from '@tanstack/react-db';
 import { useEffect, useState } from 'react';
 
 import type { ToastView } from '@/components/types';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
-import { searchHistory } from '@/lib/storage/palette-items';
+import { collections } from '@/lib/storage';
 import { openPaletteInCurrentTab } from '@/lib/tabs';
 
-import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
+import { recentQueriesFor } from './context.ts';
 import type { PanelSearch } from './searchParams.ts';
 
 const TOAST_LIFETIME_MS = 2000;
 
-export function usePanelContext(): PanelContext | undefined {
-  const [context, setContext] = useState<PanelContext>();
-  useEffect(() => {
-    void readPanelContext().then(setContext);
-  }, []);
-  return context;
-}
+/** パネルに 1 つ。検索の記録（recordSearch）は item に書き、ここは watch で追う */
+const searchHistory = collections.searchHistory();
 
 export function useRecentQueries(scope: PanelSearch['scope']): string[] {
-  const [history, setHistory] = useState<Awaited<ReturnType<typeof searchHistory.getValue>>>([]);
-  useEffect(() => {
-    void searchHistory.getValue().then(setHistory);
-    return searchHistory.watch((next) => {
-      setHistory(next);
-    });
-  }, []);
-  return recentQueriesFor(history, scope);
+  const { data } = useLiveSuspenseQuery((q) =>
+    q.from({ record: searchHistory }).orderBy(({ record }) => record.at, 'desc'),
+  );
+  return recentQueriesFor(data, scope);
 }
 
 export function useToast(): [ToastView | undefined, (toast: ToastView) => void] {
