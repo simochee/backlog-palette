@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useRef } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 
 import {
@@ -14,10 +15,10 @@ import {
   recentQueries,
 } from '@/components/fixtures';
 import { en, ja, type Labels, LabelsProvider } from '@/components/labels';
-import type { PanelView } from '@/components/types';
+import type { FocusHandle, PanelView } from '@/components/types';
 
 import { assertPaletteInvariants } from './Palette.invariants';
-import { SidePanel } from './SidePanel';
+import { SidePanel, type SidePanelProps } from './SidePanel';
 import { StatefulSidePanel } from './SidePanel.harness';
 
 const meta = {
@@ -156,6 +157,31 @@ export const P6: Story = {
     await userEvent.type(input, 'フロー{Enter}');
     await expect(args.onSearch).toHaveBeenLastCalledWith('決済フロー');
     await expect(args.onAction).not.toHaveBeenCalled();
+  },
+};
+
+/** container の代わりに ref の focus() を呼ぶ。パレットから検索を渡されたときの合図 */
+function Refocusable(props: SidePanelProps) {
+  const ref = useRef<FocusHandle>(null);
+  return (
+    <>
+      <button type="button" onClick={() => ref.current?.focus()}>
+        入力欄へ戻す
+      </button>
+      <StatefulSidePanel {...props} ref={ref} />
+    </>
+  );
+}
+
+export const P7: Story = {
+  name: 'P7 検索を渡された — ref の focus() を呼ぶと、フィルターなど入力欄の外にあったフォーカスが入力欄へ戻る',
+  render: (args) => <Refocusable {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('combobox', { name: ja.panel.inputLabel });
+    const button = canvas.getByRole('button', { name: '入力欄へ戻す' });
+    await userEvent.click(button);
+    await expect(input).toHaveFocus();
   },
 };
 

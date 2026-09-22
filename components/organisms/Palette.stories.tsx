@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useRef } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 
 import {
@@ -27,8 +28,9 @@ import {
 } from '@/components/fixtures';
 import { ja } from '@/components/labels';
 import { flattenRows } from '@/components/organisms/CandidateList';
+import type { FocusHandle } from '@/components/types';
 
-import { Palette } from './Palette';
+import { Palette, type PaletteProps } from './Palette';
 import { StatefulPalette } from './Palette.harness';
 import { assertPaletteInvariants } from './Palette.invariants';
 
@@ -241,5 +243,33 @@ export const S13: Story = {
     await expect(args.onAction).toHaveBeenCalledWith(id, { newTab: false });
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
+  },
+};
+
+/** container の代わりに ref の focus() を呼ぶ。開き直しの合図は props ではなくこの呼び出し */
+function Refocusable(props: PaletteProps) {
+  const ref = useRef<FocusHandle>(null);
+  return (
+    <>
+      <button type="button" onClick={() => ref.current?.focus()}>
+        入力欄へ戻す
+      </button>
+      <StatefulPalette {...props} ref={ref} />
+    </>
+  );
+}
+
+export const Refocus: Story = {
+  name: 'ref の focus() を呼ぶと、入力欄の外に出ていたフォーカスが入力欄へ戻る',
+  render: (args) => <Refocusable {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('combobox', { name: ja.palette.inputLabel });
+    const button = canvas.getByRole('button', { name: '入力欄へ戻す' });
+    button.focus();
+    await expect(button).toHaveFocus();
+    // Overlay が画面を覆うのでポインタでは押せない。container と同じく直接呼ばせる
+    button.click();
+    await expect(input).toHaveFocus();
   },
 };
