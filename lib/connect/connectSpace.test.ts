@@ -1,6 +1,8 @@
 import { Error as BacklogErrors } from 'backlog-js';
 import { describe, expect, it, vi } from 'vitest';
 
+import { TransportError } from '@/lib/backlog/transportError';
+
 import { type ConnectApi, type ConnectDeps, connectSpace } from './connectSpace';
 
 const HOST = 'demo.backlog.jp';
@@ -74,7 +76,7 @@ describe('接続の手順', () => {
 
   it('初期化に失敗しても保存した鍵は残り、失敗を返す', async () => {
     const d = deps(fakeApi(), {
-      prefetchMasters: () => Promise.reject(new TypeError('Failed to fetch')),
+      prefetchMasters: () => Promise.reject(new TransportError(new TypeError('Failed to fetch'))),
     });
 
     const result = await connectSpace(HOST, 'key', d);

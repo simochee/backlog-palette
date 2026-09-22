@@ -85,6 +85,13 @@
 
 **実装への含意**: `.action` 形式のレガシーパスと `/projects/{key}/…` 形式の新パスが混在している。ページ定義は「1 画面 = 1 パステンプレート」ではなく、**別名（alias）を複数持てる形**で持つのが安全。
 
+### 1.4 ページの DOM
+
+| 事実 | 確度 | 根拠 |
+|---|---|---|
+| ダークモードのとき `<html>` に `dark-mode` クラスが付く。無ければライト | ● | 開発者の実機観察（2026-09-23）。パレットのテーマはこれに揃える（decisions.md D-57） |
+| 表示中にテーマを切り替えたとき、再読み込みなしでクラスが付け外しされるか | ✗ | 未確認。パレットは開くたびに読み直すので、どちらでも追従する |
+
 ---
 
 ## 2. 課題キー / プロジェクトキーの形式
@@ -155,6 +162,10 @@
 `createdUser` `created` `updatedUser` `updated` `customFields` `attachments` `sharedFiles` `stars`。
 `dueDate` と `startDate` は**既定の応答に含まれる**ので、期限を行に出すのに追加のリクエストは要らない。
 `parentIssueId` も含まれるが、親課題の件名は含まれない（表示するには課題ごとに 1 リクエスト要る）
+
+**未割り当ての課題の `assignee` は `null`**（●、2026-09-23 に実スペースの `GET /issues` 100 件で確認）。
+項目自体は省かれない。backlog-js の型は `assignee?: User` で undefined しか表さないので、型を信じると
+`assignee.name` で落ちる。`updatedUser` は同じ 100 件で null の例は無かった
 
 - 件数取得: `GET /api/v2/issues/count`。**課題一覧と同じパラメータ（`keyword` を含む）を受ける**（◎）。実装プラン §18-11「広げれば N 件」の判断材料になる
 - `projectId[]` / `statusId[]` / `assigneeId[]` はすべて**数値 ID**。キーや名前では絞れない → マスタの先読み（実装プラン §7.4）は必須
@@ -379,7 +390,7 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 |---|---|
 | `GET /wikis` の一覧に**本文 `content` が含まれる** | ● 含まれる。**「本文が返らない」は誤りだった**。Wiki もハイライト付きスニペットを作れる |
 | `GET /wikis` に `count` が効かない | ● `count=5` を付けても全件（実測 956 件）返った。ただし `keyword` を付ければサーバ側で絞られるので、検索用途では問題にならない。**キーワード無しの一覧取得は避ける** |
-| `GET /documents` は `projectIds[]` と `offset` を取る | ● 既定 20 件。`plain`・`json`・`title`・`statusId`・`tags`・`emoji` を含む |
+| `GET /documents` は `projectId[]` と `offset` を取る | ● 既定 20 件。`plain`・`json`・`title`・`statusId`・`tags`・`emoji` を含む。**以前ここに `projectIds[]` と書いていたのは誤り**。2026-09-23 に実スペースで再測: `projectId[]=18` は projectId 18 のドキュメントだけに絞られ、`projectIds[]=18` は絞り込まれず、パラメータ無しと同じ応答だった（未知のパラメータは黙って無視される）。§3.4 の公式ドキュメントおよび backlog-js の `GetDocumentsParams` と一致 |
 | `GET /issues` はパラメータ無しだとエラー | ● `projectId[]` の指定が要る |
 
 ### 6.4 OAuth 2.0（公式ドキュメントで確認、2026-09-10）
@@ -404,3 +415,47 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 | 1 つの OAuth クライアントで複数スペースを認可できるか | ● **できる。**あるスペースで登録した client_id を、他のスペースの認可エンドポイントにそのまま使える |
 
 **含意**: スペースを増やすたびの OAuth アプリ登録が要らない。2 つ目以降のスペースも「接続」1 回で繋がるので、スペース横断（実装プラン §1）が OAuth のまま成立する。
+
+## 7. ページの見た目（プロジェクトテーマ）
+
+出典: `https://assets.backlog.com/playassets/1.84.0/styles/ReactApp.css`（● 2026-09-23 に取得して読んだ。
+版が上がると URL の `1.84.0` が変わる）と、実機の DevTools（● 2026-09-23、theme-orange）。
+
+### 7.1 宣言のされ方
+
+| 事実 | 内容 |
+|---|---|
+| 既定値 | `:root` にデザイントークン一式を宣言する。テーマ変数の既定は緑（Main `#4caf93` / Accent `#2c9a7a` / Link `#00836b` ほか） |
+| プロジェクトテーマ | `body:not(.Page--error):not(.Page--add-space).theme-<name>` が `--defaultColor*` を上書きする |
+| テーマ名 | aqua / azuki / black / gray / orange / pink / purple / sakura / ultramarine / army / ethnic / leopard / pink-leopard / acrylic（14 種）。クラスが無ければ `:root` の緑 |
+| ダークモード | 祖先に `.dark-mode` があると `.dark-mode body:not(...)` が text / border / background 系と `--defaultColor*` を再定義する。テーマごとの上書きもある（`.dark-mode body:not(...).theme-<name>`）。ダークのテーマ上書きは Main / Accent / Accent-rgb / Link だけで、Base / Base-rgb / Base-2 は全テーマ共通で `[class*=theme-]` が面の色に寄せる。Sub-1 はライトのテーマ値が残る |
+| 値の形 | 色は `#rrggbb`（大文字小文字は混在）。`-rgb` 付きは `r,g,b`（空白なし）。ダークの Base / Base-2 は `var(--backgroundColor*)` 参照で、computed style では解決後の hex が返る |
+| 片寄った変数 | `--defaultColorMainInverse` はダークの black / gray / army / acrylic にだけある |
+
+theme-orange の値（ライト / ダーク）:
+
+| 変数 | ライト | ダーク |
+|---|---|---|
+| `--defaultColorMain` | `#ea733b` | `#d4642f` |
+| `--defaultColorAccent` | `#de5514` | `#C3542D` |
+| `--defaultColorAccent-rgb` | `222,85,20` | `210,93,60` |
+| `--defaultColorBase` | `#f3e6e2` | `#3e3e3e`（`var(--backgroundColorWeak)`） |
+| `--defaultColorBase-rgb` | `243,230,226` | `62,62,62` |
+| `--defaultColorBase-2` | `#f7ebe9` | `#333333`（`var(--backgroundColorSchemeBase)`） |
+| `--defaultColorLink` | `#c14524` | `#ff9454` |
+| `--defaultColorSub-1` | `#ECA08B` | `#ECA08B` |
+| `--backgroundColorSchemeBase` | `#ffffff` | `#333333` |
+
+### 7.2 Backlog 本体での使い分け（ReactApp.css の参照箇所から）
+
+| 変数 | 主な使われ方 |
+|---|---|
+| Accent | 主ボタンの塗りと縁（`.button--primary`）、アイコンの fill、選択中の下線。参照数が最多 |
+| Accent-rgb | 選択面 `rgba(…, .25)`（`.selectbox--multiple__item.is_selected`）、ホバー面 `rgba(…, .075)`〜`.2` |
+| `--backgroundColorSchemeBase` | 主ボタンの文字色（Accent の塗りの上） |
+| Link | リンク文字色、入力欄フォーカスの縁と `box-shadow: 0 0 3px` |
+| Base / Base-2 | 淡い面（選択済み絵文字、既定ボタンのホバー面） |
+| Main | ヘッダーなど面の塗り。参照は少ない |
+| Sub-1 | 一部の縁と面。参照は少ない |
+
+`.dark-mode` が付く要素はセレクタからは body の祖先としか言えないが、実機では `<html>` に付く（§1.4）。

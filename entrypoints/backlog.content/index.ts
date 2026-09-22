@@ -5,6 +5,8 @@ import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { onMessage } from '@/lib/messaging/content';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
 import { SHARE_FRAGMENT_KEY } from '@/lib/share';
+import { readBacklogTheme } from '@/lib/theme/backlogTheme';
+import { BACKLOG_DARK_MODE_CLASS, type ColorScheme } from '@/lib/theme/colorScheme';
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
@@ -18,7 +20,13 @@ import { summaryFromTitle } from './title.ts';
  */
 function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameElement {
   const iframe = document.createElement('iframe');
-  iframe.src = src;
+  /*
+   * テーマは open でも届くが、open は iframe を表示した後に非同期で着く。それだけだと
+   * ダークの Backlog で最初の ⌘K に一瞬ライトが写るので、読み込む時点の値も URL で渡す
+   */
+  const url = new URL(src);
+  url.searchParams.set('colorScheme', readColorScheme());
+  iframe.src = url.href;
   iframe.dataset.backlogPalette = '';
   /*
    * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
@@ -42,6 +50,10 @@ function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameEle
   return iframe;
 }
 
+function readColorScheme(): ColorScheme {
+  return document.documentElement.classList.contains(BACKLOG_DARK_MODE_CLASS) ? 'dark' : 'light';
+}
+
 const ISSUE_PATH = /^\/view\/([A-Z][A-Z0-9_]*-\d+)/u;
 
 function readPageContext(): PageContext {
@@ -53,10 +65,17 @@ function readPageContext(): PageContext {
     spaceKey: spaceKeyOf(origin),
     projectKey: issueKey?.slice(0, issueKey.lastIndexOf('-')),
     issueKey,
+    colorScheme: readColorScheme(),
   };
 }
 
-type PaletteFrame = { show: () => void; hide: () => void };
+/** Backlog 本体のダークモードは `.dark-mode body` で変数を再定義する（backlog-facts.md §7） */
+function readPageTheme() {
+  const style = getComputedStyle(document.body);
+  return readBacklogTheme((name) => style.getPropertyValue(name), readColorScheme());
+}
+
+type PaletteFrame = { show: () => void; hide: () => void; syncTheme: () => void };
 
 function createPaletteFrameControl(
   iframe: HTMLIFrameElement,
@@ -65,8 +84,15 @@ function createPaletteFrameControl(
   const send = (message: ToIframe) => {
     iframe.contentWindow?.postMessage(message, extensionOrigin);
   };
+  const syncTheme = () => send({ t: 'theme', theme: readPageTheme() });
   return {
+    syncTheme,
     show: () => {
+      /*
+       * 読み込み時と遷移時にも送っているが、開く直前にも読み直す。Backlog は SPA で、
+       * body のテーマクラスが wxt:locationchange より後に付け替わることがある
+       */
+      syncTheme();
       iframe.style.display = 'block';
       /*
        * 親からも iframe 要素にフォーカスを移す。iframe の中で input.focus() を
@@ -113,6 +139,8 @@ function createPaletteHost(
 
   ctx.addEventListener(iframe, 'load', () => {
     isLoaded = true;
+    // 開いてから送ると、表示された最初のフレームが既定の配色になる（D-58）
+    frame.syncTheme();
     if (!hasPendingOpen) return;
     hasPendingOpen = false;
     frame.show();
@@ -166,7 +194,9 @@ export default defineContentScript({
     document.documentElement.append(iframe);
     ctx.onInvalidated(() => iframe.remove());
 
-    const host = createPaletteHost(ctx, iframe, createPaletteFrameControl(iframe, extensionOrigin));
+    const frame = createPaletteFrameControl(iframe, extensionOrigin);
+    const host = createPaletteHost(ctx, iframe, frame);
+    ctx.addEventListener(window, 'wxt:locationchange', frame.syncTheme);
 
     /*
      * キャプチャ段階で受ける。Backlog 本体がバブリングで ⌘K を使っていても
