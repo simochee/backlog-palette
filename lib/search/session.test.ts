@@ -135,6 +135,6 @@ describe('接続が戻ったら引き直す対象', () => {
     expect(endedOffline(fail(startSession('q', scope), 'issue', { kind: 'unauthorized' }))).toBe(
       false,
     );
-    expect(endedOffline(undefined)).toBe(false);
+    expect(endedOffline()).toBe(false);
   });
 });

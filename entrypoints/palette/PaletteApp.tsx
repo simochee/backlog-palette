@@ -54,7 +54,7 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
  */
 function useRetryWhenOnline(offline: boolean, retry: () => void) {
   useEffect(() => {
-    if (!offline) return undefined;
+    if (!offline) return;
     window.addEventListener('online', retry);
     return () => {
       window.removeEventListener('online', retry);
