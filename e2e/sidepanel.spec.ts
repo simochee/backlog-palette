@@ -67,6 +67,30 @@ test.describe('サイドパネル', () => {
     await expect(page.getByRole('option', { name: '一致する結果がありません' })).toBeVisible();
   });
 
+  test('閉じて開き直すと前回の検索と条件が戻る', async ({ page, serviceWorker, seedConnected }) => {
+    await seedConnected([{ host: DEMO, name: 'デモスペース' }]);
+    await page.goto(panelUrl(serviceWorker));
+    await page.getByRole('button', { name: /^スペース/u }).click();
+    await page.getByRole('radio', { name: 'デモスペース' }).click();
+    await page.getByRole('button', { name: /^種別/u }).click();
+    await page.getByRole('radio', { name: '課題' }).click();
+    const input = page.getByRole('combobox', { name: '検索語' });
+    await input.fill('決済');
+    await input.press('Enter');
+    await expect(
+      page.getByRole('option', { name: /決済フローのエラーハンドリング/u }),
+    ).toBeVisible();
+
+    await page.goto('about:blank');
+    await page.goto(panelUrl(serviceWorker));
+
+    await expect(page.getByRole('combobox', { name: '検索語' })).toHaveValue('決済');
+    await expect(page.getByRole('button', { name: /^種別 課題/u })).toBeVisible();
+    await expect(
+      page.getByRole('option', { name: /決済フローのエラーハンドリング/u }),
+    ).toBeVisible();
+  });
+
   test('入力欄が空のとき ↑ で直前の検索語が入る', async ({ page, serviceWorker }) => {
     await seed(serviceWorker, {
       ...connected,
