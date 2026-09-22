@@ -31,8 +31,8 @@ async function waitForExtensionFrame(tab: Page, file: string): Promise<Frame> {
   for (let attempt = 0; attempt < 50; attempt += 1) {
     for (const frame of tab.frames()) {
       if (frame === tab.mainFrame()) continue;
-      const href = await frame.evaluate(() => location.href).catch(() => '');
-      if (href.endsWith(`/${file}`)) return frame;
+      const pathname = await frame.evaluate(() => location.pathname).catch(() => '');
+      if (pathname.endsWith(`/${file}`)) return frame;
     }
     await new Promise((done) => {
       setTimeout(done, 100);

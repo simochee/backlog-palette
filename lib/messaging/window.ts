@@ -1,4 +1,5 @@
 import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
+import type { ColorScheme } from '@/lib/theme/colorScheme';
 
 /**
  * content script とパレット iframe の間の唯一の通信路。
@@ -15,6 +16,8 @@ export type PageContext = {
   spaceKey?: string;
   projectKey?: string;
   issueKey?: string;
+  /** Backlog 本体のテーマ。パレットの見た目をこれに揃える */
+  colorScheme?: ColorScheme;
 };
 
 export type ToIframe = { t: 'open'; ctx: PageContext } | { t: 'close' };
