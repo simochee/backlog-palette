@@ -163,6 +163,10 @@
 `dueDate` と `startDate` は**既定の応答に含まれる**ので、期限を行に出すのに追加のリクエストは要らない。
 `parentIssueId` も含まれるが、親課題の件名は含まれない（表示するには課題ごとに 1 リクエスト要る）
 
+**未割り当ての課題の `assignee` は `null`**（●、2026-09-23 に実スペースの `GET /issues` 100 件で確認）。
+項目自体は省かれない。backlog-js の型は `assignee?: User` で undefined しか表さないので、型を信じると
+`assignee.name` で落ちる。`updatedUser` は同じ 100 件で null の例は無かった
+
 - 件数取得: `GET /api/v2/issues/count`。**課題一覧と同じパラメータ（`keyword` を含む）を受ける**（◎）。実装プラン §18-11「広げれば N 件」の判断材料になる
 - `projectId[]` / `statusId[]` / `assigneeId[]` はすべて**数値 ID**。キーや名前では絞れない → マスタの先読み（実装プラン §7.4）は必須
 
