@@ -21,7 +21,8 @@ export type IssueLike = {
   summary: string;
   issueType: { name: string; color: string };
   status: { id: number; name: string };
-  assignee?: Named;
+  // backlog-js の型は undefined 想定だが、API は未割り当ての課題に null を返す
+  assignee?: Named | null;
   dueDate?: string | null;
   updatedUser: Named;
   updated: string;
@@ -75,7 +76,9 @@ export function issueEntry(host: string, issue: IssueLike, project: ProjectRef):
     spaceId: host,
     projectId: String(project.id),
     projectName: project.name,
-    ...(issue.assignee === undefined ? {} : { assignee: issue.assignee.name }),
+    ...(issue.assignee === undefined || issue.assignee === null
+      ? {}
+      : { assignee: issue.assignee.name }),
     ...(issue.dueDate === undefined || issue.dueDate === null ? {} : { dueDate: issue.dueDate }),
     updatedBy: issue.updatedUser.name,
     status: statusBadge(issue.status),
