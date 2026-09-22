@@ -379,7 +379,7 @@ M1（API 検証）と M2 の着手前に、検証スペースで確認する。*
 |---|---|
 | `GET /wikis` の一覧に**本文 `content` が含まれる** | ● 含まれる。**「本文が返らない」は誤りだった**。Wiki もハイライト付きスニペットを作れる |
 | `GET /wikis` に `count` が効かない | ● `count=5` を付けても全件（実測 956 件）返った。ただし `keyword` を付ければサーバ側で絞られるので、検索用途では問題にならない。**キーワード無しの一覧取得は避ける** |
-| `GET /documents` は `projectIds[]` と `offset` を取る | ● 既定 20 件。`plain`・`json`・`title`・`statusId`・`tags`・`emoji` を含む |
+| `GET /documents` は `projectId[]` と `offset` を取る | ● 既定 20 件。`plain`・`json`・`title`・`statusId`・`tags`・`emoji` を含む。**以前ここに `projectIds[]` と書いていたのは誤り**。公式の Get Document List と backlog-js の `GetDocumentsParams` はどちらも `projectId[]`（2026-09-23 確認、§3.4 と一致） |
 | `GET /issues` はパラメータ無しだとエラー | ● `projectId[]` の指定が要る |
 
 ### 6.4 OAuth 2.0（公式ドキュメントで確認、2026-09-10）
