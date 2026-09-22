@@ -30,11 +30,12 @@ test.describe('サイドパネル', () => {
     }
   });
 
-  test('スペースを選ぶと検索状態が URL に入り、語を打って Enter で検索が走る', async ({
+  test('スペースを選ぶと検索状態が URL に入り、語を打って Enter でそのスペースの API を検索する', async ({
     page,
     serviceWorker,
+    seedConnected,
   }) => {
-    await seed(serviceWorker, connected);
+    await seedConnected([{ host: DEMO, name: 'デモスペース' }]);
     await page.goto(panelUrl(serviceWorker));
 
     await page.getByRole('button', { name: /^スペース/u }).click();
@@ -46,6 +47,22 @@ test.describe('サイドパネル', () => {
     await input.press('Enter');
 
     await expect(page).toHaveURL(/%E6%B1%BA%E6%B8%88|決済/u);
+    await expect(
+      page.getByRole('option', { name: /決済フローのエラーハンドリング/u }),
+    ).toBeVisible();
+    await expect(page.getByRole('option', { name: /決済まわりの仕様メモ/u })).toBeVisible();
+  });
+
+  test('一致しない語では 0 件の案内が出る', async ({ page, serviceWorker, seedConnected }) => {
+    await seedConnected([{ host: DEMO, name: 'デモスペース' }]);
+    await page.goto(panelUrl(serviceWorker));
+    await page.getByRole('button', { name: /^スペース/u }).click();
+    await page.getByRole('radio', { name: 'デモスペース' }).click();
+
+    const input = page.getByRole('combobox', { name: '検索語' });
+    await input.fill('存在しない語');
+    await input.press('Enter');
+
     await expect(page.getByRole('status', { name: '検索の進捗' })).toContainText('0 件');
     await expect(page.getByRole('option', { name: '一致する結果がありません' })).toBeVisible();
   });

@@ -22,7 +22,7 @@ describe('ステータス条件の展開', () => {
 
 describe('プロジェクトをまたぐステータス', () => {
   it('組み込み 4 種（未対応・処理中・処理済み・完了）はどのプロジェクトでも同じ ID を指す', () => {
-    expect([1, 2, 3, 4].every(isBuiltinStatus)).toBe(true);
+    expect([1, 2, 3, 4].every((id) => isBuiltinStatus(id))).toBe(true);
   });
 
   it('カスタムステータスはそのプロジェクトでしか通じない', () => {
