@@ -37,6 +37,12 @@ function toThemeValue(value: unknown): string | undefined {
   return HEX_COLOR.test(trimmed) || RGB_CHANNELS.test(trimmed) ? trimmed : undefined;
 }
 
+function isComplete(
+  variables: Partial<BacklogTheme['variables']>,
+): variables is BacklogTheme['variables'] {
+  return BACKLOG_THEME_VARIABLES.every((name) => variables[name] !== undefined);
+}
+
 /*
  * 1 つでも欠けたら全体を捨てる。Backlog は :root に既定値を宣言しているので、欠けているのは
  * ReactApp.css を読まないページか想定外の DOM。部分的に置くと、トークンが参照する
@@ -45,9 +51,13 @@ function toThemeValue(value: unknown): string | undefined {
 function collectVariables(
   pick: (name: BacklogThemeVariable) => unknown,
 ): BacklogTheme['variables'] | undefined {
-  const entries = BACKLOG_THEME_VARIABLES.map((name) => [name, toThemeValue(pick(name))] as const);
-  if (entries.some(([, value]) => value === undefined)) return undefined;
-  return Object.fromEntries(entries) as BacklogTheme['variables'];
+  const variables: Partial<BacklogTheme['variables']> = {};
+  for (const name of BACKLOG_THEME_VARIABLES) {
+    const value = toThemeValue(pick(name));
+    if (value === undefined) return undefined;
+    variables[name] = value;
+  }
+  return isComplete(variables) ? variables : undefined;
 }
 
 /** content script 側。`readVariable` には body の computed style を読む関数を渡す */
