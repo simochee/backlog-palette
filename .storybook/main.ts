@@ -2,6 +2,8 @@ import type { StorybookConfig } from '@storybook/react-vite';
 import tailwindcss from '@tailwindcss/vite';
 import { mergeConfig, type Plugin } from 'vite';
 
+import { reactCompiler } from '../react-compiler.config.ts';
+
 const projectRoot = new URL('..', import.meta.url).pathname;
 
 const rejectExtensionApi: Plugin = {
@@ -32,7 +34,7 @@ const config: StorybookConfig = {
   // 動いてしまう。解決不能にしておくことで規約違反をビルドエラーとして検出する。
   viteFinal: (viteConfig) =>
     mergeConfig(viteConfig, {
-      plugins: [rejectExtensionApi, tailwindcss()],
+      plugins: [rejectExtensionApi, tailwindcss(), reactCompiler()],
       css: { transformer: 'lightningcss' },
       resolve: {
         alias: {

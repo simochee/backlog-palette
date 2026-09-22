@@ -1,6 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'wxt';
 
+import { reactCompiler } from './react-compiler.config.ts';
+
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   imports: false,
@@ -47,7 +49,7 @@ export default defineConfig({
       : {}),
   }),
   vite: () => ({
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), reactCompiler()],
     css: { transformer: 'lightningcss' },
   }),
 });
