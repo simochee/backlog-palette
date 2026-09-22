@@ -54,7 +54,8 @@ function createSessionSupply() {
     else void inflight?.then(receive);
   };
 
-  return { current, ready: refresh(), refresh, whenReady };
+  void refresh();
+  return { current, refresh, whenReady };
 }
 
 type Opening = {
@@ -114,8 +115,6 @@ function closeOnPaletteHotkey(close: () => void): void {
 }
 
 export type PaletteController = {
-  /** 最初の用意が終わるまで container を Suspense で待たせる */
-  ready: Promise<unknown>;
   session: Readable<Supplied>;
   surface: Readable<Surface>;
   store: PaletteStore;
@@ -174,5 +173,5 @@ export function startPaletteController(channel: HostChannel): PaletteController 
   watchConnectedSpaces(() => void supply.refresh());
   closeOnPaletteHotkey(close);
 
-  return { ready: supply.ready, session: supply.current, surface, store, pending, close };
+  return { session: supply.current, surface, store, pending, close };
 }

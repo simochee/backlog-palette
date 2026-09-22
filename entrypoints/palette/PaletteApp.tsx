@@ -1,5 +1,5 @@
 import { useSelector } from '@tanstack/react-store';
-import { use, useEffect, useEffectEvent } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
@@ -84,13 +84,17 @@ function OpenPalette({ session, controller }: OpenPaletteProps) {
 
 /**
  * パレットの container。Store を購読し derive の結果を presenter に渡す。状態を持つのは
- * controller と Store だけ（CLAUDE.md の層構成）。最初の材料が揃うまでは Suspense で待つ。
+ * controller と Store だけ（CLAUDE.md の層構成）。
  *
  * 表示・非表示は content script が iframe ごと切り替えるので、ここは閉じている間も描き続ける。
  * `open` を待ってから描くと、iframe が表示された直後の打鍵が入力欄に届かない
  */
 export function PaletteApp({ controller }: { controller: PaletteController }) {
-  use(controller.ready);
+  /*
+   * 最初の材料を use() + Suspense で待たない。Suspense は fallback から中身へ切り替えるとき
+   * 表示をまとめて遅らせ（最大 300ms）、その間は入力欄が無いので開いた直後の打鍵が落ちる。
+   * Store の更新なら材料が届いた時点で同期に描ける
+   */
   const session = useSelector(controller.session);
   if (session === null) return null;
   return <OpenPalette session={session} controller={controller} />;

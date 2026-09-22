@@ -1,4 +1,4 @@
-import { StrictMode, Suspense } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import '@/components/tokens/tailwind.css';
@@ -20,8 +20,6 @@ const controller = startPaletteController(hostChannel);
 
 createRoot(root).render(
   <StrictMode>
-    <Suspense fallback={null}>
-      <PaletteApp controller={controller} />
-    </Suspense>
+    <PaletteApp controller={controller} />
   </StrictMode>,
 );
