@@ -8,7 +8,10 @@ import { pruneDisplayCache } from '@/lib/visits/record';
 
 const PRUNE_DISPLAY_CACHE = 'prune-display-cache';
 
-type SidebarAction = { toggle: () => void };
+type SidebarAction = {
+  toggle: () => void;
+  isOpen: (windowId: number | undefined) => Promise<boolean>;
+};
 
 /*
  * Firefox は side_panel を知らず sidebar_action で出す（surfaces.md §7）。
@@ -18,11 +21,13 @@ function readSidebarAction(): SidebarAction | undefined {
   const value: unknown = Reflect.get(browser, 'sidebarAction');
   if (typeof value !== 'object' || value === null) return undefined;
   const toggle: unknown = Reflect.get(value, 'toggle');
-  if (typeof toggle !== 'function') return undefined;
+  const isOpen: unknown = Reflect.get(value, 'isOpen');
+  if (typeof toggle !== 'function' || typeof isOpen !== 'function') return undefined;
   return {
     toggle: () => {
       Reflect.apply(toggle, value, []);
     },
+    isOpen: async (windowId) => Boolean(await Reflect.apply(isOpen, value, [{ windowId }])),
   };
 }
 
@@ -47,6 +52,14 @@ function readSenderTab(sender: unknown): CurrentTab | undefined {
   };
 }
 
+function readSenderWindowId(sender: unknown): number | undefined {
+  if (typeof sender !== 'object' || sender === null) return undefined;
+  const tab: unknown = Reflect.get(sender, 'tab');
+  if (typeof tab !== 'object' || tab === null) return undefined;
+  const windowId: unknown = Reflect.get(tab, 'windowId');
+  return typeof windowId === 'number' ? windowId : undefined;
+}
+
 /** browser.tabs を持たないコンテキスト（Firefox の埋め込み iframe）からの委譲を受ける */
 function serveTabsDelegation() {
   // 送り主の載っているタブは sender から読む。メッセージに載せた値は信じない（I7）
@@ -58,6 +71,11 @@ function serveTabsDelegation() {
       return;
     }
     await browser.tabs.update(tabId, { url: message.data.url });
+  });
+  onMessage('isSidebarOpen', async (message) => {
+    const sidebarAction = readSidebarAction();
+    if (sidebarAction === undefined) return false;
+    return sidebarAction.isOpen(readSenderWindowId(message.sender));
   });
 }
 

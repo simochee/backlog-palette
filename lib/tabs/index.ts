@@ -55,3 +55,12 @@ export async function openPaletteInCurrentTab(): Promise<void> {
   if (tab?.id === undefined) return;
   await sendToContent('openPalette', undefined, tab.id).catch(() => undefined);
 }
+
+/**
+ * Firefox のサイドバーが開いているか。サイドバーはスクリプトから開けないので、⌘→ と
+ * panel 行は開いているときだけ出す（surfaces.md §5.5）。埋め込み iframe は sidebarAction を
+ * 持たないので background に訊く
+ */
+export function isSidebarOpen(): Promise<boolean> {
+  return sendMessage('isSidebarOpen');
+}
