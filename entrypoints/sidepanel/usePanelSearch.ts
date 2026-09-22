@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   arrive,
@@ -49,13 +49,13 @@ function useSearchStore(search: PanelSearch) {
   if (store.searchKey !== searchKey) setStore(freshStore(search, searchKey, 0));
   const current = store.searchKey === searchKey ? store : freshStore(search, searchKey, 0);
 
-  const retry = useCallback(() => {
+  const retry = () => {
     setStore((previous) =>
       previous.searchKey === searchKey
         ? freshStore(search, searchKey, previous.attempt + 1)
         : previous,
     );
-  }, [search, searchKey]);
+  };
   useRetryWhenOnline(endedOffline(current.session), retry);
 
   return { searchKey, attempt: current.attempt, session: current.session, setStore };
@@ -110,10 +110,10 @@ export function usePanelSearch(
     return cancel;
   }, [search, searchKey, attempt, runner, learningEnabled, setStore]);
 
-  const state = useCallback((): SearchState | undefined => {
+  const state = (): SearchState | undefined => {
     if (search.scope === undefined) return undefined;
     return searchState(search.query, search.scope, search.conditions);
-  }, [search]);
+  };
 
   return { session, state };
 }

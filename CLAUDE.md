@@ -175,6 +175,19 @@ WXT の auto-import は無効化している (`wxt.config.ts` の `imports: fals
 import { browser, defineBackground } from '#imports';
 ```
 
+## React の書き方
+
+メモ化は React Compiler に任せる (`react-compiler.config.ts`、tech-stack.md T-12)。
+`useMemo` / `useCallback` / `memo` は書かない。コンパイラが同じ粒度でメモ化するので、
+依存配列を人が保守する理由がない。
+
+コンパイラは `panicThreshold: 'all_errors'` で動かしている。レンダー中の ref の読み書きなど
+規則を破ったコンポーネントがあると、`pnpm build` と `pnpm build:storybook` が落ちる。
+黙って最適化から外れるより、ビルドで知る方を選んでいる。
+
+oxlint の `react-hooks/exhaustive-deps` はコンパイラのメモ化を知らない。effect の中で
+呼ぶ関数が「毎回変わる」と言われたら、`useCallback` で包むのではなく `useEffectEvent` にする。
+
 ## 情報の置き場所
 
 How / What / Why / Why not をそれぞれの置き場所に分ける。読み手が「どこを見れば

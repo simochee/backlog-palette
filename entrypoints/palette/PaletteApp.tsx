@@ -1,5 +1,5 @@
 import { useSelector } from '@tanstack/react-store';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
@@ -100,10 +100,7 @@ function useIndexWithAssigned(session: PaletteSession): PaletteIndex {
       alive = false;
     };
   }, [session]);
-  return useMemo(
-    () => (assigned === undefined ? session.index : { ...session.index, assigned }),
-    [session.index, assigned],
-  );
+  return assigned === undefined ? session.index : { ...session.index, assigned };
 }
 
 type OpenPaletteProps = {
@@ -122,29 +119,23 @@ function OpenPalette({ session, store, pending, open, openedAt, close }: OpenPal
   const state = useSelector(store, (snapshot) => snapshot);
   useToastExpiry(store, state.toast);
 
-  const derived = useMemo(
-    () => derive(state, index, labels, { platform: detectPlatform(), panelAvailable }),
-    [state, index, labels, panelAvailable],
-  );
-  const env = useMemo<ActionEnv>(
-    () => ({
-      context,
-      labels,
-      learningEnabled: index.learningEnabled,
-      runner,
-      query: state.input.trim(),
-      scope: scopeOf(state.stack),
-      dispatch: store.dispatch,
-      close,
-      now: Date.now,
-    }),
-    [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
-  );
+  const derived = derive(state, index, labels, { platform: detectPlatform(), panelAvailable });
+  const env: ActionEnv = {
+    context,
+    labels,
+    learningEnabled: index.learningEnabled,
+    runner,
+    query: state.input.trim(),
+    scope: scopeOf(state.stack),
+    dispatch: store.dispatch,
+    close,
+    now: Date.now,
+  };
   // オフラインで終わった検索は、接続が戻ったら同じ語とスコープで引き直す（palette.md §7.5、D-59）
-  const retry = useCallback(() => {
+  const retry = () => {
     const last = pending.lastSearch;
     if (last !== undefined) restartSearch(last.query, last.scope, env, pending, 'reconnect');
-  }, [pending, env]);
+  };
   useRetryWhenOnline(open && endedOffline(state.session), retry);
   const callbacks = usePaletteCallbacks({
     store,

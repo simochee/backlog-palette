@@ -1,5 +1,3 @@
-import { useCallback, useMemo } from 'react';
-
 import type { PaletteCallbacks } from '@/components/organisms/Palette';
 import type { DerivedPalette, PaletteStore } from '@/lib/palette';
 import { EXTERNAL_ROW_ID, MORE_EXTERNAL_ROW_ID } from '@/lib/search/ids';
@@ -29,23 +27,17 @@ type RowCallbacks = Pick<PaletteCallbacks, 'onAction' | 'onTake'>;
 
 /** 行 id → 動作の解決は derive が済ませている。ここは Map を引いて実行するだけ（I1 を container で破らない） */
 function useRowCallbacks({ store, derived, env, pending }: Input): RowCallbacks {
-  const onAction = useCallback(
-    (id: string, opts: { newTab: boolean }) => {
-      const action = derived.actions.get(id);
-      if (action === undefined) return;
-      if (id === EXTERNAL_ROW_ID || id === MORE_EXTERNAL_ROW_ID)
-        track({ type: 'externalSearchOpened' });
-      void performAction(action, opts.newTab, env, pending);
-    },
-    [derived.actions, env, pending],
-  );
-  const onTake = useCallback(
-    (id: string) => {
-      const target = derived.takes.get(id);
-      if (target !== undefined) store.dispatch({ type: 'took', target });
-    },
-    [derived.takes, store],
-  );
+  const onAction = (id: string, opts: { newTab: boolean }) => {
+    const action = derived.actions.get(id);
+    if (action === undefined) return;
+    if (id === EXTERNAL_ROW_ID || id === MORE_EXTERNAL_ROW_ID)
+      track({ type: 'externalSearchOpened' });
+    void performAction(action, opts.newTab, env, pending);
+  };
+  const onTake = (id: string) => {
+    const target = derived.takes.get(id);
+    if (target !== undefined) store.dispatch({ type: 'took', target });
+  };
   return { onAction, onTake };
 }
 
@@ -54,33 +46,23 @@ export function usePaletteCallbacks(input: Input): PaletteCallbacks {
   const { store, env, pending, stack, close } = input;
   const rows = useRowCallbacks(input);
 
-  const onInputChange = useCallback(
-    (value: string) => {
+  return {
+    ...rows,
+    onInputChange: (value) => {
       // 入力が変わったら走っている検索は捨てる（palette.md §7.4）
       cancelSearch(pending);
       paletteTelemetry.typed();
       store.dispatch({ type: 'inputChanged', value });
     },
-    [store, pending],
-  );
-
-  const onEscape = useCallback(() => {
-    // コマンド階層では 1 段戻る。スコープだけのときは閉じる（D-6）
-    if (activeCommand(stack) === undefined) close();
-    else store.dispatch({ type: 'escaped' });
-  }, [stack, store, close]);
-
-  return useMemo(
-    () => ({
-      ...rows,
-      onInputChange,
-      onEscape,
-      onSelectionChange: (id: string) => store.dispatch({ type: 'selected', id }),
-      onBackspaceAtStart: () => store.dispatch({ type: 'backspacedAtStart' }),
-      onCopySearchUrl: () => void copySearchUrl(env, pending),
-      onOpenPanel: () => void openPanel(env),
-      onDismiss: close,
-    }),
-    [rows, onInputChange, onEscape, store, env, pending, close],
-  );
+    onEscape: () => {
+      // コマンド階層では 1 段戻る。スコープだけのときは閉じる（D-6）
+      if (activeCommand(stack) === undefined) close();
+      else store.dispatch({ type: 'escaped' });
+    },
+    onSelectionChange: (id) => store.dispatch({ type: 'selected', id }),
+    onBackspaceAtStart: () => store.dispatch({ type: 'backspacedAtStart' }),
+    onCopySearchUrl: () => void copySearchUrl(env, pending),
+    onOpenPanel: () => void openPanel(env),
+    onDismiss: close,
+  };
 }
