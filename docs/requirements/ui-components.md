@@ -44,7 +44,7 @@ export type RowView = {
 export type SectionView = {
   id: string;
   label?: string;                // 無ければ見出しを描かない
-  meta?: string;                 // 見出し右の補足（件数・進捗・「学習で並び替え」）
+  meta?: string;                 // 見出し右の補足（件数・進捗・「よく開く順」）
   rows: readonly RowView[];
 };
 
@@ -70,7 +70,7 @@ export type ToastView = { message: string; detail?: string };
 export type PaletteView = {
   path: readonly PathSegmentView[];
   input: { value: string; placeholder: string; completion?: string };
-  armedNotice?: string;          // 「もう一度 ⌫ で右端を削除」
+  armedNotice?: string;          // 「もう一度押すと {段} を外します」
   escLabel: string;              // 「閉じる」「1 つ前に戻る」
   sections: readonly SectionView[];
   selectedId?: string;           // 選択行。container が持つ（入力変更・検索起動で動かすため）
@@ -261,7 +261,7 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 |---|---|
 | フッターに出ているキーを押すと対応するハンドラが呼ばれる | `footer` の各 `KeyHint.id` について §1 の表どおりにキーを送り、コールバックが 1 回呼ばれる（I2） |
 | ヒントを持つ行で Enter を押すと onAction が呼ばれる | `hints` が空でない各行を選択して `Enter`、`onAction(id)`（I1） |
-| ヒントを持たない行で Enter を押しても何も起きない | `hints` が空の行を選択して `Enter`、`onAction` は呼ばれない |
+| 動作を持たない行は ↑↓ で選択されない | `hints` が空の行を飛ばして選択が進み、選べる行の各々で `Enter` が `onAction` を呼ぶ（I1・D-35）。選択行は view ではなく DOM から引く |
 | Tab を押してもフォーカスは入力欄から出ない | `Tab`／`Shift+Tab` 後に `document.activeElement` が入力欄のまま。選択行が `complete` か `stack` を持つときは `onTake` も呼ばれる（I3） |
 | 変換中の Enter では onAction が呼ばれない | `isComposing: true` の keydown を送る（I5） |
 
@@ -273,11 +273,11 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 | `Badge` | 6 つの tone が並ぶ／dot つき |
 | `SpaceBadge` | 英字キー／日本語ラベルは頭文字 1 文字／アイコン画像があれば画像 |
 | `KindIcon` | 全 RowKind が並ぶ（写像の抜けを描画で検出） |
-| `ResultRow` | 課題（コード + マーカー + タグ + バッジ）／ページ／プロジェクト（`⇥` のヒント）／コマンド `›`／検索行（アクセント）／未接続（危険色）／検索中（スピナー）／**長い件名は 1 行で省略され title 属性に全文を持つ**／**選択行は左端の罫とタイトルの太字で示される**／**ヒントが空なら何も描かれない**／幅 360 |
+| `ResultRow` | 課題（コード + マーカー + タグ + **先頭のスペースバッジ**、D-42）／ページ／プロジェクト（`⇥` のヒント）／コマンド `›`／検索行（アクセント）／未接続（危険色）／検索中（スピナー）／**長い件名は 1 行で省略され title 属性に全文を持つ**／**選択行は左端の罫とタイトルの太字で示される**／**ヒントが空なら何も描かれない**／幅 360 |
 | `SectionHeader` | 見出しだけ／補足つき |
 | `ScopePath` | 根／1 段／2 段／コマンド階層／**削除待ちの段は取り消し線で示される**／**幅が足りないと左の段がバッジだけになる** |
 | `PaletteInput` | 空でプレースホルダ／入力中／**ゴースト補完は入力の続きとして表示され選択できない**／変換中（下線つきの未確定文字） |
-| `KeyHints` | 6 つ全部／**幅が足りないと priority の大きいものから落ち ↵ は必ず残る** |
+| `KeyHints` | 7 つ全部／**幅が足りないと priority の大きいものから落ち ↵ は必ず残る**／**落ちるのは優先順の右側だけで、ラベルの短い下位のヒントが上位を追い越して残らない**（D-40） |
 | `Toast` | 文言だけ／詳細つき（URL） |
 
 ### 5.3 organisms
@@ -302,7 +302,7 @@ story の `name` は仕様を日本語で述べる。play function を持たな�
 |---|---|---|
 | S0 | 未接続で何も出せない | 接続行が 1 つだけあり選択されている |
 | S1 | 空状態（履歴あり） | 3 セクションが順に並び先頭行が選択されている |
-| S1' | 空状態（履歴なし） | 案内行にはヒントが無く、ページのセクションは出る |
+| S1' | 空状態（履歴なし） | 案内行はページのセクションの下にあり、ヒントを持たず、選択もそこへは行かない（D-35・D-38） |
 | S2 | ページ名を入力中（`ぼーど`） | ゴースト補完が出て Tab で onTake が呼ばれる／フッターの ⇥ ラベルが「補完」 |
 | S3 | 課題キーを入力中（`PROJ-12`） | 直接ジャンプ行が先頭で選択されアクセント面を持つ／⌘↵ で newTab: true |
 | S4 | 自由テキスト（`ログイン`） | 検索行が先頭／強い一致がある入力では候補が先頭で検索行が 2 番目 |

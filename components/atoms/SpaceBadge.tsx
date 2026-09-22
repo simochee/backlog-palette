@@ -34,7 +34,7 @@ export function SpaceBadge({ label, icon }: SpaceBadgeProps) {
     <span
       title={label}
       aria-label={label}
-      className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control border border-border bg-sunken px-1 font-mono text-xs font-semibold leading-none text-subtle"
+      className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control bg-marker-neutral-bg px-1 font-mono text-xs font-semibold leading-none text-marker-neutral-fg"
     >
       <span aria-hidden>{first}</span>
       {second !== undefined && (

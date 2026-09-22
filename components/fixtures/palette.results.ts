@@ -2,7 +2,15 @@ import type { Labels } from '@/components/labels';
 import type { PaletteView, RowView, SectionView } from '@/components/types';
 
 import { projects, type SpaceFixture, spaces } from './domain';
-import { loginPages, projectPath, resultRows, rootPath, spacePath, view } from './palette';
+import {
+  kindProgress,
+  loginPages,
+  projectPath,
+  resultRows,
+  rootPath,
+  spacePath,
+  view,
+} from './palette';
 import {
   authExpiredRow,
   connectRow,
@@ -18,13 +26,7 @@ import {
 } from './rows';
 import { assignedSection, commandsSection, pagesSection, recentSection } from './sections';
 
-/** 種別ごとの進捗。スペース横断はしない（D-20）ので単位は種別 */
-const kindsMeta = (labels: Labels): string =>
-  [
-    `${labels.panel.options.issue} 12`,
-    `${labels.panel.options.wiki} 3`,
-    `${labels.panel.options.document} 2`,
-  ].join(' · ');
+const kindsMeta = (labels: Labels): string => kindProgress(labels, ['12', '3', '2']);
 
 /** コマンド階層の引数行。command の後に space は積めないので stack のヒントを持たない */
 const argumentRow = (space: SpaceFixture): RowView => {
@@ -55,20 +57,8 @@ const commonPagesSection = (labels: Labels): SectionView => ({
   id: 'common',
   label: labels.sections.commonPages,
   rows: [
-    pageRow(
-      'personal-settings',
-      labels.rows.personalSettings,
-      labels,
-      projects.web,
-      labels.rows.commonPageSub,
-    ),
-    pageRow(
-      'api-key-settings',
-      labels.rows.apiKeySettings,
-      labels,
-      projects.web,
-      labels.rows.commonPageSub,
-    ),
+    pageRow('personal-settings', labels.rows.personalSettings, labels.rows.commonPageSub),
+    pageRow('api-key-settings', labels.rows.apiKeySettings, labels.rows.commonPageSub),
   ],
 });
 
@@ -89,7 +79,11 @@ export const s6 = (labels: Labels): PaletteView => {
         id: 'results',
         label: labels.sections.results,
         meta: kindsMeta(labels),
-        rows: [noticeRow(2, labels), ...rows, externalRow(labels)],
+        rows: [
+          noticeRow(2, labels),
+          ...rows,
+          externalRow(labels, 'https://nulab.backlog.com/FindIssueAllOver.action'),
+        ],
       },
       loginPages(labels),
     ],
@@ -127,7 +121,7 @@ export const s7 = (labels: Labels): PaletteView =>
 export const s8 = (labels: Labels): PaletteView =>
   view(labels, {
     path: [...spacePath, { id: 'project', label: projects.web.name, badge: true, armed: true }],
-    armedNotice: labels.palette.armedNotice,
+    armedNotice: labels.palette.armedNotice(projects.web.name),
     sections: [recentSection(labels), pagesSection(labels), assignedSection(labels)],
   });
 

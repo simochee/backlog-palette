@@ -48,12 +48,23 @@ type FooterCheck = (
   target: Target,
 ) => Promise<void>;
 
-const selectedRow = (rows: readonly RowView[], view: InvariantView) =>
-  rows.find((row) => row.id === view.selectedId);
+/** 動作を持つ行だけが選択を通る（I1）。↑↓ はそれ以外を飛ばす */
+const canSelect = (row: RowView) => row.hints.length > 0;
+
+/**
+ * 選択行は view ではなく DOM から引く。view.selectedId は状態の宣言で、
+ * キーを送った後に実際どこが選ばれているかは DOM だけが知っている
+ */
+function selectedRow(rows: readonly RowView[], { canvasElement }: Target) {
+  const id = canvasElement.querySelector<HTMLElement>('[role="option"][aria-selected="true"]')
+    ?.dataset.rowId;
+  return rows.find((row) => row.id === id);
+}
 
 const footerChecks: Record<KeyHint['id'], FooterCheck> = {
-  async enter(_input, rows, { view, spies }) {
-    const selected = selectedRow(rows, view);
+  async enter(_input, rows, target) {
+    const { spies } = target;
+    const selected = selectedRow(rows, target);
     const onAction = spy(spies.onAction, 'onAction');
     onAction.mockClear();
     await userEvent.keyboard('{Enter}');
@@ -63,20 +74,21 @@ const footerChecks: Record<KeyHint['id'], FooterCheck> = {
       await expectCalledOnceWith(onAction, selected.id, { newTab: false });
     }
   },
-  async modEnter(_input, rows, { view, spies }) {
-    const onAction = spy(spies.onAction, 'onAction');
+  async modEnter(_input, rows, target) {
+    const onAction = spy(target.spies.onAction, 'onAction');
     onAction.mockClear();
     await userEvent.keyboard('{Meta>}{Enter}{/Meta}');
-    await expectCalledOnceWith(onAction, selectedRow(rows, view)?.id, { newTab: true });
+    await expectCalledOnceWith(onAction, selectedRow(rows, target)?.id, { newTab: true });
   },
-  async move(_input, rows, { view, spies }) {
-    const onSelectionChange = spy(spies.onSelectionChange, 'onSelectionChange');
+  async move(_input, rows, target) {
+    const onSelectionChange = spy(target.spies.onSelectionChange, 'onSelectionChange');
     onSelectionChange.mockClear();
-    const index = rows.findIndex((row) => row.id === view.selectedId);
-    const next = rows[index + 1];
+    const selectable = rows.filter((row) => canSelect(row));
+    const index = selectable.findIndex((row) => row.id === selectedRow(rows, target)?.id);
+    const next = selectable[index + 1];
     if (next === undefined) {
       await userEvent.keyboard('{ArrowUp}');
-      await expect(onSelectionChange).toHaveBeenLastCalledWith(rows[index - 1]?.id);
+      await expect(onSelectionChange).toHaveBeenLastCalledWith(selectable[index - 1]?.id);
       await userEvent.keyboard('{ArrowDown}');
     } else {
       await userEvent.keyboard('{ArrowDown}');
@@ -92,11 +104,11 @@ const footerChecks: Record<KeyHint['id'], FooterCheck> = {
     await expect(onBackspaceAtStart).toHaveBeenCalledTimes(1);
     input.setSelectionRange(input.value.length, input.value.length);
   },
-  async take(_input, rows, { view, spies }) {
-    const onTake = spy(spies.onTake, 'onTake');
+  async take(_input, rows, target) {
+    const onTake = spy(target.spies.onTake, 'onTake');
     onTake.mockClear();
     await userEvent.keyboard('{Tab}');
-    await expectCalledOnceWith(onTake, selectedRow(rows, view)?.id);
+    await expectCalledOnceWith(onTake, selectedRow(rows, target)?.id);
   },
   async copyUrl(_input, _rows, { spies }) {
     const onCopySearchUrl = spy(spies.onCopySearchUrl, 'onCopySearchUrl');
@@ -117,21 +129,27 @@ async function assertFooterKeys(input: HTMLInputElement, rows: readonly RowView[
   for (const hint of target.view.footer) await footerChecks[hint.id](input, rows, target);
 }
 
-/** I1: ヒントを持つ行で Enter を押すと onAction が呼ばれ、持たない行では何も起きない */
+/**
+ * I1: 選択は動作を持つ行だけを通り、その各行で Enter が onAction を呼ぶ。
+ * 動作を持たない行（案内・取得中のプレースホルダ）は ↑↓ で選択されない
+ */
 async function assertRowEnter(rows: readonly RowView[], target: Target) {
   const onAction = spy(target.spies.onAction, 'onAction');
+  const selectable = rows.filter((row) => canSelect(row));
+  // 選べる行が 1 つも無い状態（取得中だけ）では、view が置いた選択がそのまま残る
+  if (selectable.length === 0) return;
   await pressAll('ArrowUp', rows.length);
 
-  for (const [index, row] of rows.entries()) {
+  for (const [index, row] of selectable.entries()) {
+    await expect(selectedRow(rows, target)?.id).toBe(row.id);
     onAction.mockClear();
     await userEvent.keyboard('{Enter}');
-    if (row.hints.length > 0) {
-      await expectCalledOnceWith(onAction, row.id, { newTab: false });
-    } else {
-      await expect(onAction).not.toHaveBeenCalled();
-    }
-    if (index < rows.length - 1) await userEvent.keyboard('{ArrowDown}');
+    await expectCalledOnceWith(onAction, row.id, { newTab: false });
+    if (index < selectable.length - 1) await userEvent.keyboard('{ArrowDown}');
   }
+
+  await pressAll('ArrowDown', rows.length);
+  await expect(selectedRow(rows, target)?.id).toBe(selectable.at(-1)?.id);
 }
 
 /** I3: Tab を押してもフォーカスは入力欄から出ない */
@@ -163,10 +181,13 @@ export async function assertPaletteInvariants(target: Target) {
   await userEvent.click(input);
   input.setSelectionRange(input.value.length, input.value.length);
 
-  // 状態固有の検査がキーを送った後でも同じ前提から始めるため、選択を view の初期位置へ戻す
+  // 状態固有の検査がキーを送った後でも同じ前提から始めるため、選択を初期位置へ戻す。
+  // 初期選択が動作を持たない行（§7.2 のプレースホルダ）のときは ↑↓ で戻せないので、
+  // その位置から下で最初に選べる行に置く
+  const selectable = rows.filter((row) => canSelect(row));
   const initialIndex = Math.max(
     0,
-    rows.findIndex((row) => row.id === target.view.selectedId),
+    selectable.findIndex((row) => row.id === target.view.selectedId),
   );
   await pressAll('ArrowUp', rows.length);
   await pressAll('ArrowDown', initialIndex);

@@ -19,5 +19,5 @@ export const LabelOnly: Story = {
 
 export const WithMeta: Story = {
   name: '補足つき',
-  args: { label: ja.sections.results, meta: ja.sections.summary(3, 17) },
+  args: { label: ja.sections.results, meta: ja.sections.count(17) },
 };

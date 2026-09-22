@@ -67,9 +67,9 @@ describe('入力の解釈（§4）の残り', () => {
 });
 
 describe('空状態（§9）の残り', () => {
-  it('最近開いた行の補足は · 最近開いた で終わる', () => {
+  it('最近開いた行の補足は見出しを繰り返さず、行が持つ情報だけを出す', () => {
     for (const row of section(run({}), 'recent')?.rows ?? [])
-      expect(row.sub?.endsWith(ja.rows.recentSub)).toBe(true);
+      expect(row.sub).not.toContain(ja.sections.recent);
   });
 
   it('学習がオフなら「学習で並び替え」の補足は出ない', () => {

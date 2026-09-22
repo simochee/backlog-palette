@@ -63,10 +63,10 @@ describe('行のカタログ（§5）: ↵ ⌘↵ ⇥ の対応', () => {
 });
 
 describe('行のカタログ（§5）: 動作を持たない行と面', () => {
-  it('検索行と接続行は ↵ だけを持ち、案内行は何も持たない', () => {
+  it('検索行と接続行は ↵ だけを持ち、接続行の面は危険色ではなくアクセント', () => {
     expect(rowOf(run({ input: 'zzzz' }), 'search')?.hints).toEqual(['enter']);
     expect(rowOf(run({ stack: emptyStack }), 'connect')?.hints).toEqual(['enter']);
-    expect(rowOf(run({ stack: emptyStack }), 'connect')?.tone).toBe('danger');
+    expect(rowOf(run({ stack: emptyStack }), 'connect')?.tone).toBe('accent');
   });
 
   it('直接ジャンプ行と検索行はアクセント面を敷く', () => {
@@ -90,8 +90,8 @@ describe('行のカタログ（§5）: 表示要素', () => {
     );
   });
 
-  it('ページの補足は {プロジェクト名} · ページ、プロジェクトの補足は プロジェクト · {キー}', () => {
-    expect(rowOf(run({ input: 'がんと' }), 'page')?.sub).toBe(`${web.name} · ${ja.rows.pageSub}`);
+  it('ページの補足はプロジェクト名だけ、プロジェクトの補足は プロジェクト · {キー}', () => {
+    expect(rowOf(run({ input: 'がんと' }), 'page')?.sub).toBe(web.name);
     expect(rowOf(run({ input: '#もば', stack: stackOf(space) }), 'project')?.sub).toBe(
       ja.rows.projectSub('MOB'),
     );

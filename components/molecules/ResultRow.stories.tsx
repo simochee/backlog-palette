@@ -40,7 +40,7 @@ export const Issue: Story = {
 
 export const Page: Story = {
   name: 'ページ',
-  args: { row: pageRow('board', 'ボード', ja) },
+  args: { row: pageRow('board', 'ボード', projects.web.name) },
 };
 
 export const Project: Story = {

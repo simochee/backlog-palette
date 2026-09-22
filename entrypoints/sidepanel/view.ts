@@ -103,8 +103,7 @@ export function footerOf(
     {
       selected,
       rowCount: rows.length,
-      canPopStack: false,
-      armedLabel: undefined,
+      popLabel: undefined,
       hasInput,
       hasResults,
       panelAvailable: false,

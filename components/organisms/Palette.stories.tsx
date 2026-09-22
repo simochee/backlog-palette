@@ -25,7 +25,6 @@ import {
   s12,
   s13,
   sectionIds,
-  spaces,
 } from '@/components/fixtures';
 import { ja } from '@/components/labels';
 import { flattenRows } from '@/components/organisms/CandidateList';
@@ -77,12 +76,16 @@ export const S1: Story = {
 };
 
 export const S1Empty: Story = {
-  name: "S1' 空状態（履歴なし） — 案内行にはヒントが無く、ページのセクションは出る",
+  name: "S1' 空状態（履歴なし） — 案内行はページの下にあり、ヒントも選択も持たない",
   args: s1Empty(ja),
   play: async ({ args, canvasElement }) => {
-    const [hint] = options(canvasElement);
+    const rows = options(canvasElement);
+    const hint = rows.at(-1);
+    await expect(rows[0]?.dataset.kind).toBe('page');
+    await expect(rows[0]).toHaveAttribute('aria-selected', 'true');
     await expect(hint?.dataset.kind).toBe('hint');
     await expect(hint?.querySelector('kbd')).toBeNull();
+    await expect(hint).toHaveAttribute('aria-selected', 'false');
     await expect(sectionIds(canvasElement)).toContain('pages');
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
@@ -139,7 +142,9 @@ export const S5: Story = {
     await expect(searching?.dataset.rowId).toBe('searching');
     await expect(searching).toHaveAttribute('aria-selected', 'true');
     await expect(
-      within(canvasElement).getByText(ja.sections.loading(spaces.nulab.label)),
+      within(canvasElement).getByText(
+        new RegExp(`^${ja.panel.options.issue} ${ja.panel.loading}`, 'u'),
+      ),
     ).toBeVisible();
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
@@ -187,8 +192,8 @@ export const S8: Story = {
     const canvas = within(canvasElement);
     const segment = canvas.getByText(projects.web.name);
     await expect(getComputedStyle(segment).textDecorationLine).toContain('line-through');
-    await expect(canvas.getByText(ja.palette.armedNotice)).toBeVisible();
-    await expect(hintLabel(canvasElement, 'back')).toContain(ja.keys.backArmed(projects.web.name));
+    await expect(canvas.getByText(ja.palette.armedNotice(projects.web.name))).toBeVisible();
+    await expect(hintLabel(canvasElement, 'back')).toContain(ja.keys.back(projects.web.name));
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
   },

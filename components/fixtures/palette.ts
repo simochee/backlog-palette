@@ -28,6 +28,18 @@ export const projectPath: PathSegmentView[] = [
   { id: 'project', label: projects.web.name, badge: true },
 ];
 
+/**
+ * 検索結果の見出しの補足。単位はスペースではなく種別（D-20・§7.2）。
+ * 値は件数か「読み込み中」で、3 種別ぶんを「·」で並べる
+ */
+export const kindProgress = (labels: Labels, values: readonly [string, string, string]): string =>
+  [labels.panel.options.issue, labels.panel.options.wiki, labels.panel.options.document]
+    .map((kind, index) => `${kind} ${values[index]}`)
+    .join(' · ');
+
+const loadingMeta = (labels: Labels): string =>
+  kindProgress(labels, [labels.panel.loading, labels.panel.loading, labels.panel.loading]);
+
 export type StatePartial = {
   path: PathSegmentView[];
   input?: string;
@@ -43,7 +55,9 @@ export type StatePartial = {
 
 export function view(labels: Labels, partial: StatePartial): PaletteView {
   const input = partial.input ?? '';
-  const selectedId = partial.selectedId ?? partial.sections[0]?.rows[0]?.id;
+  const rows = partial.sections.flatMap((section) => section.rows);
+  // 既定の選択は動作を持つ最初の行。案内行や取得中の行は選択を通さない（D-35）
+  const selectedId = partial.selectedId ?? rows.find((row) => row.hints.length > 0)?.id;
   return {
     path: partial.path,
     input: {
@@ -111,7 +125,7 @@ export const s1 = (labels: Labels): PaletteView =>
 export const s1Empty = (labels: Labels): PaletteView =>
   view(labels, {
     path: projectPath,
-    sections: [{ id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }, pagesSection(labels)],
+    sections: [pagesSection(labels), { id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }],
   });
 
 /** S2 ページ名を入力中（がんと） */
@@ -124,7 +138,7 @@ export const s2 = (labels: Labels): PaletteView =>
       {
         id: 'pages',
         label: labels.sections.pages,
-        rows: [pageRow('gantt', 'ガントチャート', labels)],
+        rows: [pageRow('gantt', 'ガントチャート')],
       },
       { id: 'search', rows: [searchRow('がんと', projects.web.name, labels)] },
     ],
@@ -174,7 +188,7 @@ export const s5 = (labels: Labels): PaletteView =>
       {
         id: 'results',
         label: labels.sections.results,
-        meta: labels.sections.loading(spaces.nulab.label),
+        meta: loadingMeta(labels),
         rows: [searchingRow(labels)],
       },
       loginPages(labels),

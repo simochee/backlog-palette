@@ -5,21 +5,21 @@ import { projects } from './domain';
 import { commandRow, descendCommandRow, pageRow, projectRow, sampleIssues } from './rows';
 
 /** 同じ対象がページやコマンドのセクションにも並ぶので、行 id はセクション内で一意にする */
-const recent = (row: RowView, sub: string): RowView => ({ ...row, id: `recent:${row.id}`, sub });
+const recent = (row: RowView): RowView => ({ ...row, id: `recent:${row.id}` });
 
+/**
+ * 最近開いたに入るのは課題・Wiki・ドキュメント・プロジェクトだけで、ページ定義は入らない
+ * （§9。ページは次のセクションが担当する）。補足は行が元から持つものをそのまま使う
+ */
 export function recentSection(labels: Labels): SectionView {
   return {
     id: 'recent',
     label: labels.sections.recent,
     meta: labels.sections.learned,
     rows: [
-      recent(sampleIssues.payment, `${projects.web.name} · ${labels.rows.recentSub}`),
-      recent(
-        pageRow('board', 'ボード', labels, projects.web),
-        `${projects.web.name} · ${labels.rows.recentSub}`,
-      ),
-      recent(sampleIssues.pushNotice, `${projects.mobile.name} · ${labels.rows.recentSub}`),
-      recent(projectRow(projects.helpdesk), `プロジェクト · HELP · ${labels.rows.recentSub}`),
+      recent(sampleIssues.payment),
+      recent(sampleIssues.pushNotice),
+      recent(projectRow(projects.helpdesk)),
     ],
   };
 }
@@ -29,11 +29,11 @@ export function pagesSection(labels: Labels): SectionView {
     id: 'pages',
     label: labels.sections.pagesOf(projects.web.name),
     rows: [
-      pageRow('issues', '課題一覧', labels),
-      pageRow('board', 'ボード', labels),
-      pageRow('gantt', 'ガントチャート', labels),
-      pageRow('wiki', 'Wiki', labels),
-      pageRow('add-issue', '課題の追加', labels),
+      pageRow('issues', '課題一覧'),
+      pageRow('board', 'ボード'),
+      pageRow('gantt', 'ガントチャート'),
+      pageRow('wiki', 'Wiki'),
+      pageRow('files', 'ファイル'),
     ],
   };
 }

@@ -1,6 +1,8 @@
 import type { Labels } from '@/components/labels';
 import type { KeyHint, KeyHintId, PathSegmentView, RowHint, SectionView } from '@/components/types';
 
+import { projects } from './domain';
+
 type HintOverrides = Partial<Record<KeyHintId, string>>;
 
 const keys: Record<KeyHintId, readonly string[]> = {
@@ -28,7 +30,7 @@ function defaultLabel(id: KeyHintId, labels: Labels): string {
   const byId: Record<KeyHintId, string> = {
     enter: labels.keys.open,
     move: labels.keys.move,
-    back: labels.keys.back,
+    back: labels.keys.back(projects.web.name),
     take: labels.keys.complete,
     modEnter: labels.keys.newTab,
     toPanel: labels.keys.toPanel,
@@ -94,10 +96,10 @@ export function deriveFooter(labels: Labels, context: FooterContext): KeyHint[] 
       overrides.enter = labels.keys.connect;
   }
   if (rows.length > 1) ids.push('move');
-  const armed = context.path.find((segment) => segment.armed === true);
-  if (context.path.length > 0 && context.path[0]?.id !== 'root') {
+  const last = context.path.at(-1);
+  if (last !== undefined && context.path[0]?.id !== 'root') {
     ids.push('back');
-    if (armed !== undefined) overrides.back = labels.keys.backArmed(armed.label);
+    overrides.back = labels.keys.back(last.label);
   }
   const take = takeLabel(hints, labels);
   if (take !== undefined) {

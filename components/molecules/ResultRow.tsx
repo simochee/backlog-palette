@@ -21,10 +21,15 @@ const hintSymbols: Partial<Record<RowHint, string>> = {
   stack: '⇥',
 };
 
+/**
+ * 選択されたら tone に関わらず選択面にする。アクセント面のまま選択されると、
+ * 「青い面が 2 行ある」状態になって ↵ の宛先が罫と太字だけの差になる。
+ * 行の性格（検索・ジャンプ・危険）はアイコンと文字色が引き続き言う
+ */
 const surface: Record<RowTone, (selected: boolean) => string> = {
   default: (selected) => (selected ? 'bg-row-selected' : 'hover:bg-sunken'),
-  accent: (selected) => (selected ? 'bg-row-accent' : 'bg-row-accent hover:brightness-95'),
-  danger: (selected) => (selected ? 'bg-row-danger' : 'bg-row-danger hover:brightness-95'),
+  accent: (selected) => (selected ? 'bg-row-selected' : 'bg-row-accent hover:brightness-95'),
+  danger: (selected) => (selected ? 'bg-row-selected' : 'bg-row-danger hover:brightness-95'),
 };
 
 function RowBody({ row, selected, tone }: { row: RowView; selected: boolean; tone: RowTone }) {
@@ -77,6 +82,7 @@ function RowHints({ hints, selected }: { hints: readonly RowHint[]; selected: bo
 
 export function ResultRow({ row, selected, optionId, onClick }: ResultRowProps) {
   const tone = row.tone ?? 'default';
+  const actionable = row.hints.length > 0;
 
   return (
     // キーは Palette が入力欄で受ける（仮想フォーカス）。行はクリックだけを扱い、
@@ -87,6 +93,7 @@ export function ResultRow({ row, selected, optionId, onClick }: ResultRowProps) 
       id={optionId}
       tabIndex={-1}
       aria-selected={selected}
+      aria-disabled={!actionable}
       data-row-id={row.id}
       data-kind={row.kind}
       data-tone={tone}
@@ -96,12 +103,18 @@ export function ResultRow({ row, selected, optionId, onClick }: ResultRowProps) 
         'group/row relative flex min-h-(--bp-size-row) cursor-default items-center gap-2 px-3 py-1.5 text-md text-default outline-none',
         'before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-pill before:bg-accent before:opacity-0',
         selected && 'before:opacity-100',
-        surface[tone](selected),
+        // 押せない行にホバーの面が出ると、押せる行と見分けが付かない（不変条件 I1）
+        actionable ? surface[tone](selected) : selected ? 'bg-row-selected' : undefined,
       )}
     >
-      {row.busy === true ? <Spinner /> : <KindIcon kind={row.kind} className="text-subtle" />}
+      {row.busy === true ? (
+        <Spinner />
+      ) : row.space === undefined ? (
+        <KindIcon kind={row.kind} className={tone === 'accent' ? 'text-accent' : 'text-subtle'} />
+      ) : (
+        <SpaceBadge label={row.space.label} icon={row.space.icon} />
+      )}
       <RowBody row={row} selected={selected} tone={tone} />
-      {row.space !== undefined && <SpaceBadge label={row.space.label} icon={row.space.icon} />}
       <RowHints hints={row.hints} selected={selected} />
     </div>
   );

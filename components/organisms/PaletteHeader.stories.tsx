@@ -42,7 +42,7 @@ export const Armed: Story = {
       { id: 'space', label: spaces.nulab.label, badge: true, icon: spaces.nulab.icon },
       { id: 'project', label: projects.web.name, badge: true, armed: true },
     ],
-    armedNotice: ja.palette.armedNotice,
+    armedNotice: ja.palette.armedNotice(projects.web.name),
   },
 };
 

@@ -4,7 +4,16 @@ import { transitionScores } from '@/lib/rank/transitions';
 import type { Scope } from '@/lib/stack/types';
 
 import { entityId, type PaletteIndex, type SpaceEntry } from './model';
-import { type Built, connectRow, entityRow, hintRow, pageRow, projectRow, spaceRow } from './rows';
+import {
+  type Built,
+  connectRow,
+  entityRow,
+  hintRow,
+  loadingRow,
+  pageRow,
+  projectRow,
+  spaceRow,
+} from './rows';
 import { type BuiltSection, SECTION_CAP } from './sections';
 
 type Env = { index: PaletteIndex; scope: Scope; labels: Labels };
@@ -22,32 +31,29 @@ function inScope(scope: Scope, spaceId: string): boolean {
   return scope.kind !== 'root' && scope.spaceId === spaceId;
 }
 
+/**
+ * 今いるページは出さない。最頻・最直近なので何もしなければ先頭に来るが、開いても何も起きない。
+ * 除くと先頭行が「直前に見ていた別のもの」になり、`⌘K` → `↵` が「戻る」として使える
+ */
+const isHere = (index: PaletteIndex, url: string): boolean => url === index.currentUrl;
+
 function recentSection({ index, scope, labels }: Env): BuiltSection {
   const scores = frecencyByEntity(index.activity, index.now);
-  const sub = (context: string) => `${context} · ${labels.rows.recentSub}`;
   const rows: { built: Built; score: number }[] = [];
 
+  // 補足は行が持つ情報（担当者・最終更新・プロジェクトキー）をそのまま使う。
+  // 「· 最近開いた」を足すと見出しの繰り返しになり、全行が 2 行組に太る
   for (const entry of index.cache) {
-    if (!inScope(scope, entry.spaceId)) continue;
+    if (!inScope(scope, entry.spaceId) || isHere(index, entry.url)) continue;
     const score = scores.get(entityId(entry.kind, entry.id));
-    if (score !== undefined)
-      rows.push({ built: entityRow('recent', entry, labels, sub(entry.projectName)), score });
+    if (score !== undefined) rows.push({ built: entityRow('recent', entry, labels), score });
   }
   for (const project of index.projects) {
-    if (!inScope(scope, project.spaceId)) continue;
+    if (!inScope(scope, project.spaceId) || isHere(index, project.url)) continue;
     const score = scores.get(entityId('project', project.id));
     const space = spaceOf(index, project.spaceId);
     if (score !== undefined && space !== undefined)
-      rows.push({
-        built: projectRow(
-          'recent',
-          project,
-          space,
-          labels,
-          sub(labels.rows.projectSub(project.key)),
-        ),
-        score,
-      });
+      rows.push({ built: projectRow('recent', project, space, labels), score });
   }
 
   return {
@@ -61,7 +67,7 @@ function recentSection({ index, scope, labels }: Env): BuiltSection {
 
 /** {現在の文脈} のページ。遷移パターンはこのセクション内の並びにだけ効く（D-16） */
 function pagesSection({ index, scope, labels }: Env, scopeLabel: string): BuiltSection {
-  const pages = index.pagesFor(scope);
+  const pages = index.pagesFor(scope).filter((page) => !isHere(index, page.url));
   const from = index.currentPageKind;
   const scores =
     from === undefined
@@ -70,22 +76,29 @@ function pagesSection({ index, scope, labels }: Env, scopeLabel: string): BuiltS
   const ordered = pages
     .map((page, order) => ({ page, order, score: scores.get(page.id) ?? 0 }))
     .toSorted((a, b) => b.score - a.score || a.order - b.order);
-  const sub = `${scopeLabel} · ${labels.rows.pageSub}`;
+  // 補足を置かない。見出しが「{scopeLabel} のページ」と言っているので繰り返しになる
   return {
     id: 'pages',
     label: labels.sections.pagesOf(scopeLabel),
-    rows: ordered.map(({ page }) => pageRow('pages', page, sub)),
+    rows: ordered.map(({ page }) => pageRow('pages', page)),
     cap: SECTION_CAP,
   };
 }
 
+/**
+ * 担当課題だけが API を待つ。届くまでセクションごと消しておくと「出ない機能」に見え、
+ * 到着でリストが下に伸びる。見出しとプレースホルダを先に出し、届いたら置き換える（§7.2 と同じ形）
+ */
 function assignedSection({ index, labels }: Env): BuiltSection {
-  const assigned = index.assigned ?? [];
+  const assigned = index.assigned;
   return {
     id: 'assigned',
     label: labels.sections.assigned,
-    meta: index.assigned === undefined ? undefined : labels.sections.count(assigned.length),
-    rows: assigned.map((entry) => entityRow('assigned', entry, labels)),
+    meta: assigned === undefined ? undefined : labels.sections.count(assigned.length),
+    rows:
+      assigned === undefined
+        ? [loadingRow('assigned', labels.rows.loading)]
+        : assigned.map((entry) => entityRow('assigned', entry, labels)),
     cap: SECTION_CAP,
   };
 }
@@ -108,9 +121,11 @@ export function emptySections(
     return [recent, pages, { id: 'connect', rows: [connectRow('connect', undefined, labels)] }];
 
   const assigned = assignedSection(env);
-  if (recent.rows.length === 0 && assigned.rows.length === 0)
-    return [{ id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }, pages];
-  return [recent, pages, assigned];
+  // 案内を出すかは「思い出せるものがあるか」だけで決める。担当課題の到着で消えると
+  // 選択が別の行へ飛ぶ（I4）。末尾に置き、上から試して駄目なら打つ、の順にする
+  const hint =
+    recent.rows.length === 0 ? [{ id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }] : [];
+  return [recent, pages, assigned, ...hint];
 }
 
 /** 根: 切り替え先のスペース（未接続は connect 行）と共通のページ（D-20） */

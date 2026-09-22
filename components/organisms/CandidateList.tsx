@@ -20,18 +20,35 @@ export function flattenRows(sections: readonly SectionView[]): RowView[] {
   return sections.flatMap((section) => section.rows);
 }
 
-/** ↑↓ の移動先。端で止まり、循環しない（palette.md §6） */
+/** 選択が止まってよい行。動作を持たない行は Enter が効かない（不変条件 I1） */
+export const isSelectable = (row: RowView): boolean => row.hints.length > 0;
+
+/**
+ * ↑↓ の移動先。端で止まり、循環しない（palette.md §6）。
+ * 動作を持たない行（案内・検索中のプレースホルダ）は飛ばす。飛ばさないと、
+ * 選択の見た目（罫・反転・太字）が「この行で ↵ が効く」と言うのに何も起きない行ができる。
+ * 選択が既にその種の行にあるとき（§7.2 のプレースホルダ）は、その位置から数えて隣を返す
+ */
+export function neighbourRow(
+  rows: readonly RowView[],
+  selectedId: string | undefined,
+  delta: 1 | -1,
+): RowView | undefined {
+  const index = rows.findIndex((row) => row.id === selectedId);
+  if (index === -1) return rows.find((row) => isSelectable(row));
+  for (let next = index + delta; next >= 0 && next < rows.length; next += delta) {
+    const row = rows[next];
+    if (row !== undefined && isSelectable(row)) return row;
+  }
+  return undefined;
+}
+
 export function moveSelection(
   sections: readonly SectionView[],
   selectedId: string | undefined,
   delta: 1 | -1,
 ): string | undefined {
-  const rows = flattenRows(sections);
-  if (rows.length === 0) return undefined;
-  const index = rows.findIndex((row) => row.id === selectedId);
-  if (index === -1) return rows[0]?.id;
-  const next = rows[index + delta];
-  return next?.id;
+  return neighbourRow(flattenRows(sections), selectedId, delta)?.id;
 }
 
 function SectionGroup({
