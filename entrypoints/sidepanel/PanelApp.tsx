@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LabelsProvider } from '@/components/labels';
 import { SidePanel } from '@/components/organisms/SidePanel';
 import type { ToastView } from '@/components/types';
+import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { searchHistory } from '@/lib/storage/palette-items';
+import { openPaletteInCurrentTab } from '@/lib/tabs';
 
 import { backlog } from './backlog.ts';
 import { panelCallbacks } from './callbacks.ts';
@@ -56,6 +58,19 @@ function isConditionsActive(search: PanelSearch): boolean {
   return type !== 'all' || status.kind !== 'all' || assignee !== 'all' || updated !== 'any';
 }
 
+/** パネルの ⌘K はタブのパレットを開く（surfaces.md §5.4、P1）。パネル内のフォーカス移動には使わない */
+function usePaletteHotkey() {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing || !isPaletteHotkey(event, navigator.platform)) return;
+      event.preventDefault();
+      void openPaletteInCurrentTab();
+    };
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+  }, []);
+}
+
 /** 既定のスコープはタブのスペース。URL に無ければ文脈から補う */
 function withDefaultScope(search: PanelSearch, context: PanelContext): PanelSearch {
   if (search.scope !== undefined || context.tabSpace === undefined) return search;
@@ -94,6 +109,7 @@ function Panel({ context }: { context: PanelContext }) {
     context.tabSpace,
   );
   const recentQueries = useRecentQueries(search.scope);
+  usePaletteHotkey();
   const { session, state } = usePanelSearch(
     search,
     backlog.runner,
