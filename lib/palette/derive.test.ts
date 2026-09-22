@@ -76,6 +76,21 @@ describe('空状態（§9）: 取得中と案内行', () => {
   });
 });
 
+describe('空状態（§9）: 期限', () => {
+  it('担当課題のうち期限が近いものだけ、行に期限が出る（並びは変えない）', () => {
+    const soon = { ...login, dueDate: new Date(index.now + 2 * 24 * 60 * 60 * 1000).toISOString() };
+    const far = {
+      ...payment,
+      dueDate: new Date(index.now + 60 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+    const d = run({}, { assigned: { kind: 'ready', rows: [soon, far] } });
+    const rows = rowsOf(d, 'assigned');
+    expect(rows[0]?.due?.tone).toBe('warning');
+    expect(rows[1]?.due).toBeUndefined();
+    expect(rows.map((r) => r.code)).toEqual([soon.key, far.key]);
+  });
+});
+
 describe('空状態（§9）: 取得失敗', () => {
   it('担当課題が取れなかったら、読み込み中のままにせず理由を行にする', () => {
     const unauthorized = run({}, { assigned: { kind: 'failed', error: { kind: 'unauthorized' } } });

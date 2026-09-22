@@ -27,7 +27,7 @@ const hintSymbols: Partial<Record<RowHint, string>> = {
  * 行の性格（検索・ジャンプ・危険）はアイコンと文字色が引き続き言う
  */
 const surface: Record<RowTone, (selected: boolean) => string> = {
-  default: (selected) => (selected ? 'bg-row-selected' : 'hover:bg-sunken'),
+  default: (selected) => (selected ? 'bg-row-selected' : 'hover:bg-row-hover'),
   accent: (selected) => (selected ? 'bg-row-selected' : 'bg-row-accent hover:brightness-95'),
   danger: (selected) => (selected ? 'bg-row-selected' : 'bg-row-danger hover:brightness-95'),
 };
@@ -36,7 +36,11 @@ function RowBody({ row, selected, tone }: { row: RowView; selected: boolean; ton
   return (
     <div className="min-w-0 flex-1">
       <div className="flex min-w-0 items-center gap-1.5">
-        {row.tag !== undefined && <Badge label={row.tag.label} tone={row.tag.tone} />}
+        {row.tag !== undefined && (
+          <span className="@max-narrow:hidden">
+            <Badge label={row.tag.label} tone={row.tag.tone} />
+          </span>
+        )}
         {row.code !== undefined && (
           <span className="shrink-0 font-mono text-sm text-subtle">{row.code}</span>
         )}
@@ -52,11 +56,12 @@ function RowBody({ row, selected, tone }: { row: RowView; selected: boolean; ton
           {row.title}
         </span>
       </div>
-      {(row.sub !== undefined || row.marker !== undefined) && (
+      {(row.sub !== undefined || row.marker !== undefined || row.due !== undefined) && (
         <div className="flex min-w-0 items-center gap-1.5 text-sm text-subtle">
           {row.marker !== undefined && (
             <Badge label={row.marker.label} tone={row.marker.tone} dot />
           )}
+          {row.due !== undefined && <Badge label={row.due.label} tone={row.due.tone} />}
           {row.sub !== undefined && <span className="truncate @max-narrow:hidden">{row.sub}</span>}
         </div>
       )}
@@ -74,7 +79,9 @@ function RowHints({ hints, selected }: { hints: readonly RowHint[]; selected: bo
   return (
     <span className={cn('flex shrink-0 gap-1', !selected && 'opacity-50')}>
       {symbols.map((symbol) => (
-        <Kbd key={symbol} keys={[symbol]} />
+        <span key={symbol} className={cn(symbol === '⇥' && '@max-narrow:hidden')}>
+          <Kbd keys={[symbol]} />
+        </span>
       ))}
     </span>
   );
@@ -107,13 +114,15 @@ export function ResultRow({ row, selected, optionId, onClick }: ResultRowProps) 
         actionable ? surface[tone](selected) : selected ? 'bg-row-selected' : undefined,
       )}
     >
-      {row.busy === true ? (
-        <Spinner />
-      ) : row.space === undefined ? (
-        <KindIcon kind={row.kind} className={tone === 'accent' ? 'text-accent' : 'text-subtle'} />
-      ) : (
-        <SpaceBadge label={row.space.label} icon={row.space.icon} />
-      )}
+      <span className="flex size-5 shrink-0 items-center justify-center">
+        {row.busy === true ? (
+          <Spinner />
+        ) : row.space === undefined ? (
+          <KindIcon kind={row.kind} className={tone === 'accent' ? 'text-accent' : 'text-subtle'} />
+        ) : (
+          <SpaceBadge label={row.space.label} icon={row.space.icon} />
+        )}
+      </span>
       <RowBody row={row} selected={selected} tone={tone} />
       <RowHints hints={row.hints} selected={selected} />
     </div>

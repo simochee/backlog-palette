@@ -156,12 +156,12 @@ export function panelRow(labels: Labels): RowView {
   };
 }
 
-export function externalRow(labels: Labels, url = 'https://nulab.backlog.com/find/PROJ'): RowView {
+export function externalRow(labels: Labels, spaceLabel = spaces.nulab.label): RowView {
   return {
     id: 'external',
     kind: 'external',
     title: labels.rows.openExternal,
-    sub: url,
+    sub: labels.rows.openExternalSub(spaceLabel),
     hints: ['enter', 'modEnter'],
   };
 }

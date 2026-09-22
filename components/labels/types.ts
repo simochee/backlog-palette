@@ -56,6 +56,8 @@ export type Labels = {
     openDirect: string;
     projectSub: (key: string) => string;
     updatedBy: (person: string) => string;
+    dueOn: (month: number, day: number) => string;
+    overdue: string;
     commonPageSub: string;
     personalSettings: string;
     apiKeySettings: string;
@@ -73,6 +75,7 @@ export type Labels = {
     toPanel: string;
     toPanelSub: string;
     openExternal: string;
+    openExternalSub: (space: string) => string;
     moreExternal: (count: number) => string;
     copied: (subject: string) => string;
     /** ⌘⇧C の対象。`copied` に渡して「検索 URL をコピーしました」にする */

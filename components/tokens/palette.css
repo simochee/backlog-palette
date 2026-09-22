@@ -14,6 +14,7 @@
   --bp-surface-overlay: rgb(15 23 42 / 45%);
   --bp-surface-control: #ffffff;
 
+  --bp-row-hover: #eceef2;
   --bp-row-selected: #dfe8ff;
   --bp-row-accent: #f5f8ff;
   --bp-row-danger: #fff1f0;
@@ -113,6 +114,7 @@
   --bp-surface-overlay: rgb(0 0 0 / 55%);
   --bp-surface-control: #23262f;
 
+  --bp-row-hover: #242833;
   --bp-row-selected: #32405f;
   --bp-row-accent: #1d2536;
   --bp-row-danger: #3a1f1f;

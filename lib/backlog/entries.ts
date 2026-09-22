@@ -22,6 +22,7 @@ export type IssueLike = {
   issueType: { name: string; color: string };
   status: { id: number; name: string };
   assignee?: Named;
+  dueDate?: string | null;
   updatedUser: Named;
   updated: string;
 };
@@ -75,6 +76,7 @@ export function issueEntry(host: string, issue: IssueLike, project: ProjectRef):
     projectId: String(project.id),
     projectName: project.name,
     ...(issue.assignee === undefined ? {} : { assignee: issue.assignee.name }),
+    ...(issue.dueDate === undefined || issue.dueDate === null ? {} : { dueDate: issue.dueDate }),
     updatedBy: issue.updatedUser.name,
     status: statusBadge(issue.status),
     type: typeBadge(issue.issueType),

@@ -1,5 +1,5 @@
 import type { Labels } from '@/components/labels';
-import type { RowHint, RowView } from '@/components/types';
+import type { Badge, RowHint, RowView } from '@/components/types';
 import { SEARCH_ROW_ID } from '@/lib/search/ids';
 import type { CommandSegment, Scope } from '@/lib/stack/types';
 
@@ -68,7 +68,7 @@ export function entityRow(
   section: string,
   entry: CachedEntry,
   labels: Labels,
-  sub?: string,
+  extras: { sub?: string; due?: Badge } = {},
 ): Built {
   return build(
     `${section}:${entry.kind}:${entry.id}`,
@@ -76,8 +76,9 @@ export function entityRow(
       kind: entry.kind,
       code: entry.key,
       title: entry.title,
-      sub: sub ?? entitySub(entry, labels),
+      sub: extras.sub ?? entitySub(entry, labels),
       marker: entry.status,
+      ...(extras.due === undefined ? {} : { due: extras.due }),
       tag: entry.type,
     },
     { type: 'navigate', url: entry.url },

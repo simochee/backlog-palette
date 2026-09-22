@@ -12,8 +12,8 @@ import {
   PanelsTopLeft,
   Plug,
   Search,
-  Terminal,
   TriangleAlert,
+  Zap,
 } from 'lucide-react';
 
 import type { RowKind } from '@/components/types';
@@ -32,7 +32,7 @@ const icons: Record<RowKind, LucideIcon> = {
   document: FileText,
   project: FolderKanban,
   space: Building,
-  command: Terminal,
+  command: Zap,
   search: Search,
   panel: PanelRight,
   connect: Plug,

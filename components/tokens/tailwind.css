@@ -14,6 +14,7 @@
   --color-sunken: var(--bp-surface-sunken);
   --color-overlay: var(--bp-surface-overlay);
   --color-control: var(--bp-surface-control);
+  --color-row-hover: var(--bp-row-hover);
   --color-row-selected: var(--bp-row-selected);
   --color-row-accent: var(--bp-row-accent);
   --color-row-danger: var(--bp-row-danger);

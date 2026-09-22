@@ -75,12 +75,17 @@ export function assignedFailedSection(labels: Labels, spaceLabel: string): Secti
   };
 }
 
+/** 期限が出るのは期限切れと 7 日以内だけ（D-50）。3 行のうち 2 行は出ない */
 export function assignedSection(labels: Labels): SectionView {
   return {
     id: 'assigned',
     label: labels.sections.assigned,
     meta: labels.sections.count(3),
-    rows: [sampleIssues.login, sampleIssues.release, sampleIssues.invoice],
+    rows: [
+      { ...sampleIssues.login, due: { label: labels.rows.overdue, tone: 'danger' } },
+      { ...sampleIssues.release, due: { label: labels.rows.dueOn(9, 25), tone: 'warning' } },
+      sampleIssues.invoice,
+    ],
   };
 }
 

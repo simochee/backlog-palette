@@ -79,11 +79,7 @@ export const s6 = (labels: Labels): PaletteView => {
         id: 'results',
         label: labels.sections.results,
         meta: kindsMeta(labels),
-        rows: [
-          noticeRow(2, labels),
-          ...rows,
-          externalRow(labels, 'https://nulab.backlog.com/FindIssueAllOver.action'),
-        ],
+        rows: [noticeRow(2, labels), ...rows, externalRow(labels)],
       },
       loginPages(labels),
     ],
@@ -153,7 +149,6 @@ export const s11 = (labels: Labels): PaletteView =>
   view(labels, {
     path: spacePath,
     input: 'ログイン',
-    hasResults: true,
     enterLabel: labels.keys.connect,
     selectedId: `status:${spaces.nulab.label}`,
     sections: [
