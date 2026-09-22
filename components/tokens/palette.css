@@ -28,7 +28,8 @@
 
   --bp-text-default: #1f2937;
   --bp-text-subtle: #5f6673;
-  --bp-text-disabled: #9ca3af;
+  /* 使うのは区切りの「/」と銘だけ。読ませる文字には text-subtle を使う */
+  --bp-text-disabled: #8b93a1;
   --bp-text-inverse: #ffffff;
 
   --bp-border-default: #e5e7eb;
@@ -134,7 +135,7 @@
 
   --bp-text-default: #e5e7eb;
   --bp-text-subtle: #a6afbe;
-  --bp-text-disabled: #6b7280;
+  --bp-text-disabled: #7d8698;
   --bp-text-inverse: #111318;
 
   --bp-border-default: #2c313c;

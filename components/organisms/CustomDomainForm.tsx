@@ -76,7 +76,7 @@ function HostField({ value, error, onChange, onBlur, labels }: HostFieldProps) {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onBlur={onBlur}
-          className="h-(--bp-size-control) min-w-0 flex-1 rounded-control border border-border-strong bg-control px-2 font-mono text-md text-default outline-none placeholder:text-disabled focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-danger"
+          className="h-(--bp-size-control) min-w-0 flex-1 rounded-control border border-border-strong bg-control px-2 font-mono text-md text-default outline-none placeholder:text-subtle focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-danger"
         />
         <Button type="submit" variant="secondary" disabled={!isValidHost(value)}>
           {labels.options.customDomain.add}

@@ -87,7 +87,7 @@ function ApiKeyInput({
       onChange={(event) => onChange(event.target.value)}
       onBlur={onBlur}
       onKeyDown={onKeyDown}
-      className="h-(--bp-size-control) min-w-0 flex-1 bg-transparent font-mono text-md text-default outline-none placeholder:text-disabled"
+      className="h-(--bp-size-control) min-w-0 flex-1 bg-transparent font-mono text-md text-default outline-none placeholder:text-subtle"
     />
   );
 }
