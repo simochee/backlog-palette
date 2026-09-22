@@ -114,6 +114,8 @@ export type PanelView = {
   selectedId?: string;
   footer: readonly KeyHint[];
   toast?: ToastView;
+  /** いま出ている結果を検索した語。入力がこれと違えば、Enter は行を開かずに検索しなおす */
+  searchedQuery?: string;
 };
 
 export type ConnectSheetState =

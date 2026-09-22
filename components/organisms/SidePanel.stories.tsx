@@ -148,6 +148,17 @@ function Cell({
   );
 }
 
+export const P6: Story = {
+  name: 'P6 結果が出ている状態で語を打ち直す — Enter は選択行を開かず、打ち直した語で検索しなおす',
+  args: { ...p2(ja), searchedQuery: '決済' },
+  play: async ({ args, canvasElement }) => {
+    const input = within(canvasElement).getByRole('combobox', { name: ja.panel.inputLabel });
+    await userEvent.type(input, 'フロー{Enter}');
+    await expect(args.onSearch).toHaveBeenLastCalledWith('決済フロー');
+    await expect(args.onAction).not.toHaveBeenCalled();
+  },
+};
+
 export const Matrix: Story = {
   name: '両テーマ・両言語・幅 360/640/720 で描画が落ちない',
   parameters: { layout: 'padded' },
