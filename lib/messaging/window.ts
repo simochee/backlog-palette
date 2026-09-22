@@ -1,10 +1,11 @@
 import { isBacklogSpaceOrigin } from '@/lib/backlog/host';
 import type { BacklogTheme } from '@/lib/theme/backlogTheme';
+import type { ColorScheme } from '@/lib/theme/colorScheme';
 
 /**
  * content script とパレット iframe の間の唯一の通信路。
  *
- * ページへは open / close とプロジェクトテーマの theme（D-57）、ページからは close と、
+ * ページへは open / close とプロジェクトテーマの theme（D-58）、ページからは close と、
  * 貼り付けバーだけが送る connected（D-56）。
  * 足すときはセキュリティ設計の変更として decisions.md に起票する。
  */
@@ -17,6 +18,8 @@ export type PageContext = {
   spaceKey?: string;
   projectKey?: string;
   issueKey?: string;
+  /** Backlog 本体のテーマ。パレットの見た目をこれに揃える */
+  colorScheme?: ColorScheme;
 };
 
 /** theme の中身は受け手が parseBacklogTheme で検証し直す。ここでは形だけを見る */

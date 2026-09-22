@@ -29,7 +29,7 @@ const RGB_CHANNELS = /^\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}$/u;
 
 /*
  * ページから届いた文字列をそのまま style に置かず、Backlog が実際に宣言している 2 つの形
- * （#rrggbb と `-rgb` 変数の「r, g, b」）に絞る（D-57）
+ * （#rrggbb と `-rgb` 変数の「r, g, b」）に絞る（D-58）
  */
 function toThemeValue(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;

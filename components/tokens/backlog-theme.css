@@ -1,6 +1,6 @@
 /*
  * Backlog のテーマ変数（--defaultColor* ほか）を --bp-* から直接参照する。
- * 変数は content script がページの body で解決した値を、iframe のルートに同じ名前で置く（D-57）。
+ * 変数は content script がページの body で解決した値を、iframe のルートに同じ名前で置く（D-58）。
  * 色はこちらで持たない。ここに書くのはどの変数をどのトークンに当てるかだけで、
  * 当て方は Backlog 本体の ReactApp.css での使い分けに合わせる（backlog-facts.md §7.2）。
  *

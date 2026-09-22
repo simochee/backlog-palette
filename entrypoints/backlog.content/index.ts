@@ -5,6 +5,7 @@ import { isPaletteHotkey, isTextEntryTarget } from '@/lib/hotkey/paletteHotkey';
 import { isFromIframe, type PageContext, type ToIframe } from '@/lib/messaging/window';
 import { SHARE_FRAGMENT_KEY } from '@/lib/share';
 import { readBacklogTheme } from '@/lib/theme/backlogTheme';
+import { BACKLOG_DARK_MODE_CLASS, type ColorScheme } from '@/lib/theme/colorScheme';
 import { readVisitedPage } from '@/lib/visits/page';
 import { recordVisit } from '@/lib/visits/record';
 
@@ -18,7 +19,13 @@ import { summaryFromTitle } from './title.ts';
  */
 function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameElement {
   const iframe = document.createElement('iframe');
-  iframe.src = src;
+  /*
+   * テーマは open でも届くが、open は iframe を表示した後に非同期で着く。それだけだと
+   * ダークの Backlog で最初の ⌘K に一瞬ライトが写るので、読み込む時点の値も URL で渡す
+   */
+  const url = new URL(src);
+  url.searchParams.set('colorScheme', readColorScheme());
+  iframe.src = url.href;
   iframe.dataset.backlogPalette = '';
   /*
    * クロスオリジンの iframe でクリップボードに書くには、埋め込む側が
@@ -42,6 +49,10 @@ function createPaletteFrame(src: string, extensionOrigin: string): HTMLIFrameEle
   return iframe;
 }
 
+function readColorScheme(): ColorScheme {
+  return document.documentElement.classList.contains(BACKLOG_DARK_MODE_CLASS) ? 'dark' : 'light';
+}
+
 const ISSUE_PATH = /^\/view\/([A-Z][A-Z0-9_]*-\d+)/u;
 
 function readPageContext(): PageContext {
@@ -53,14 +64,14 @@ function readPageContext(): PageContext {
     spaceKey: spaceKeyOf(origin),
     projectKey: issueKey?.slice(0, issueKey.lastIndexOf('-')),
     issueKey,
+    colorScheme: readColorScheme(),
   };
 }
 
 /** Backlog 本体のダークモードは `.dark-mode body` で変数を再定義する（backlog-facts.md §7） */
 function readPageTheme() {
   const style = getComputedStyle(document.body);
-  const scheme = document.querySelector('.dark-mode body') === null ? 'light' : 'dark';
-  return readBacklogTheme((name) => style.getPropertyValue(name), scheme);
+  return readBacklogTheme((name) => style.getPropertyValue(name), readColorScheme());
 }
 
 type PaletteFrame = { show: () => void; hide: () => void; syncTheme: () => void };
@@ -127,7 +138,7 @@ function createPaletteHost(
 
   ctx.addEventListener(iframe, 'load', () => {
     isLoaded = true;
-    // 開いてから送ると、表示された最初のフレームが既定の配色になる（D-57）
+    // 開いてから送ると、表示された最初のフレームが既定の配色になる（D-58）
     frame.syncTheme();
     if (!hasPendingOpen) return;
     hasPendingOpen = false;
