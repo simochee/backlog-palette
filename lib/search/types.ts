@@ -25,7 +25,7 @@ export type ResultRow = {
   id: string;
   key?: string;
   title: string;
-  projectName: string;
+  projectName?: string;
   assignee?: string;
   updatedBy?: string;
   status?: Badge;

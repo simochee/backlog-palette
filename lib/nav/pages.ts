@@ -20,6 +20,11 @@ export type PageDefinition = {
   scope: PageScope;
   /** このページと判定するパス。先頭が正規のパスで、残りは別名（レガシーの .action など） */
   paths: readonly RegExp[];
+  /**
+   * パスに識別子が無く、クエリが識別子になっている画面のためのクエリ名。
+   * 落とすと別のプロジェクトの画面が同じ URL になる（`canonicalPath`）
+   */
+  identityQuery?: string;
   /** 文脈が足りなければ undefined。候補から落とす */
   build: (context: PageContext) => string | undefined;
 };
@@ -138,6 +143,7 @@ export const pages: readonly PageDefinition[] = [
     // 台帳では project.key= と project.id= の両方が公式 OSS にあり、どちらが正か未確認。
     // 遷移には bee のテストが使う project.key= を採る
     paths: [/^\/EditProject\.action$/u],
+    identityQuery: 'project.key',
     build: projectPath((key) => `/EditProject.action?project.key=${key}`),
   },
 ];

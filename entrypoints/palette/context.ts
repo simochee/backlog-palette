@@ -28,7 +28,7 @@ export async function readOpenContext(): Promise<OpenContext | undefined> {
   const url = new URL(tab.url);
   const spaceHost = spaceHostOf(url.origin);
   if (spaceHost === undefined) return undefined;
-  const info = parsePath(url.pathname);
+  const info = parsePath(url.pathname, url.search);
   return {
     origin: url.origin,
     href: url.href,

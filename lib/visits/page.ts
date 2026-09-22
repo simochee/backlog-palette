@@ -1,59 +1,48 @@
 import { spaceHostOf } from '@/lib/backlog/host';
+import { canonicalUrl, parsePath } from '@/lib/nav/path';
 import type { DisplayCacheEntry, VisitedKind } from '@/lib/storage/items';
 
-type PagePattern = {
-  kind: VisitedKind;
-  pattern: RegExp;
-  /** パスから読んだ生の値を保存する形に直す。無ければ key を持たない画面 */
-  readKey?: (raw: string) => string;
-};
-
-/*
- * 表示キャッシュに載せる画面だけを拾う（docs/backlog-facts.md §1）。
- * 課題キーは実在キーと突き合わせるまで文字種だけで緩く見る（同 §2.2）。
- *
- * 大文字化するのは課題キーだけ。Wiki のページ名とドキュメント ID は
- * 大文字小文字を区別する値で、変えると URL を組み直したときに別ページになる。
- */
-const PAGES: readonly PagePattern[] = [
-  {
-    kind: 'issue',
-    pattern: /^\/view\/(?<key>(?<project>[A-Za-z][A-Za-z0-9_]*)-\d+)$/u,
-    readKey: (raw) => raw.toUpperCase(),
-  },
-  { kind: 'project', pattern: /^\/projects\/(?<project>[A-Z][A-Z0-9_]*)$/u },
-  {
-    kind: 'wiki',
-    pattern: /^\/wiki\/(?<project>[A-Z][A-Z0-9_]*)\/(?<key>.+)$/u,
-    // pathname はパーセントエンコードされている。名前として保存する
-    readKey: (raw) => decodeURIComponent(raw),
-  },
-  {
-    kind: 'document',
-    pattern: /^\/document\/(?<project>[A-Z][A-Z0-9_]*)\/(?<key>[^/]+)$/u,
-    readKey: (raw) => raw,
-  },
-];
-
 export type VisitedPage = Omit<DisplayCacheEntry, 'title' | 'visitedAt'>;
+
+/**
+ * 表示キャッシュに載せる対象と、その識別子（docs/backlog-facts.md §1）。
+ * ページ定義（ボード・ガントなど）は載せない。そこは「{プロジェクト} のページ」が担当する。
+ *
+ * 別名 Wiki（`/alias/wiki/{id}`）の key は数字列の id。`lib/backlog/entries.ts` の
+ * `wikiEntry` と行動ログが既にこの形なので、検索経由の頻度と合算される。名前指定の
+ * Wiki は名前で記録され、API 無しでは別名と束ねられない（D-52）
+ */
+function identityOf(
+  pathname: string,
+  search: string,
+): { kind: VisitedKind; projectKey?: string; key?: string } | undefined {
+  const info = parsePath(pathname, search);
+  if (info === undefined) return undefined;
+  if (info.kind === 'issue')
+    return { kind: 'issue', projectKey: info.projectKey, key: info.issueKey };
+  if (info.kind === 'project') return { kind: 'project', projectKey: info.projectKey };
+  if (info.kind === 'wiki') return { kind: 'wiki', projectKey: info.projectKey, key: info.name };
+  if (info.kind === 'wikiAlias') return { kind: 'wiki', key: info.wikiId };
+  if (info.kind === 'document')
+    return { kind: 'document', projectKey: info.projectKey, key: info.documentId };
+  // ページ定義（ボード・ガントなど）は表示キャッシュに載せない
+  return undefined;
+}
 
 export function readVisitedPage(href: string): VisitedPage | undefined {
   const url = new URL(href);
   const spaceHost = spaceHostOf(url.origin);
   if (spaceHost === undefined) return undefined;
 
-  for (const { kind, pattern, readKey } of PAGES) {
-    const match = pattern.exec(url.pathname);
-    const projectKey = match?.groups?.project;
-    if (match === null || projectKey === undefined) continue;
-    const raw = match.groups?.key;
-    return {
-      url: url.origin + url.pathname,
-      kind,
-      spaceHost,
-      projectKey: projectKey.toUpperCase(),
-      ...(readKey === undefined || raw === undefined ? {} : { key: readKey(raw) }),
-    };
-  }
-  return undefined;
+  const identity = identityOf(url.pathname, url.search);
+  const canonical = canonicalUrl(href);
+  if (identity === undefined || canonical === undefined) return undefined;
+
+  return {
+    url: canonical,
+    kind: identity.kind,
+    spaceHost,
+    ...(identity.projectKey === undefined ? {} : { projectKey: identity.projectKey }),
+    ...(identity.key === undefined ? {} : { key: identity.key }),
+  };
 }

@@ -21,7 +21,7 @@ export const displayCacheSchema = z.object({
   kind: z.enum(['issue', 'project', 'wiki', 'document']),
   /** スペースの識別子はホスト名（D-32） */
   spaceHost: z.string().min(1),
-  projectKey: z.string().min(1),
+  projectKey: z.string().min(1).optional(),
   key: z.string().optional(),
   title: z.string().optional(),
   visitedAt: z.number(),

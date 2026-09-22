@@ -60,11 +60,18 @@ function recentSection({ index, scope, labels }: Env): BuiltSection {
       rows.push({ built: projectRow('recent', project, space, labels), score });
   }
 
+  // 同じ対象は 1 行。URL の書き方が違うだけの行が表示キャッシュに 2 件あっても、
+  // 「最近開いた」に 2 回並ばない（D-52。移行が走らない経路への守り）
+  const seen = new Set<string>();
+  const unique = rows
+    .toSorted((a, b) => b.score - a.score)
+    .filter(({ built }) => !seen.has(built.row.id) && seen.add(built.row.id) !== undefined);
+
   return {
     id: 'recent',
     label: labels.sections.recent,
     meta: index.learningEnabled ? labels.sections.learned : undefined,
-    rows: rows.toSorted((a, b) => b.score - a.score).map((r) => r.built),
+    rows: unique.map((r) => r.built),
     cap: SECTION_CAP,
   };
 }

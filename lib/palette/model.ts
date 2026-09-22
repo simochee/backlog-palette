@@ -45,8 +45,9 @@ export type CachedEntry = {
   key?: string;
   title: string;
   spaceId: string;
-  projectId: string;
-  projectName: string;
+  /** URL からプロジェクトが読めない行がある（別名 Wiki）。マスタが届くまでは表示キャッシュ由来 */
+  projectId?: string;
+  projectName?: string;
   assignee?: string;
   updatedBy?: string;
   status?: Badge;
