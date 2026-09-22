@@ -27,11 +27,13 @@ const PANEL_ALWAYS_AVAILABLE = import.meta.env.BROWSER !== 'firefox';
 function usePanelAvailable(openedAt: number): boolean {
   const [answer, setAnswer] = useState({ openedAt: -1, available: false });
   useEffect(() => {
-    if (PANEL_ALWAYS_AVAILABLE) return;
     let alive = true;
-    void isPanelAvailable().then((available) => {
+    const ask = async () => {
+      if (PANEL_ALWAYS_AVAILABLE) return;
+      const available = await isPanelAvailable();
       if (alive) setAnswer({ openedAt, available });
-    });
+    };
+    void ask();
     return () => {
       alive = false;
     };

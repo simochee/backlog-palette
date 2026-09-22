@@ -72,9 +72,9 @@ function serveTabsDelegation() {
     }
     await browser.tabs.update(tabId, { url: message.data.url });
   });
-  onMessage('isSidebarOpen', async (message) => {
+  onMessage('isSidebarOpen', (message) => {
     const sidebarAction = readSidebarAction();
-    if (sidebarAction === undefined) return false;
+    if (sidebarAction === undefined) return Promise.resolve(false);
     return sidebarAction.isOpen(readSenderWindowId(message.sender));
   });
 }
