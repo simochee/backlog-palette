@@ -186,6 +186,7 @@ export function buildPanelView(view: ViewInput): PanelView {
     selectedId,
     footer: footerOf(sections, selectedId, view.input.trim() !== '', hasResults, labels),
     toast: view.toast,
+    searchedQuery: session?.query,
   };
 }
 
