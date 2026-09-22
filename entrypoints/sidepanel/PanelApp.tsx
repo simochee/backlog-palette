@@ -12,6 +12,7 @@ import { type PanelContext, readPanelContext, recentQueriesFor } from './context
 import { buildFilters } from './filters.ts';
 import { useFilterChoices } from './filterSources.ts';
 import { useHandoff } from './handoff.ts';
+import { useRememberSearch, useRestoreLastSearch } from './lastSearch.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';
 import { usePanelSearch } from './usePanelSearch.ts';
@@ -61,25 +62,26 @@ function withDefaultScope(search: PanelSearch, context: PanelContext): PanelSear
   return { ...search, scope: { kind: 'space', spaceId: context.tabSpace } };
 }
 
-/** 入力・選択・トースト・URL の更新。パレットからの受け渡しは入力と URL の両方に写す */
-function usePanelState(initialQuery: string) {
+/** 入力・選択・トースト・URL の更新。パレットからの受け渡しと前回の復元は入力と URL の両方に写す */
+function usePanelState(search: PanelSearch, tabSpace: string | undefined) {
   const navigate = rootRoute.useNavigate();
-  const [input, setInput] = useState(initialQuery);
+  const [input, setInput] = useState(search.query);
   const [selectedId, setSelectedId] = useState<string>();
   const [toast, showToast] = useToast();
   const update = useCallback(
     (next: PanelSearch) => void navigate({ to: '/', search: next }),
     [navigate],
   );
-  useHandoff(
-    useCallback(
-      (next: PanelSearch) => {
-        setInput(next.query);
-        update(next);
-      },
-      [update],
-    ),
+  const receive = useCallback(
+    (next: PanelSearch) => {
+      setInput(next.query);
+      update(next);
+    },
+    [update],
   );
+  useHandoff(receive);
+  useRestoreLastSearch(search, tabSpace, receive);
+  useRememberSearch(search);
   return { input, setInput, selectedId, setSelectedId, toast, showToast, update };
 }
 
@@ -88,7 +90,8 @@ function Panel({ context }: { context: PanelContext }) {
   const raw = panelSearchSchema.parse(rootRoute.useSearch());
   const search = useMemo(() => withDefaultScope(raw, context), [raw, context]);
   const { input, setInput, selectedId, setSelectedId, toast, showToast, update } = usePanelState(
-    search.query,
+    search,
+    context.tabSpace,
   );
   const recentQueries = useRecentQueries(search.scope);
   const { session, state } = usePanelSearch(
