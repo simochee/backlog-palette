@@ -26,7 +26,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Idle: Story = {
-  name: '入力待ち（画面下部中央の横長）',
+  name: '入力待ち（画面下部中央の横長。入力欄にフォーカスがある間は縁を accent にしてリングを出す）',
 };
 
 export const Submitting: Story = {

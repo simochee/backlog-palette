@@ -150,7 +150,7 @@ export function ConnectSheet({ state, onSubmit, onClose, ...rest }: ConnectSheet
     <section
       aria-label={labels.connect.title}
       data-state={state.kind}
-      className="flex w-full max-w-(--bp-width-sheet) items-center gap-3 rounded-pill border border-border bg-floating py-1.5 pr-1.5 pl-4 font-body text-default shadow-floating data-[state=error]:border-danger"
+      className="flex w-full max-w-(--bp-width-sheet) items-center gap-3 rounded-pill border border-border bg-floating py-1.5 pr-1.5 pl-4 font-body text-default shadow-floating transition-[border-color,box-shadow] duration-(--bp-motion-fast) focus-within:border-accent focus-within:ring-4 focus-within:ring-ring data-[state=error]:border-danger data-[state=error]:focus-within:border-danger data-[state=error]:focus-within:ring-danger/30"
     >
       {state.kind === 'done' ? (
         <DoneBar spaceLabel={state.spaceLabel} onClose={onClose} labels={labels} />
