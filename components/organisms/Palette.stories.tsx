@@ -105,18 +105,17 @@ export const S4: Story = {
 };
 
 export const S5: Story = {
-  name: 'S5 検索中 — 検索行の直下に検索中の行があり選択されている／見出しの補足に進捗が出る',
+  name: 'S5 検索中 — 検索行の直下に検索中の行があり選択されている／見出しは何も言わない',
   args: s5(ja),
   play: async ({ args, canvasElement }) => {
     const [search, searching] = options(canvasElement);
     await expect(search?.dataset.kind).toBe('search');
     await expect(searching?.dataset.rowId).toBe('searching');
     await expect(searching).toHaveAttribute('aria-selected', 'true');
+    // 「検索中」は検索行の補足と行の 2 か所。見出しでもう一度言わない（D-49）
     await expect(
-      within(canvasElement).getByText(
-        new RegExp(`^${ja.panel.options.issue} ${ja.panel.loading}`, 'u'),
-      ),
-    ).toBeVisible();
+      within(canvasElement).queryByText(new RegExp(`^${ja.panel.options.issue} `, 'u')),
+    ).toBeNull();
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
   },

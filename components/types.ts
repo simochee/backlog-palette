@@ -36,6 +36,8 @@ export type RowView = {
   title: string;
   sub?: string;
   marker?: Badge;
+  /** 期限。急ぎのときだけ渡る（期限切れ・7 日以内、D-50） */
+  due?: Badge;
   tag?: Badge;
   space?: { label: string; icon?: string };
   hints: readonly RowHint[];

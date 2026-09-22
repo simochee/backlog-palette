@@ -51,10 +51,18 @@ function kindLabel(kind: SearchKind, labels: Labels): string {
   return labels.panel.options[kind];
 }
 
-/** 見出しの補足: `課題 12 · Wiki 読み込み中 · ドキュメント 2`。全部揃ったら `17 件`（§7.2） */
-export function progressMeta(session: SearchSession, labels: Labels): string {
+/**
+ * 見出しの補足: `課題 12 · Wiki 読み込み中 · ドキュメント 2`。全部揃ったら `17 件`（§7.2）。
+ * 種別の進捗が全部同じときは何も言わない。同じ 1 語をセクションの中の行が既に言っており、
+ * 「検索中」が 3 か所（検索行の補足・見出し・プレースホルダ行）に並ぶと読む場所が散る（D-49）
+ */
+export function progressMeta(session: SearchSession, labels: Labels): string | undefined {
   if (errorOf(session, 'unauthorized') !== undefined) return labels.panel.authExpired;
-  if (isDone(session)) return labels.sections.count(totalCount(session));
+  if (isDone(session)) {
+    const total = totalCount(session);
+    return total === 0 ? undefined : labels.sections.count(total);
+  }
+  if (searchKinds.every((kind) => session.kinds[kind].state === 'loading')) return undefined;
   return searchKinds
     .map((kind) => {
       const progress = session.kinds[kind];
@@ -110,7 +118,8 @@ function emptyRows(
       {
         kind: 'external',
         title: labels.rows.openExternal,
-        sub: index.externalSearchUrl(scope, session.query),
+        // 生の URL は次に何が起きるかを説明しない。URL は title 属性が持つ
+        sub: labels.rows.openExternalSub(space?.label ?? ''),
       },
       { type: 'navigate', url: index.externalSearchUrl(scope, session.query) },
     ),
@@ -189,7 +198,11 @@ export function resultsSection(env: Env, session: SearchSession): BuiltSection {
     rows.push(
       build(
         MORE_EXTERNAL_ROW_ID,
-        { kind: 'external', title: labels.rows.moreExternal(session.overflow), sub: url },
+        {
+          kind: 'external',
+          title: labels.rows.moreExternal(session.overflow),
+          sub: labels.rows.openExternalSub(space?.label ?? ''),
+        },
         { type: 'navigate', url },
       ),
     );

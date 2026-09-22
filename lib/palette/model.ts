@@ -51,6 +51,8 @@ export type CachedEntry = {
   updatedBy?: string;
   status?: Badge;
   type?: Badge;
+  /** 期限（`yyyy-MM-dd`）。担当課題の応答に含まれる（backlog-facts.md §3.2） */
+  dueDate?: string;
   url: string;
 };
 

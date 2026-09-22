@@ -5,6 +5,7 @@ import type { SearchError } from '@/lib/search/types';
 import type { CommandSegment, Scope } from '@/lib/stack/types';
 
 import { copyCandidates, copyIssueCommand, copyIssueRow } from './candidates';
+import { dueBadge } from './due';
 import { entityId, type PaletteIndex, type SpaceEntry } from './model';
 import {
   build,
@@ -123,7 +124,9 @@ function assignedSection({ index, labels }: Env, space: SpaceEntry | undefined):
     // 取得は SECTION_CAP 件で打ち切るので、それに達した件数は総数ではない。数えられるときだけ出す
     meta:
       assigned.rows.length < SECTION_CAP ? labels.sections.count(assigned.rows.length) : undefined,
-    rows: assigned.rows.map((entry) => entityRow('assigned', entry, labels)),
+    rows: assigned.rows.map((entry) =>
+      entityRow('assigned', entry, labels, { due: dueBadge(entry.dueDate, index.now, labels) }),
+    ),
   };
 }
 

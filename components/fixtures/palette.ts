@@ -44,9 +44,6 @@ export const kindProgress = (labels: Labels, values: readonly [string, string, s
     .map((kind, index) => `${kind} ${values[index]}`)
     .join(' · ');
 
-const loadingMeta = (labels: Labels): string =>
-  kindProgress(labels, [labels.panel.loading, labels.panel.loading, labels.panel.loading]);
-
 export type StatePartial = {
   path: PathSegmentView[];
   input?: string;
@@ -223,7 +220,6 @@ export const s5 = (labels: Labels): PaletteView =>
       {
         id: 'results',
         label: labels.sections.results,
-        meta: loadingMeta(labels),
         rows: [searchingRow(labels)],
       },
       loginPages(labels),

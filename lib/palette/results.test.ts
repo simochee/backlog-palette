@@ -58,10 +58,21 @@ describe('起動直後（§7.2）', () => {
     expect(results(d)?.rows[0]?.busy).toBe(true);
   });
 
-  it('検索行の補足は「検索中…」に、見出しの補足は種別ごとの進捗になる', () => {
+  it('検索行の補足は「検索中…」になり、全種別が取得中の見出しは何も言わない', () => {
     const d = view(started);
     expect(d.view.sections[0]?.rows[0]?.sub).toBe(`${nulab.label} · ${ja.rows.searching}`);
-    expect(results(d)?.meta).toContain(ja.panel.loading);
+    // 「検索中」を検索行・見出し・プレースホルダ行の 3 か所で言わない（D-49）
+    expect(results(d)?.meta).toBeUndefined();
+  });
+
+  it('種別ごとに進み方が違えば、見出しは種別ごとの進捗を出す', () => {
+    const partial = reduce(started, {
+      type: 'resultsArrived',
+      kind: 'issue',
+      rows: [row('PROJ-1', 1)],
+    });
+    expect(results(view(partial))?.meta).toContain(ja.panel.loading);
+    expect(results(view(partial))?.meta).toContain(ja.panel.options.issue);
   });
 
   it('入力が変わると検索結果は即座に消える（§7.4）', () => {

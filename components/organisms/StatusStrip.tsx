@@ -38,10 +38,10 @@ function ProgressItem({
           <span>{item.message}</span>
           {item.action !== undefined && (
             <Button
-              variant="ghost"
+              variant="secondary"
               tone="danger"
               onClick={() => onAction(item.id)}
-              className="h-6 px-1.5 text-xs"
+              className="h-5 px-1.5 text-xs"
             >
               {item.action.label}
             </Button>
@@ -58,6 +58,7 @@ export function StatusStrip({ progress, onProgressAction, ...rest }: StatusStrip
   if (progress.length === 0) return null;
 
   const allReady = progress.every((item) => item.state === 'ready');
+  const allLoading = progress.every((item) => item.state === 'loading');
   const total = progress.reduce((sum, item) => sum + (item.count ?? 0), 0);
 
   return (
@@ -67,6 +68,12 @@ export function StatusStrip({ progress, onProgressAction, ...rest }: StatusStrip
     >
       {allReady ? (
         <span>{labels.sections.count(total)}</span>
+      ) : allLoading ? (
+        // 種別ごとに分けても全部同じ語になる。3 つ並べても増える情報は無い（D-49）
+        <span className="inline-flex items-center gap-1.5">
+          <Spinner className="size-3" />
+          {labels.panel.loading}
+        </span>
       ) : (
         progress.map((item, index) => (
           <span key={item.id} className="inline-flex items-center gap-2">

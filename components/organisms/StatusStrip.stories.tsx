@@ -29,8 +29,24 @@ export const AllReady: Story = {
   },
 };
 
+export const AllLoading: Story = {
+  name: '全部 loading（種別に分けず 1 語に畳む）',
+  args: {
+    progress: [
+      { id: 'issue', label: ja.panel.options.issue, state: 'loading' },
+      { id: 'wiki', label: ja.panel.options.wiki, state: 'loading' },
+      { id: 'document', label: ja.panel.options.document, state: 'loading' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByText(ja.panel.loading)).toHaveLength(1);
+    await expect(canvas.queryByText(ja.panel.options.issue)).toBeNull();
+  },
+};
+
 export const WithLoading: Story = {
-  name: '読み込み中を含む',
+  name: '読み込み中とエラーが混ざる（種別ごとに出す）',
   args: {
     progress: [
       { id: 'issue', label: ja.panel.options.issue, state: 'ready', count: 12 },

@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef } from 'react';
+
+import { useHasMoreBelow } from '@/components/hooks/useHasMoreBelow';
 
 type PaletteFrameProps = {
   header: ReactNode;
@@ -13,6 +15,9 @@ type PaletteFrameProps = {
  * 幅は min(--bp-width-palette, 親の幅) で、親の左右余白は Overlay が持つ。
  */
 export function PaletteFrame({ header, list, footer, width, ...aria }: PaletteFrameProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const hasMoreBelow = useHasMoreBelow(listRef);
+
   return (
     <div
       role="dialog"
@@ -21,8 +26,18 @@ export function PaletteFrame({ header, list, footer, width, ...aria }: PaletteFr
       style={width === undefined ? undefined : { maxWidth: width }}
     >
       <div className="shrink-0 border-b border-border">{header}</div>
-      <div className="min-h-(--bp-size-row) max-h-(--bp-height-list-max) overflow-y-auto">
-        {list}
+      {/* 上限の高さで切れた行は「途中で終わった」ようにしか見えない。下端にだけ地の色へ落とす */}
+      <div className="relative min-h-(--bp-size-row)">
+        <div ref={listRef} className="max-h-(--bp-height-list-max) overflow-y-auto">
+          {list}
+        </div>
+        {hasMoreBelow && (
+          <div
+            aria-hidden
+            data-testid="list-fade"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t from-floating to-transparent"
+          />
+        )}
       </div>
       <div className="h-(--bp-size-footer) shrink-0 border-t border-border">{footer}</div>
     </div>
