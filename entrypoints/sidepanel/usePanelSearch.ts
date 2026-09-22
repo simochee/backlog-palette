@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 import {
   arrive,
@@ -29,13 +29,15 @@ function freshStore(search: PanelSearch, searchKey: string, attempt: number): St
 }
 
 function useRetryWhenOnline(offline: boolean, retry: () => void) {
+  const onOnline = useEffectEvent(retry);
   useEffect(() => {
     if (!offline) return noop;
-    window.addEventListener('online', retry);
+    const listener = () => onOnline();
+    window.addEventListener('online', listener);
     return () => {
-      window.removeEventListener('online', retry);
+      window.removeEventListener('online', listener);
     };
-  }, [offline, retry]);
+  }, [offline]);
 }
 
 /*
@@ -49,14 +51,13 @@ function useSearchStore(search: PanelSearch) {
   if (store.searchKey !== searchKey) setStore(freshStore(search, searchKey, 0));
   const current = store.searchKey === searchKey ? store : freshStore(search, searchKey, 0);
 
-  const retry = () => {
+  useRetryWhenOnline(endedOffline(current.session), () => {
     setStore((previous) =>
       previous.searchKey === searchKey
         ? freshStore(search, searchKey, previous.attempt + 1)
         : previous,
     );
-  };
-  useRetryWhenOnline(endedOffline(current.session), retry);
+  });
 
   return { searchKey, attempt: current.attempt, session: current.session, setStore };
 }
@@ -66,7 +67,8 @@ function useSearchStore(search: PanelSearch) {
  * 入る行は保留する（I4）。入力の途中では走らせない（Enter で明示的に起動、D-2）。
  * オフラインで終わった検索は、接続が戻ったら引き直す（palette.md §7.5、D-59）。
  *
- * effect は runner の起動と打ち切りだけを持ち、状態は到着の callback（非同期）でしか変えない
+ * effect は検索の同一性（searchKey と試行回数）だけに反応し、runner の起動と打ち切りを持つ。
+ * 状態は到着の callback（非同期）でしか変えない
  */
 export function usePanelSearch(
   search: PanelSearch,
@@ -75,29 +77,26 @@ export function usePanelSearch(
   learningEnabled: boolean,
 ) {
   const { searchKey, attempt, session, setStore } = useSearchStore(search);
-  const selected = useRef(selectedId);
+  const currentSelection = useEffectEvent(() => selectedId);
 
-  useEffect(() => {
-    selected.current = selectedId;
-  }, [selectedId]);
-
-  useEffect(() => {
+  const start = useEffectEvent((key: string, run: number) => {
     if (!canRun(search)) return noop;
     const { query, scope, conditions } = search;
-    if (attempt === 0) {
+    if (run === 0) {
       if (learningEnabled) void recordSearch(query, scope, Date.now());
       track({ type: 'panelSearchStarted' });
     }
-    const cancel = runner.run(
+    return runner.run(
       query,
       scope,
       (kind, outcome) => {
+        const selected = currentSelection();
         setStore((previous) => {
           const base = previous.session;
-          if (previous.searchKey !== searchKey || previous.attempt !== attempt) return previous;
+          if (previous.searchKey !== key || previous.attempt !== run) return previous;
           if (base === undefined) return previous;
           if (!outcome.ok) return { ...previous, session: fail(base, kind, outcome.error) };
-          const index = base.rows.findIndex((row) => resultRowId(row) === selected.current);
+          const index = base.rows.findIndex((row) => resultRowId(row) === selected);
           return {
             ...previous,
             session: arrive(base, kind, outcome.rows, index === -1 ? undefined : index),
@@ -106,9 +105,10 @@ export function usePanelSearch(
       },
       conditions,
     );
-    // 入力が変わったら走っている検索を捨てる（palette.md §7.4）
-    return cancel;
-  }, [search, searchKey, attempt, runner, learningEnabled, setStore]);
+  });
+
+  // 入力が変わったら走っている検索を捨てる（palette.md §7.4）。戻り値の cancel がそれ
+  useEffect(() => start(searchKey, attempt), [searchKey, attempt]);
 
   const state = (): SearchState | undefined => {
     if (search.scope === undefined) return undefined;

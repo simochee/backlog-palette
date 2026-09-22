@@ -5,6 +5,8 @@ import '@/components/tokens/tailwind.css';
 import './palette.css';
 
 import { applyBacklogColorScheme } from './colorScheme.ts';
+import { startPaletteController } from './controller.ts';
+import { hostChannel } from './hostChannel.ts';
 import { PaletteApp } from './PaletteApp.tsx';
 
 // iframe を作った時点の Backlog のテーマ。content script が URL に載せる
@@ -13,8 +15,10 @@ applyBacklogColorScheme(new URLSearchParams(window.location.search).get('colorSc
 const root = document.querySelector('#root');
 if (root === null) throw new Error('#root が無い');
 
+const controller = startPaletteController(hostChannel);
+
 createRoot(root).render(
   <StrictMode>
-    <PaletteApp />
+    <PaletteApp controller={controller} />
   </StrictMode>,
 );

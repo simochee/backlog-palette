@@ -77,6 +77,21 @@ test.describe('パレットからサイドパネルへの引き渡し（surfaces
     await expect.poll(() => readStorage<unknown>('panelRequest')).toBeUndefined();
   });
 
+  test('受け渡しで開いたパネルを閉じて開き直すと、渡された検索が前回の検索として戻る', async ({
+    page,
+    serviceWorker,
+  }) => {
+    await seed(serviceWorker, request('請求書', 'PROJ'));
+    await page.goto(panelUrl(serviceWorker));
+    await expect(page.getByRole('combobox', { name: '検索語' })).toHaveValue('請求書');
+
+    await page.goto('about:blank');
+    await page.goto(panelUrl(serviceWorker));
+
+    await expect(page.getByRole('combobox', { name: '検索語' })).toHaveValue('請求書');
+    await expect(page.getByRole('button', { name: /^プロジェクト PROJ/u })).toBeVisible();
+  });
+
   test('パネルが開いている間に渡し直されても、新しい語で検索を起動する', async ({
     page,
     serviceWorker,

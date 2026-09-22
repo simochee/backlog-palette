@@ -1,10 +1,11 @@
 import type { Labels } from '@/components/labels';
-import { toApiFailure } from '@/lib/backlog/failure';
 import { resolveLanguage } from '@/lib/i18n/language';
 import type { AssignedState, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
 import { settings } from '@/lib/storage/palette-items';
+import type { Readable } from '@/lib/store';
 
+import { assignedStoreFor } from './assigned.ts';
 import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
 import { initialStackOf, type OpenContext, readOpenContext } from './context.ts';
@@ -30,24 +31,12 @@ export type PaletteSession = {
   /** 共有 URL で開いたときに復元する検索（palette.md §7.6） */
   restore: Restore | undefined;
   runner: SearchRunner;
-  /** 担当課題。API から届いたら空状態の末尾に足す（palette.md §9）。未接続なら undefined のまま */
-  assigned: Promise<AssignedState>;
+  /**
+   * 担当課題。API から届いたら空状態の末尾に足す（palette.md §9）。
+   * promise にして use() で待つと、届くまでパレットごと描けない。表示キャッシュだけで先に描く
+   */
+  assigned: Readable<AssignedState>;
 };
-
-/*
- * 失敗しても空状態は描く。失敗は担当課題のセクションの中の行になる（I6・D-38）。
- * 分類を捨てて undefined を返すと、取れなかったときに「読み込み中」が回り続ける
- */
-async function assignedFor(host: string, connected: boolean): Promise<AssignedState> {
-  // 未接続のスペースでは空状態が接続行になり、担当課題のセクションは出ない（§9）
-  if (!connected) return { kind: 'ready', rows: [] };
-  try {
-    const rows = await backlog.queryClient.query(backlog.queries.assignedIssues(host));
-    return { kind: 'ready', rows };
-  } catch (error) {
-    return { kind: 'failed', error: toApiFailure(error) };
-  }
-}
 
 export async function createSession(): Promise<PaletteSession | undefined> {
   const context = await readOpenContext();
@@ -67,6 +56,6 @@ export async function createSession(): Promise<PaletteSession | undefined> {
     stack: initialStackOf(context, connected.get(context.spaceHost)),
     restore: restoreFrom(context.href, context.spaceHost),
     runner: backlog.runner,
-    assigned: assignedFor(context.spaceHost, connected.has(context.spaceHost)),
+    assigned: assignedStoreFor(context.spaceHost, connected.has(context.spaceHost)),
   };
 }
