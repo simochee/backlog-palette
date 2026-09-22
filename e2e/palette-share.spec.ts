@@ -158,10 +158,17 @@ test.describe('フッターの通し検査（不変条件 I2 の実機版）', (
       const ids = await visibleHintIds(first);
       expect(ids.length).toBeGreaterThan(2);
 
+      const exercised: string[] = [];
       for (const id of ids) {
         const frame = await openPalette(page, url);
         await situation.prepare(page, frame);
-        expect(await visibleHintIds(frame), `${id} が出ている状態を作れない`).toContain(id);
+        /*
+         * フッターは幅に入る分しか出さない（§6・D-40）。優先順の低いキーは同じ状態でも
+         * 出ないことがあるので、出ていないキーは飛ばす。I2 が言っているのは
+         * 「出ているキーには動作がある」で、「全部のキーが常に出る」ではない
+         */
+        if (!(await visibleHintIds(frame)).includes(id)) continue;
+        exercised.push(id);
 
         const before = await snapshot(page, frame);
         // 押した結果は 遷移（URL）・入力・スコープパス・選択・トースト・閉じる のどれかに現れる
@@ -178,6 +185,8 @@ test.describe('フッターの通し検査（不変条件 I2 の実機版）', (
           .poll(outcome, { message: `${id} を押しても何も起きない`, timeout: 3000 })
           .not.toBe('same');
       }
+      // 飛ばしてばかりで何も試していない、を検出する
+      expect(exercised, '出ているキーを 1 つも試せていない').toContain('enter');
     });
   }
 });

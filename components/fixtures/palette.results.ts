@@ -129,6 +129,7 @@ export const s8 = (labels: Labels): PaletteView =>
 export const s9 = (labels: Labels): PaletteView =>
   view(labels, {
     path: [...spacePath, { id: 'command', label: labels.rows.switchSpace }],
+    placeholder: labels.palette.commandPlaceholder(labels.rows.switchSpace),
     escLabel: labels.palette.escBack,
     sections: [
       {

@@ -39,17 +39,28 @@ function defaultLabel(id: KeyHintId, labels: Labels): string {
   return byId[id];
 }
 
+/** 幅が足りないときの短い言い方（D-44）。持つのは長くなりうる 2 つだけ */
+function shortLabel(id: KeyHintId, labels: Labels): string | undefined {
+  if (id === 'back') return labels.keys.backShort;
+  if (id === 'copyUrl') return labels.keys.copyUrlShort;
+  return undefined;
+}
+
 export function footerHints(
   ids: readonly KeyHintId[],
   labels: Labels,
   overrides: HintOverrides = {},
 ): KeyHint[] {
-  return ids.map((id) => ({
-    id,
-    keys: keys[id],
-    label: overrides[id] ?? defaultLabel(id, labels),
-    priority: priority[id],
-  }));
+  return ids.map((id) => {
+    const short = shortLabel(id, labels);
+    return {
+      id,
+      keys: keys[id],
+      label: overrides[id] ?? defaultLabel(id, labels),
+      ...(short === undefined ? {} : { shortLabel: short }),
+      priority: priority[id],
+    };
+  });
 }
 
 export const allHintIds: readonly KeyHintId[] = [

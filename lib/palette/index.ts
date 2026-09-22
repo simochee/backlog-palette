@@ -1,5 +1,6 @@
 export { derive, type DerivedPalette, type DeriveOptions } from './derive';
 export type {
+  AssignedState,
   CachedEntry,
   CurrentIssue,
   EntityKind,

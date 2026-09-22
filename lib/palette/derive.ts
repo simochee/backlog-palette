@@ -4,7 +4,7 @@ import { deriveBindings, type KeyBinding } from '@/lib/keys/bindings';
 import { type Platform, toKeyHints } from '@/lib/keys/match';
 import { fold } from '@/lib/query/normalize';
 import { activeCommand, scopeOf } from '@/lib/stack/stack';
-import type { Stack } from '@/lib/stack/types';
+import type { CommandSegment, Scope, Stack } from '@/lib/stack/types';
 
 import { buildSections, type Env } from './build';
 import type { PaletteIndex } from './model';
@@ -71,6 +71,12 @@ function bindingsOf(
   );
 }
 
+/** 入力欄の案内。どの階層にいるかで、入力が何に効くかが変わる */
+function placeholderOf(scope: Scope, command: CommandSegment | undefined, labels: Labels): string {
+  if (command !== undefined) return labels.palette.commandPlaceholder(command.label);
+  return scope.kind === 'root' ? labels.palette.rootPlaceholder : labels.palette.placeholder;
+}
+
 /** 削除待ちの段。予告とフッターの文言はこの段の名前で語る（§8） */
 function armedSegment(state: PaletteState) {
   return state.stack.armedForDelete ? state.stack.segments.at(-1) : undefined;
@@ -88,12 +94,13 @@ export function derive(
     buildSections(state, env, scopeLabel(state.stack, labels)),
     labels,
   );
+  const command = activeCommand(state.stack);
   const selected =
     rows.find((r) => r.row.id === state.selectedId) ??
     rows.find((r) => r.row.hints.length > 0) ??
     rows[0];
   const bindings = bindingsOf(state, rows, selected, labels, options);
-  const inCommand = activeCommand(state.stack) !== undefined;
+  const inCommand = command !== undefined;
 
   const actions = new Map<string, RowAction>();
   const takes = new Map<string, TakeTarget>();
@@ -107,8 +114,7 @@ export function derive(
       path: pathOf(state.stack),
       input: {
         value: state.input,
-        placeholder:
-          scope.kind === 'root' ? labels.palette.rootPlaceholder : labels.palette.placeholder,
+        placeholder: placeholderOf(scope, command, labels),
         completion: completionOf(state.input, selected),
       },
       armedNotice: (() => {

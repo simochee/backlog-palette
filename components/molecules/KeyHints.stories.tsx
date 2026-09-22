@@ -49,6 +49,25 @@ export const Overflow: Story = {
   },
 };
 
+export const ShortLabels: Story = {
+  name: 'キーを落とす前に短い言い方を試す（⌫ は段名つきから「1 つ戻る」へ）',
+  globals: { width: '360' },
+  args: {
+    hints: footerHints(['enter', 'move', 'back', 'take'], ja, {
+      back: ja.keys.back('Webリニューアル'),
+    }),
+  },
+  render: (args) => (
+    <div className="w-72">
+      <KeyHints {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(visibleIds(canvasElement)).toContain('back'));
+    await expect(within(canvasElement).getAllByText(ja.keys.backShort)[0]).toBeVisible();
+  },
+};
+
 export const OverflowKeepsOrder: Story = {
   name: '落ちるのは優先順の右側だけで、ラベルの短い下位のヒントが上位を追い越して残らない',
   globals: { width: '360' },

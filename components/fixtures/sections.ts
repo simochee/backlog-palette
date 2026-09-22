@@ -38,6 +38,43 @@ export function pagesSection(labels: Labels): SectionView {
   };
 }
 
+/** 課題ページのときだけ出る「この課題」。2 段階コマンド 1 行（§9・D-46） */
+export function thisIssueSection(labels: Labels, issueKey: string): SectionView {
+  return {
+    id: 'issue',
+    label: labels.sections.thisIssue,
+    rows: [descendCommandRow('copy-issue', labels.rows.copyIssue(issueKey))],
+  };
+}
+
+/** 担当課題の取得中。動作を持たないので選択は止まらない（D-35・D-38） */
+export function assignedLoadingSection(labels: Labels): SectionView {
+  return {
+    id: 'assigned',
+    label: labels.sections.assigned,
+    rows: [
+      { id: 'assigned:loading', kind: 'hint', title: labels.rows.loading, busy: true, hints: [] },
+    ],
+  };
+}
+
+/** 担当課題の取得に失敗。認証切れだけ再接続へ運べる（I6・D-38） */
+export function assignedFailedSection(labels: Labels, spaceLabel: string): SectionView {
+  return {
+    id: 'assigned',
+    label: labels.sections.assigned,
+    rows: [
+      {
+        id: 'assigned:status',
+        kind: 'status',
+        title: labels.rows.authExpired(spaceLabel),
+        tone: 'danger',
+        hints: ['enter'],
+      },
+    ],
+  };
+}
+
 export function assignedSection(labels: Labels): SectionView {
   return {
     id: 'assigned',

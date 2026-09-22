@@ -5,7 +5,7 @@ import { LabelsProvider } from '@/components/labels';
 import { Palette } from '@/components/organisms/Palette';
 import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import { detectPlatform } from '@/lib/keys';
-import { type CachedEntry, derive, type PaletteIndex, type PaletteStore } from '@/lib/palette';
+import { type AssignedState, derive, type PaletteIndex, type PaletteStore } from '@/lib/palette';
 import { scopeOf } from '@/lib/stack/stack';
 
 import type { ActionEnv, Pending } from './actions.ts';
@@ -49,12 +49,12 @@ function useToastExpiry(store: PaletteStore, toast: unknown) {
 
 /** 担当課題は届いた時点で索引に足す。届くまでは表示キャッシュだけで描く（palette.md §9） */
 function useIndexWithAssigned(session: PaletteSession): PaletteIndex {
-  const [assigned, setAssigned] = useState<readonly CachedEntry[]>();
+  const [assigned, setAssigned] = useState<AssignedState>();
   useEffect(() => {
     let alive = true;
     const receive = async () => {
-      const rows = await session.assigned;
-      if (alive) setAssigned(rows);
+      const state = await session.assigned;
+      if (alive) setAssigned(state);
     };
     void receive();
     return () => {

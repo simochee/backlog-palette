@@ -142,9 +142,15 @@ export function connectRow(section: string, space: SpaceEntry | undefined, label
   );
 }
 
-export function copyCommandRow(id: string, title: string, subject: string, text: string): Built {
+export function copyCommandRow(
+  section: string,
+  id: string,
+  title: string,
+  subject: string,
+  text: string,
+): Built {
   return build(
-    `commands:command:${id}`,
+    `${section}:command:${id}`,
     { kind: 'command', title, sub: subject },
     { type: 'copy', text, subject },
     { kind: 'complete', text: title },

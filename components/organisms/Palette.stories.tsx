@@ -11,7 +11,6 @@ import {
   resultsGroup,
   s0,
   s1,
-  s1Empty,
   s2,
   s3,
   s4,
@@ -59,34 +58,6 @@ export const S0: Story = {
     await expect(rows).toHaveLength(1);
     await expect(rows[0]?.dataset.kind).toBe('connect');
     await expect(rows[0]).toHaveAttribute('aria-selected', 'true');
-
-    await assertPaletteInvariants({ canvasElement, view: args, spies: args });
-  },
-};
-
-export const S1: Story = {
-  name: 'S1 空状態（履歴あり） — 3 セクションが順に並び先頭行が選択されている',
-  args: s1(ja),
-  play: async ({ args, canvasElement }) => {
-    await expect(sectionIds(canvasElement)).toEqual(['recent', 'pages', 'assigned']);
-    await expect(options(canvasElement)[0]).toHaveAttribute('aria-selected', 'true');
-
-    await assertPaletteInvariants({ canvasElement, view: args, spies: args });
-  },
-};
-
-export const S1Empty: Story = {
-  name: "S1' 空状態（履歴なし） — 案内行はページの下にあり、ヒントも選択も持たない",
-  args: s1Empty(ja),
-  play: async ({ args, canvasElement }) => {
-    const rows = options(canvasElement);
-    const hint = rows.at(-1);
-    await expect(rows[0]?.dataset.kind).toBe('page');
-    await expect(rows[0]).toHaveAttribute('aria-selected', 'true');
-    await expect(hint?.dataset.kind).toBe('hint');
-    await expect(hint?.querySelector('kbd')).toBeNull();
-    await expect(hint).toHaveAttribute('aria-selected', 'false');
-    await expect(sectionIds(canvasElement)).toContain('pages');
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
   },

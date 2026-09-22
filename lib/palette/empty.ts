@@ -1,10 +1,13 @@
 import type { Labels } from '@/components/labels';
 import { frecencyByEntity } from '@/lib/rank/frecency';
 import { transitionScores } from '@/lib/rank/transitions';
-import type { Scope } from '@/lib/stack/types';
+import type { SearchError } from '@/lib/search/types';
+import type { CommandSegment, Scope } from '@/lib/stack/types';
 
+import { copyCandidates, copyIssueCommand, copyIssueRow } from './candidates';
 import { entityId, type PaletteIndex, type SpaceEntry } from './model';
 import {
+  build,
   type Built,
   connectRow,
   entityRow,
@@ -86,20 +89,41 @@ function pagesSection({ index, scope, labels }: Env, scopeLabel: string): BuiltS
 }
 
 /**
+ * 取得に失敗したことを行として出す（I6）。認証切れだけは再接続へ運べるので動作を持ち、
+ * それ以外は原因を述べるだけ。押せない行にヒントは出ない（I1）
+ */
+function assignedErrorRow(
+  error: SearchError,
+  space: SpaceEntry | undefined,
+  labels: Labels,
+): Built {
+  if (error.kind === 'unauthorized')
+    return build(
+      'assigned:status',
+      { kind: 'status', title: labels.rows.authExpired(space?.label ?? ''), tone: 'danger' },
+      { type: 'connect', spaceId: space?.id },
+    );
+  const title = error.kind === 'offline' ? labels.rows.offline : labels.rows.assignedFailed;
+  return build('assigned:status', { kind: 'status', title, tone: 'danger' });
+}
+
+/**
  * 担当課題だけが API を待つ。届くまでセクションごと消しておくと「出ない機能」に見え、
  * 到着でリストが下に伸びる。見出しとプレースホルダを先に出し、届いたら置き換える（§7.2 と同じ形）
  */
-function assignedSection({ index, labels }: Env): BuiltSection {
+function assignedSection({ index, labels }: Env, space: SpaceEntry | undefined): BuiltSection {
   const assigned = index.assigned;
+  const head = { id: 'assigned', label: labels.sections.assigned, cap: SECTION_CAP };
+  if (assigned.kind === 'loading')
+    return { ...head, rows: [loadingRow('assigned', labels.rows.loading)] };
+  if (assigned.kind === 'failed')
+    return { ...head, rows: [assignedErrorRow(assigned.error, space, labels)] };
   return {
-    id: 'assigned',
-    label: labels.sections.assigned,
-    meta: assigned === undefined ? undefined : labels.sections.count(assigned.length),
-    rows:
-      assigned === undefined
-        ? [loadingRow('assigned', labels.rows.loading)]
-        : assigned.map((entry) => entityRow('assigned', entry, labels)),
-    cap: SECTION_CAP,
+    ...head,
+    // 取得は SECTION_CAP 件で打ち切るので、それに達した件数は総数ではない。数えられるときだけ出す
+    meta:
+      assigned.rows.length < SECTION_CAP ? labels.sections.count(assigned.rows.length) : undefined,
+    rows: assigned.rows.map((entry) => entityRow('assigned', entry, labels)),
   };
 }
 
@@ -120,12 +144,18 @@ export function emptySections(
   if (current !== undefined && !current.connected)
     return [recent, pages, { id: 'connect', rows: [connectRow('connect', undefined, labels)] }];
 
-  const assigned = assignedSection(env);
+  const assigned = assignedSection(env, current);
+  // 今いる課題に対してできること。先頭には置かない。先頭行は「戻る先」のまま残す（D-37）
+  const thisIssue = copyIssueRow(env);
+  const issue =
+    thisIssue === undefined
+      ? []
+      : [{ id: 'issue', label: labels.sections.thisIssue, rows: [thisIssue] }];
   // 案内を出すかは「思い出せるものがあるか」だけで決める。担当課題の到着で消えると
   // 選択が別の行へ飛ぶ（I4）。末尾に置き、上から試して駄目なら打つ、の順にする
   const hint =
     recent.rows.length === 0 ? [{ id: 'hint', rows: [hintRow('type', labels.rows.typeHint)] }] : [];
-  return [recent, pages, assigned, ...hint];
+  return [recent, ...issue, pages, assigned, ...hint];
 }
 
 /** 根: 切り替え先のスペース（未接続は connect 行）と共通のページ（D-20） */
@@ -144,7 +174,12 @@ export function rootSections({ index, scope, labels }: Env): BuiltSection[] {
   ];
 }
 
-/** コマンド階層の引数。候補は混ぜない（§8）。スペースを切り替えの引数はスペース一覧 */
-export function argumentSections({ index, labels }: Env): BuiltSection[] {
-  return [{ id: 'args', rows: index.spaces.map((space) => spaceRow('args', space, labels)) }];
+/** コマンド階層の引数。候補は混ぜない（§8）。引数の中身は積まれているコマンドで決まる */
+export function argumentSections(env: Env, command: CommandSegment): BuiltSection[] {
+  const { index, labels } = env;
+  const rows =
+    command.commandId === copyIssueCommand.commandId
+      ? copyCandidates(env, 'args').map((candidate) => candidate.built)
+      : index.spaces.map((space) => spaceRow('args', space, labels));
+  return [{ id: 'args', rows }];
 }

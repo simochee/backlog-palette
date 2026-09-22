@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { type RefObject, useLayoutEffect, useRef, useState } from 'react';
 
 import { Kbd } from '@/components/atoms/Kbd';
 import { useElementWidth } from '@/components/hooks/useElementWidth';
@@ -33,40 +33,83 @@ export function fitHints(
   return hints.filter((hint) => kept.has(hint.id));
 }
 
-function HintItem({ hint }: { hint: KeyHint }) {
+function HintItem({ hint, short }: { hint: KeyHint; short: boolean }) {
   return (
     <span
       data-hint-id={hint.id}
       className="flex shrink-0 items-center gap-1 text-xs whitespace-nowrap text-subtle"
     >
       <Kbd keys={hint.keys} />
-      <span>{hint.label}</span>
+      <span>{(short ? hint.shortLabel : undefined) ?? hint.label}</span>
     </span>
   );
 }
 
+/** 幅の測定用に不可視で描く列。表示中の要素は落ちた後に測れない */
+function Measure({
+  innerRef,
+  hints,
+  short,
+}: {
+  innerRef: RefObject<HTMLDivElement | null>;
+  hints: readonly KeyHint[];
+  short: boolean;
+}) {
+  return (
+    <div
+      ref={innerRef}
+      aria-hidden
+      className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-3 whitespace-nowrap"
+    >
+      {hints.map((hint) => (
+        <HintItem key={hint.id} hint={hint} short={short} />
+      ))}
+    </div>
+  );
+}
+
+function measured(container: HTMLDivElement): { widths: Map<string, number>; gap: number } {
+  const items = Array.from(container.querySelectorAll<HTMLElement>('[data-hint-id]'));
+  const widths = new Map<string, number>();
+  for (const item of items) {
+    const id = item.dataset.hintId;
+    if (id !== undefined) widths.set(id, item.getBoundingClientRect().width);
+  }
+  const [first, second] = items;
+  const gap =
+    first !== undefined && second !== undefined
+      ? second.getBoundingClientRect().left - first.getBoundingClientRect().right
+      : 0;
+  return { widths, gap };
+}
+
 export function KeyHints({ hints }: KeyHintsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const measureRef = useRef<HTMLDivElement>(null);
+  const fullRef = useRef<HTMLDivElement>(null);
+  const shortRef = useRef<HTMLDivElement>(null);
   const available = useElementWidth(containerRef);
-  const [visible, setVisible] = useState<readonly KeyHint[]>(hints);
+  const [fitted, setFitted] = useState<{ hints: readonly KeyHint[]; short: boolean }>({
+    hints,
+    short: false,
+  });
 
   useLayoutEffect(() => {
-    const measure = measureRef.current;
-    if (measure === null || available === undefined) return;
+    const full = fullRef.current;
+    const shortColumn = shortRef.current;
+    if (full === null || shortColumn === null || available === undefined) return;
 
-    const items = Array.from(measure.querySelectorAll<HTMLElement>('[data-hint-id]'));
-    const widths = new Map<string, number>();
-    for (const item of items) {
-      const id = item.dataset.hintId;
-      if (id !== undefined) widths.set(id, item.getBoundingClientRect().width);
+    const byFull = measured(full);
+    const keptFull = fitHints(hints, byFull.widths, available, byFull.gap);
+    if (keptFull.length === hints.length) {
+      setFitted({ hints: keptFull, short: false });
+      return;
     }
-    const [first, second] = items;
-    const gap =
-      first !== undefined && second !== undefined
-        ? second.getBoundingClientRect().left - first.getBoundingClientRect().right
-        : 0;
-    setVisible(fitHints(hints, widths, available, gap));
+    /*
+     * 全部入らないなら短い言い方に切り替える（D-44）。どちらが多く残るかで選ぶと、
+     * 幅が境目にあるとき同じ状態で見えるキーが開くたびに変わる。短くして落とす、で固定する
+     */
+    const byShort = measured(shortColumn);
+    setFitted({ hints: fitHints(hints, byShort.widths, available, byShort.gap), short: true });
   }, [hints, available]);
 
   return (
@@ -74,18 +117,11 @@ export function KeyHints({ hints }: KeyHintsProps) {
       ref={containerRef}
       className="relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden"
     >
-      {visible.map((hint) => (
-        <HintItem key={hint.id} hint={hint} />
+      {fitted.hints.map((hint) => (
+        <HintItem key={hint.id} hint={hint} short={fitted.short} />
       ))}
-      <div
-        ref={measureRef}
-        aria-hidden
-        className="pointer-events-none invisible absolute top-0 left-0 flex items-center gap-3 whitespace-nowrap"
-      >
-        {hints.map((hint) => (
-          <HintItem key={hint.id} hint={hint} />
-        ))}
-      </div>
+      <Measure innerRef={fullRef} hints={hints} short={false} />
+      <Measure innerRef={shortRef} hints={hints} short />
     </div>
   );
 }

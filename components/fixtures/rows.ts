@@ -214,6 +214,13 @@ export const sampleIssues = {
     status: statuses.open,
     type: issueTypes.bug,
   }),
+  loginRedirect: issueRow({
+    key: 'PROJ-99',
+    title: 'ログイン後のリダイレクト先を見直す',
+    project: projects.web,
+    assignee: people.tanaka,
+    status: statuses.resolved,
+  }),
   release: issueRow({
     key: 'MOB-81',
     title: 'v3.2 リリース手順の棚卸し',

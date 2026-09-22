@@ -1,6 +1,7 @@
 import type { Labels } from '@/components/labels';
+import { toApiFailure } from '@/lib/backlog/failure';
 import { resolveLanguage } from '@/lib/i18n/language';
-import type { CachedEntry, PaletteIndex } from '@/lib/palette';
+import type { AssignedState, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
 import { settings } from '@/lib/storage/palette-items';
 import { applyColorScheme } from '@/lib/theme/colorScheme';
@@ -31,22 +32,21 @@ export type PaletteSession = {
   restore: Restore | undefined;
   runner: SearchRunner;
   /** 担当課題。API から届いたら空状態の末尾に足す（palette.md §9）。未接続なら undefined のまま */
-  assigned: Promise<readonly CachedEntry[] | undefined>;
+  assigned: Promise<AssignedState>;
 };
 
 /*
- * 失敗しても空状態は描く。401 は検索の行で再接続に導く（palette.md §7.5）ので、ここでは
- * 担当課題のセクションを出さないだけにする
+ * 失敗しても空状態は描く。失敗は担当課題のセクションの中の行になる（I6・D-38）。
+ * 分類を捨てて undefined を返すと、取れなかったときに「読み込み中」が回り続ける
  */
-async function assignedFor(
-  host: string,
-  connected: boolean,
-): Promise<readonly CachedEntry[] | undefined> {
-  if (!connected) return undefined;
+async function assignedFor(host: string, connected: boolean): Promise<AssignedState> {
+  // 未接続のスペースでは空状態が接続行になり、担当課題のセクションは出ない（§9）
+  if (!connected) return { kind: 'ready', rows: [] };
   try {
-    return await backlog.queryClient.query(backlog.queries.assignedIssues(host));
-  } catch {
-    return undefined;
+    const rows = await backlog.queryClient.query(backlog.queries.assignedIssues(host));
+    return { kind: 'ready', rows };
+  } catch (error) {
+    return { kind: 'failed', error: toApiFailure(error) };
   }
 }
 

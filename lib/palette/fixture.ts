@@ -180,7 +180,7 @@ export const index: PaletteIndex = {
   externalSearchUrl: (scope, query) =>
     `https://nulab.backlog.com/FindIssueAllOver.action?scope=${scope.kind}&q=${query}`,
   cache: [payment, login, password, pushNotice, loginWiki],
-  assigned: [login, password],
+  assigned: { kind: 'ready', rows: [login, password] },
   activity: [
     { entityId: 'issue:PROJ-142', at: now - DAY },
     { entityId: 'issue:PROJ-142', at: now - 2 * DAY },
