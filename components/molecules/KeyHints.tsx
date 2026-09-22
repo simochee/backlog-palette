@@ -84,10 +84,9 @@ function measured(container: HTMLDivElement): { widths: Map<string, number>; gap
 }
 
 export function KeyHints({ hints }: KeyHintsProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [available, containerRef] = useElementWidth();
   const fullRef = useRef<HTMLDivElement>(null);
   const shortRef = useRef<HTMLDivElement>(null);
-  const available = useElementWidth(containerRef);
   const [fitted, setFitted] = useState<{ hints: readonly KeyHint[]; short: boolean }>({
     hints,
     short: false,

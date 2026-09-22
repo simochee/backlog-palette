@@ -1,19 +1,16 @@
-import { type RefObject, useLayoutEffect, useState } from 'react';
+import { type RefCallback, useState } from 'react';
 
-export function useElementWidth(ref: RefObject<HTMLElement | null>): number | undefined {
+const noop = () => {};
+
+export function useElementWidth(): [number | undefined, RefCallback<HTMLElement>] {
   const [width, setWidth] = useState<number>();
-
-  useLayoutEffect(() => {
-    const element = ref.current;
-    const observer = new ResizeObserver(() => {
-      if (element !== null) setWidth(element.getBoundingClientRect().width);
-    });
-    if (element !== null) {
-      setWidth(element.getBoundingClientRect().width);
-      observer.observe(element);
-    }
+  const ref = (element: HTMLElement | null) => {
+    if (element === null) return noop;
+    const measure = () => setWidth(element.getBoundingClientRect().width);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
     return () => observer.disconnect();
-  }, [ref]);
-
-  return width;
+  };
+  return [width, ref];
 }
