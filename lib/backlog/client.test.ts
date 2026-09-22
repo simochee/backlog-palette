@@ -178,7 +178,8 @@ describe('失敗の分類（応答以外）', () => {
 
   it('応答は届いたが本文が JSON として読めないときはオフラインにならない', async () => {
     const { fetch } = fakeFetch(
-      () => new Response('<html>', { status: 200, headers: { 'content-type': 'application/json' } }),
+      () =>
+        new Response('<html>', { status: 200, headers: { 'content-type': 'application/json' } }),
     );
 
     const failure = await client(fetch).getMyself().catch(toApiFailure);
