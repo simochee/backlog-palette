@@ -90,13 +90,12 @@ function openWhenReady(
 export function usePaletteSession(channel: HostChannel) {
   const [store] = useState(createPaletteStore);
   const [pending] = useState<Pending>(() => ({ search: undefined, lastSearch: undefined }));
-  /** 開いた時刻。presenter が入力欄へフォーカスを戻す合図に使う */
-  const [openedAt, setOpenedAt] = useState(0);
-  const [isOpen, setOpen] = useState(false);
+  /** openedAt は開いた時刻。presenter が入力欄へフォーカスを戻す合図に使う */
+  const [visibility, setVisibility] = useState({ open: false, openedAt: 0 });
   const { session, latest, inflight, refresh } = useSessionSupply();
 
   const close = useCallback(() => {
-    setOpen(false);
+    setVisibility((previous) => ({ ...previous, open: false }));
     channel.send({ t: 'close' });
     void refresh();
   }, [channel, refresh]);
@@ -119,14 +118,13 @@ export function usePaletteSession(channel: HostChannel) {
         return;
       }
       if (message.t === 'close') {
-        setOpen(false);
+        setVisibility((previous) => ({ ...previous, open: false }));
         void refresh();
         return;
       }
-      setOpen(true);
       // 読み込み後に Backlog 側でテーマを切り替えていても、開くたびに追いつく
       applyBacklogColorScheme(message.ctx.colorScheme);
-      setOpenedAt(Date.now());
+      setVisibility({ open: true, openedAt: Date.now() });
       paletteTelemetry.opened();
       openWhenReady(latest.current, inflight.current, open);
     });
@@ -136,5 +134,5 @@ export function usePaletteSession(channel: HostChannel) {
     };
   }, [channel, refresh, close, store, pending, latest, inflight]);
 
-  return { session, store, pending, open: isOpen, openedAt, close };
+  return { session, store, pending, ...visibility, close };
 }
