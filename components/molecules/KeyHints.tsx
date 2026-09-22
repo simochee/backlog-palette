@@ -104,14 +104,12 @@ export function KeyHints({ hints }: KeyHintsProps) {
       setFitted({ hints: keptFull, short: false });
       return;
     }
-    // 落とす前に短い言い方を試す。キーを消すより語を縮める方が P5 に沿う（D-44）
+    /*
+     * 全部入らないなら短い言い方に切り替える（D-44）。どちらが多く残るかで選ぶと、
+     * 幅が境目にあるとき同じ状態で見えるキーが開くたびに変わる。短くして落とす、で固定する
+     */
     const byShort = measured(shortColumn);
-    const keptShort = fitHints(hints, byShort.widths, available, byShort.gap);
-    setFitted(
-      keptShort.length > keptFull.length
-        ? { hints: keptShort, short: true }
-        : { hints: keptFull, short: false },
-    );
+    setFitted({ hints: fitHints(hints, byShort.widths, available, byShort.gap), short: true });
   }, [hints, available]);
 
   return (
