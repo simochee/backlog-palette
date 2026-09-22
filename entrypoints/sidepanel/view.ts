@@ -79,37 +79,33 @@ export type EmptyContext = {
 };
 
 function emptyRows({ scope, spaceLabel, conditionsActive }: EmptyContext, labels: Labels) {
-  const suggestions: RowView[] = [];
+  const rows: RowView[] = [
+    { id: NO_RESULTS_ROW_ID, kind: 'hint', title: labels.rows.noResults, hints: [] },
+  ];
   if (conditionsActive)
-    suggestions.push({
+    rows.push({
       id: CLEAR_FILTERS_ROW_ID,
       kind: 'command',
       title: labels.panel.clearFiltersRow,
       hints: ['enter'],
     });
   if (scope?.kind === 'project')
-    suggestions.push({
+    rows.push({
       id: WIDEN_ROW_ID,
       kind: 'search',
       title: labels.rows.widenTo(spaceLabel),
+      tone: 'accent',
       hints: ['enter'],
     });
   if (scope !== undefined)
-    suggestions.push({
+    rows.push({
       id: EXTERNAL_ROW_ID,
       kind: 'external',
       title: labels.rows.openExternal,
       sub: labels.rows.openExternalSub(spaceLabel),
-      hints: ['enter'],
+      hints: ['enter', 'modEnter'],
     });
-  const [first, ...rest] = suggestions;
-  const hint: RowView = {
-    id: NO_RESULTS_ROW_ID,
-    kind: 'hint',
-    title: labels.rows.noResults,
-    hints: [],
-  };
-  return first === undefined ? [hint] : [hint, { ...first, tone: 'accent' as const }, ...rest];
+  return rows;
 }
 
 /** 本体の課題検索ページ。語を渡すパラメータは台帳で未確認なので、ページだけ開く（lib/nav） */
@@ -122,7 +118,7 @@ export function externalUrlOf(scope: SearchScope): string {
 
 /**
  * 0 件の提案は 条件を外す → プロジェクトを外す → 本体検索 の順（surfaces.md §5.4）。
- * 効いている条件を先頭に置くのは原因の切り分けのため。強調は先頭の提案だけに付ける
+ * 効いている条件を先頭に置くのは原因の切り分けのため
  */
 export function sectionsOf(
   session: SearchSession | undefined,
@@ -134,6 +130,11 @@ export function sectionsOf(
   return [{ id: 'results', rows: session.rows.map((row) => resultRowView(row, labels)) }];
 }
 
+/** 0 件の「一致なし」のように ↵ で何も起きない行は、既定の選択にしない */
+function firstActionable(rows: readonly RowView[]): RowView | undefined {
+  return rows.find((row) => row.hints.length > 0) ?? rows[0];
+}
+
 export function footerOf(
   sections: readonly SectionView[],
   selectedId: string | undefined,
@@ -142,7 +143,7 @@ export function footerOf(
   labels: Labels,
 ): KeyHint[] {
   const rows = sections.flatMap((section) => section.rows);
-  const selected = rows.find((row) => row.id === selectedId) ?? rows[0];
+  const selected = rows.find((row) => row.id === selectedId) ?? firstActionable(rows);
   const bindings = deriveBindings(
     {
       selected,
@@ -172,7 +173,9 @@ export function buildPanelView(view: ViewInput): PanelView {
   const { session, labels } = view;
   const sections = sectionsOf(session, labels, view.empty);
   const rows = sections.flatMap((s) => s.rows);
-  const selectedId = rows.some((row) => row.id === view.selectedId) ? view.selectedId : rows[0]?.id;
+  const selectedId = rows.some((row) => row.id === view.selectedId)
+    ? view.selectedId
+    : firstActionable(rows)?.id;
   const hasResults = session !== undefined && session.rows.length > 0;
   return {
     input: { value: view.input, placeholder: labels.panel.placeholder },

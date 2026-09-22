@@ -44,9 +44,8 @@ export function panelCallbacks(env: CallbackEnv): SidePanelCallbacks {
         update(removeProject(search));
         return;
       }
-      // 行の補足が「新しいタブで開く」と約束しているので ⌘ の有無に関わらず新しいタブ
       if (id === EXTERNAL_ROW_ID && search.scope !== undefined) {
-        void openUrl(externalUrlOf(search.scope), 'new');
+        void openUrl(externalUrlOf(search.scope), newTab ? 'new' : 'current');
         return;
       }
       const row = rowOf(id);
