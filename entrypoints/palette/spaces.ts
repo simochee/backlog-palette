@@ -1,4 +1,4 @@
-import { connectedSpaceHosts } from '@/lib/backlog/apiKeys';
+import { connectedSpaceHosts, watchConnectedSpaceHosts } from '@/lib/backlog/apiKeys';
 import { spaces } from '@/lib/storage/items';
 
 import type { SpaceLabel } from './context.ts';
@@ -18,4 +18,14 @@ export async function readConnectedSpaces(): Promise<ConnectedSpaces> {
     map.set(host, { name: record?.name ?? host, icon: record?.icon });
   }
   return map;
+}
+
+/** 接続の成立・解除と、表示名・印の更新を知らせる */
+export function watchConnectedSpaces(onChange: () => void): () => void {
+  const unwatchHosts = watchConnectedSpaceHosts(onChange);
+  const unwatchRecords = spaces.watch(() => onChange());
+  return () => {
+    unwatchHosts();
+    unwatchRecords();
+  };
 }

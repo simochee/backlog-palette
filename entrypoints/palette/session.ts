@@ -6,6 +6,7 @@ import { createPaletteStore, type PaletteStore } from '@/lib/palette';
 import { type Pending, restartSearch } from './actions.ts';
 import { createSession, type PaletteSession } from './createSession.ts';
 import { handOffToPanel } from './panel.ts';
+import { watchConnectedSpaces } from './spaces.ts';
 import { paletteTelemetry } from './telemetry.ts';
 
 type OpenArgs = {
@@ -50,6 +51,8 @@ function useSessionSupply() {
     const next = createSession();
     inflight.current = next;
     const ready = await next;
+    // 接続の保存は鍵と記録の 2 回の書き込みで、用意が重なる。遅れて終わった古い方で上書きしない
+    if (inflight.current !== next) return ready;
     latest.current = ready ?? null;
     setSession(ready);
     return ready;
@@ -84,7 +87,12 @@ export function usePaletteSession(channel: HostChannel) {
     };
 
     void refresh();
-    return channel.subscribe((message) => {
+    /*
+     * 用意は iframe の読み込み時と閉じた時にしか走らない。同じページの貼り付けバーで接続すると、
+     * 次の ⌘K が接続前に用意した「未接続」の材料で開いてしまうため、接続の変化でも用意し直す
+     */
+    const unwatchConnections = watchConnectedSpaces(() => void refresh());
+    const unsubscribe = channel.subscribe((message) => {
       if (message.t === 'close') {
         void refresh();
         return;
@@ -102,6 +110,10 @@ export function usePaletteSession(channel: HostChannel) {
       // 用意の途中に open が来ることもある。「まだ無い」を「スペースではない」と取り違えない
       void inflight.current?.then((ready) => open(ready ?? null));
     });
+    return () => {
+      unwatchConnections();
+      unsubscribe();
+    };
   }, [channel, refresh, close, store, pending, latest, inflight]);
 
   return { session, store, pending, openedAt, close };

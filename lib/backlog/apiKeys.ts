@@ -15,6 +15,11 @@ export async function removeApiKey(spaceHost: string): Promise<void> {
   await apiKeys.setValue(rest);
 }
 
+/** 鍵の出入りを知らせる。鍵そのものは渡さない */
+export function watchConnectedSpaceHosts(onChange: () => void): () => void {
+  return apiKeys.watch(() => onChange());
+}
+
 /** 鍵を持っているホストの一覧。鍵そのものは返さない */
 export async function connectedSpaceHosts(): Promise<string[]> {
   return Object.keys(await apiKeys.getValue());
