@@ -1,5 +1,5 @@
 import { useParams } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { useLabels } from '@/components/labels';
 import { OptionsLayout } from '@/components/templates/OptionsLayout';
@@ -25,7 +25,15 @@ export function OptionsPage() {
     <OptionsLayout
       title={labels.brand}
       sections={[
-        { id: 'spaces', title: labels.options.spacesTitle, children: <SpacesSection /> },
+        {
+          id: 'spaces',
+          title: labels.options.spacesTitle,
+          children: (
+            <Suspense fallback={null}>
+              <SpacesSection />
+            </Suspense>
+          ),
+        },
         { id: 'shortcuts', title: text.shortcuts.title, children: <ShortcutsSection /> },
         { id: 'about', title: text.about.title, children: <AboutSection /> },
       ]}
