@@ -6,11 +6,11 @@ import { SidePanel } from '@/components/organisms/SidePanel';
 import type { ToastView } from '@/components/types';
 import { searchHistory } from '@/lib/storage/palette-items';
 
+import { backlog } from './backlog.ts';
 import { panelCallbacks } from './callbacks.ts';
 import { type PanelContext, readPanelContext, recentQueriesFor } from './context.ts';
-import { backlog } from './backlog.ts';
-import { useFilterChoices } from './filterSources.ts';
 import { buildFilters } from './filters.ts';
+import { useFilterChoices } from './filterSources.ts';
 import { useHandoff } from './handoff.ts';
 import { rootRoute } from './route.ts';
 import { type PanelSearch, panelSearchSchema } from './searchParams.ts';

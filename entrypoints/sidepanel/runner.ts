@@ -14,4 +14,3 @@ export type PanelSearchRunner = {
     conditions: SearchConditions,
   ) => () => void;
 };
-
