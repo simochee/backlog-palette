@@ -188,6 +188,25 @@ import { browser, defineBackground } from '#imports';
 oxlint の `react-hooks/exhaustive-deps` はコンパイラのメモ化を知らない。effect の中で
 呼ぶ関数が「毎回変わる」と言われたら、`useCallback` で包むのではなく `useEffectEvent` にする。
 
+### 非同期の扱い
+
+container は Async React の形で書く。「読み込み前」を `undefined` で描き分けたり、
+effect で取得して `useState` に入れたりしない。
+
+| やりたいこと | 使うもの |
+| --- | --- |
+| 開いた時点の非同期の材料を待つ | promise をモジュールか route で 1 度だけ作り、`use()` + `<Suspense>` で読む |
+| storage のローカルデータを読む | TanStack DB の `useLiveSuspenseQuery`（tech-stack.md T-1） |
+| Router のある面で、開いたときの URL を決める | route の `beforeLoad` で `redirect` |
+| 送信して結果の状態を出す | `useActionState` を `startTransition` の中で呼ぶ |
+| effect から最新の props / state を読む | `useEffectEvent`。ref に写す effect は書かない |
+| 描き始めた後に届くデータ（担当課題など） | TanStack Store に置き、`useSelector` で読む。`use()` で待つと届くまで全体が描けない |
+
+effect は外の世界（DOM・タイマー・`window` のイベント）との同期にだけ使う。
+パレットの open のように、打鍵より先に同期で終えなければならない購読は、effect ではなく
+React の外のコントローラ（`entrypoints/palette/controller.ts`）に置く。effect の実行時機は
+描画の都合で決まる。
+
 ## 情報の置き場所
 
 How / What / Why / Why not をそれぞれの置き場所に分ける。読み手が「どこを見れば
