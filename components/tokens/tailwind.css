@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './palette.css';
+@import './backlog-theme.css';
 
 /*
  * Tailwind の既定パレット・書体・角丸・影を initial で消し、--bp-* を写したものだけを残す。

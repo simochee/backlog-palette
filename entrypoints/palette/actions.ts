@@ -37,9 +37,18 @@ export type Pending = {
 /** 検索の起動に要るのは実行役と dispatch だけ。復元（共有 URL）は行の動作を経ずにここへ来る */
 export type SearchEnv = Pick<ActionEnv, 'runner' | 'dispatch'>;
 
-export function startSearch(query: string, scope: Scope, env: SearchEnv): SearchHandle {
+/** 接続が戻ったときの自動の引き直しは、利用者の検索として数えない（surfaces.md §10） */
+export type SearchTrigger = 'user' | 'reconnect';
+
+export function startSearch(
+  query: string,
+  scope: Scope,
+  env: SearchEnv,
+  trigger: SearchTrigger = 'user',
+): SearchHandle {
+  const counted = trigger === 'user';
   env.dispatch({ type: 'searchStarted', query, scope });
-  track({ type: 'searchStarted' });
+  if (counted) track({ type: 'searchStarted' });
   // 0 件率（surfaces.md §10）。全種別が届いて 1 件も無かったときだけ数える
   let settled = 0;
   let found = 0;
@@ -49,7 +58,7 @@ export function startSearch(query: string, scope: Scope, env: SearchEnv): Search
       found += outcome.rows.length;
       env.dispatch({ type: 'resultsArrived', kind, rows: outcome.rows });
     } else env.dispatch({ type: 'searchFailed', kind, error: outcome.error });
-    if (settled === searchKinds.length && found === 0) track({ type: 'searchEmpty' });
+    if (counted && settled === searchKinds.length && found === 0) track({ type: 'searchEmpty' });
   });
   return { cancel };
 }
@@ -60,10 +69,16 @@ export function cancelSearch(pending: Pending): void {
   pending.search = undefined;
 }
 
-export function restartSearch(query: string, scope: Scope, env: SearchEnv, pending: Pending): void {
+export function restartSearch(
+  query: string,
+  scope: Scope,
+  env: SearchEnv,
+  pending: Pending,
+  trigger: SearchTrigger = 'user',
+): void {
   cancelSearch(pending);
   pending.lastSearch = { query, scope };
-  pending.search = startSearch(query, scope, env);
+  pending.search = startSearch(query, scope, env, trigger);
 }
 
 async function go(url: string, newTab: boolean, env: ActionEnv) {

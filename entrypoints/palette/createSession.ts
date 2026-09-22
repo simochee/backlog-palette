@@ -4,7 +4,6 @@ import { resolveLanguage } from '@/lib/i18n/language';
 import type { AssignedState, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
 import { settings } from '@/lib/storage/palette-items';
-import { applyColorScheme } from '@/lib/theme/colorScheme';
 
 import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
@@ -58,11 +57,6 @@ export async function createSession(): Promise<PaletteSession | undefined> {
   const [connected, prefs] = await Promise.all([readConnectedSpaces(), settings.getValue()]);
   const language = resolveLanguage(prefs.language, navigator.language);
   const index = await buildIndex({ context, connected, settings: prefs, language, now });
-  applyColorScheme(
-    document.documentElement,
-    prefs.theme,
-    window.matchMedia('(prefers-color-scheme: dark)').matches,
-  );
 
   revalidateInBackground(index, context.spaceHost, connected.has(context.spaceHost));
 
