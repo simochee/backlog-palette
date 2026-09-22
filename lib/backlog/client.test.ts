@@ -177,9 +177,9 @@ describe('失敗の分類（応答以外）', () => {
   });
 
   it('応答を受け取った後の加工で投げた TypeError はオフラインにならない', () => {
-    expect(toApiFailure(new TypeError("Cannot read properties of null (reading 'name')"))).toEqual(
-      { kind: 'failed' },
-    );
+    expect(toApiFailure(new TypeError("Cannot read properties of null (reading 'name')"))).toEqual({
+      kind: 'failed',
+    });
   });
 
   it('その他のエラー応答は failed になる', async () => {
