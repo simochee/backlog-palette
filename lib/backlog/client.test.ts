@@ -163,6 +163,25 @@ describe('失敗の分類（応答以外）', () => {
     expect(failure).toEqual({ kind: 'offline' });
   });
 
+  it('background に委譲した fetch の失敗も、TypeError の形を失っていても offline になる', async () => {
+    const fetch = (() =>
+      Promise.reject(
+        Object.assign(new Error('NetworkError when attempting to fetch resource.'), {
+          name: 'TypeError',
+        }),
+      )) as typeof globalThis.fetch;
+
+    const failure = await client(fetch).getMyself().catch(toApiFailure);
+
+    expect(failure).toEqual({ kind: 'offline' });
+  });
+
+  it('応答を受け取った後の加工で投げた TypeError はオフラインにならない', () => {
+    expect(toApiFailure(new TypeError("Cannot read properties of null (reading 'name')"))).toEqual(
+      { kind: 'failed' },
+    );
+  });
+
   it('その他のエラー応答は failed になる', async () => {
     const { fetch } = fakeFetch(() => json({ errors: [] }, { status: 500 }));
 

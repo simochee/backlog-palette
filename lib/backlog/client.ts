@@ -1,5 +1,6 @@
 import { Backlog } from 'backlog-js';
 
+import { TransportError } from './failure';
 import { type RateBucket, type RateLimiter, readRateObservation } from './rateLimit';
 
 export type ApiKeyTransport = 'header' | 'query';
@@ -57,7 +58,9 @@ function createGuardedFetch(options: SpaceClientOptions): typeof globalThis.fetc
     const bucket = bucketOf(url.pathname);
     await rateLimiter.acquire(spaceHost, bucket);
     const outgoing = transport === 'query' ? moveApiKeyToQuery(url, init) : { url, init };
-    const response = await fetchImpl(outgoing.url, outgoing.init);
+    const response = await fetchImpl(outgoing.url, outgoing.init).catch((error: unknown) => {
+      throw new TransportError(error);
+    });
     await rateLimiter.report(spaceHost, bucket, readRateObservation(response));
     return response;
   };

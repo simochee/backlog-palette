@@ -13,11 +13,6 @@ function secondsUntilReset(response: Response, now: number): number {
   return Math.max(1, Math.ceil(reset - now / 1000));
 }
 
-// Node の navigator は onLine を持たない。無いときに「オフライン」と誤判定しないための in 検査
-function isOffline(): boolean {
-  return typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine;
-}
-
 /** 鍵を持たないスペースへ問い合わせた。パレットでは未接続・再接続の行になる */
 export class NotConnectedError extends Error {
   readonly spaceHost: string;
@@ -26,6 +21,19 @@ export class NotConnectedError extends Error {
     super('not connected');
     this.name = 'NotConnectedError';
     this.spaceHost = spaceHost;
+  }
+}
+
+/*
+ * fetch が応答を返さずに終わった。TypeError で見分けないのは、応答を行に加工する途中の
+ * バグも TypeError になるため。Firefox で background に委譲した fetch の失敗は
+ * メッセージング越しに name だけ TypeError の素の Error で届くので、種類でも絞らない。
+ * CORS の拒否も同じ形で届くため、名前は Network ではなく「応答が無い」に留める
+ */
+export class TransportError extends Error {
+  constructor(cause: unknown) {
+    super('no response', { cause });
+    this.name = 'TransportError';
   }
 }
 
@@ -44,7 +52,6 @@ export function toApiFailure(error: unknown, now: number = Date.now()): ApiFailu
     }
     return { kind: 'failed' };
   }
-  // fetch はネットワーク断で TypeError を投げる。onLine が false ならそれを信じる
-  if (isOffline() || error instanceof TypeError) return { kind: 'offline' };
+  if (error instanceof TransportError) return { kind: 'offline' };
   return { kind: 'failed' };
 }
