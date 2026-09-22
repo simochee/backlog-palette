@@ -59,6 +59,8 @@ export function planIssueSearch(
   return {
     params,
     postFilter:
-      conditions.assignee === 'unassigned' ? (issue) => issue.assignee === undefined : () => true,
+      conditions.assignee === 'unassigned'
+        ? (issue) => issue.assignee === undefined || issue.assignee === null
+        : () => true,
   };
 }

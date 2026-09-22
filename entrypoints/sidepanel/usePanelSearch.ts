@@ -15,7 +15,7 @@ import { recordSearch } from './context.ts';
 import type { PanelSearchRunner } from './runner.ts';
 import { canRun, type PanelSearch } from './searchParams.ts';
 
-/** attempt は同じ検索を接続の回復で引き直した回数。0 回目だけが利用者の検索（D-58） */
+/** attempt は同じ検索を接続の回復で引き直した回数。0 回目だけが利用者の検索（D-59） */
 type Store = { searchKey: string; attempt: number; session: SearchSession | undefined };
 
 const noop = () => {};
@@ -64,7 +64,7 @@ function useSearchStore(search: PanelSearch) {
 /**
  * URL の検索状態が変わるたびに検索を走らせ直す。到着は種別ごとに合流し、選択行より上に
  * 入る行は保留する（I4）。入力の途中では走らせない（Enter で明示的に起動、D-2）。
- * オフラインで終わった検索は、接続が戻ったら引き直す（palette.md §7.5、D-58）。
+ * オフラインで終わった検索は、接続が戻ったら引き直す（palette.md §7.5、D-59）。
  *
  * effect は runner の起動と打ち切りだけを持ち、状態は到着の callback（非同期）でしか変えない
  */

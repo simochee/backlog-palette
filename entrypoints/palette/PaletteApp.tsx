@@ -117,7 +117,7 @@ function OpenPalette({ session, store, pending, open, openedAt, close }: OpenPal
     }),
     [context, labels, index.learningEnabled, runner, state.input, state.stack, store, close],
   );
-  // オフラインで終わった検索は、接続が戻ったら同じ語とスコープで引き直す（palette.md §7.5、D-58）
+  // オフラインで終わった検索は、接続が戻ったら同じ語とスコープで引き直す（palette.md §7.5、D-59）
   const retry = useCallback(() => {
     const last = pending.lastSearch;
     if (last !== undefined) restartSearch(last.query, last.scope, env, pending, 'reconnect');

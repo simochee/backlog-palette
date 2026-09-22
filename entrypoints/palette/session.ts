@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { HostChannel } from '@/lib/messaging/hostChannel';
 import { createPaletteStore, type PaletteStore } from '@/lib/palette';
+import { applyBacklogTheme, parseBacklogTheme } from '@/lib/theme/backlogTheme';
 
 import { type Pending, restartSearch } from './actions.ts';
 import { applyBacklogColorScheme } from './colorScheme.ts';
@@ -113,6 +114,10 @@ export function usePaletteSession(channel: HostChannel) {
      */
     const unwatchConnections = watchConnectedSpaces(() => void refresh());
     const unsubscribe = channel.subscribe((message) => {
+      if (message.t === 'theme') {
+        applyBacklogTheme(document.documentElement, parseBacklogTheme(message.theme));
+        return;
+      }
       if (message.t === 'close') {
         setOpen(false);
         void refresh();
