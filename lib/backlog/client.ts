@@ -1,7 +1,7 @@
 import { Backlog } from 'backlog-js';
 
-import { TransportError } from './failure';
 import { type RateBucket, type RateLimiter, readRateObservation } from './rateLimit';
+import { TransportError } from './transportError';
 
 export type ApiKeyTransport = 'header' | 'query';
 

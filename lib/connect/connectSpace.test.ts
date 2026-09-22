@@ -1,7 +1,7 @@
 import { Error as BacklogErrors } from 'backlog-js';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TransportError } from '@/lib/backlog/failure';
+import { TransportError } from '@/lib/backlog/transportError';
 
 import { type ConnectApi, type ConnectDeps, connectSpace } from './connectSpace';
 

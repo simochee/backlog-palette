@@ -154,6 +154,16 @@ describe('失敗の分類（応答以外）', () => {
     ).resolves.toMatchObject({ kind: 'rateLimited' });
   });
 
+  it('その他のエラー応答は failed になる', async () => {
+    const { fetch } = fakeFetch(() => json({ errors: [] }, { status: 500 }));
+
+    const failure = await client(fetch).getMyself().catch(toApiFailure);
+
+    expect(failure).toEqual({ kind: 'failed' });
+  });
+});
+
+describe('オフラインは応答が届いたかどうかで決まる', () => {
   it('ネットワーク断は offline になる', async () => {
     const fetch = (() =>
       Promise.reject(new TypeError('Failed to fetch'))) as typeof globalThis.fetch;
@@ -191,13 +201,5 @@ describe('失敗の分類（応答以外）', () => {
     expect(toApiFailure(new TypeError("Cannot read properties of null (reading 'name')"))).toEqual({
       kind: 'failed',
     });
-  });
-
-  it('その他のエラー応答は failed になる', async () => {
-    const { fetch } = fakeFetch(() => json({ errors: [] }, { status: 500 }));
-
-    const failure = await client(fetch).getMyself().catch(toApiFailure);
-
-    expect(failure).toEqual({ kind: 'failed' });
   });
 });

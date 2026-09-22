@@ -3,6 +3,7 @@ import { Error as BacklogErrors } from 'backlog-js';
 import type { SearchError } from '@/lib/search/types';
 
 import { RateLimitExceededError, readRateObservation } from './rateLimit';
+import { TransportError } from './transportError';
 
 /** API 呼び出しの失敗を行に閉じるための分類（I6、palette.md §7.5）。検索の SearchError と同じ */
 export type ApiFailure = SearchError;
@@ -21,20 +22,6 @@ export class NotConnectedError extends Error {
     super('not connected');
     this.name = 'NotConnectedError';
     this.spaceHost = spaceHost;
-  }
-}
-
-/*
- * fetch が応答を返さずに終わった。TypeError で見分けないのは、応答を行に加工する途中の
- * バグも TypeError になるため。Firefox で background に委譲した fetch の失敗は
- * メッセージング越しに name だけ TypeError の素の Error で届くので、種類でも絞らない。
- * CORS の拒否も同じ形で届くため、名前は Network ではなく「応答が無い」に留める。
- * AbortSignal やタイムアウトを入れると中止もここに入ってオフラインに見えるので、そのときは中止を先に分ける
- */
-export class TransportError extends Error {
-  constructor(cause: unknown) {
-    super('no response', { cause });
-    this.name = 'TransportError';
   }
 }
 
