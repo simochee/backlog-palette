@@ -11,7 +11,7 @@ export const ja: Labels = {
     armedNotice: (segment) => `もう一度で ${segment} を外す`,
     rootScope: 'スペース',
     rootPlaceholder: '移動するスペースを選ぶ',
-    commandPlaceholder: (command) => `${command}: 選択肢を絞り込む`,
+    commandPlaceholder: '名前で絞り込む',
   },
   keys: {
     open: '開く',

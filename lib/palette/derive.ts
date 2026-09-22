@@ -73,7 +73,8 @@ function bindingsOf(
 
 /** 入力欄の案内。どの階層にいるかで、入力が何に効くかが変わる */
 function placeholderOf(scope: Scope, command: CommandSegment | undefined, labels: Labels): string {
-  if (command !== undefined) return labels.palette.commandPlaceholder(command.label);
+  // 何の階層かはスコープパスの右端が言っている。ここで名前を繰り返さない
+  if (command !== undefined) return labels.palette.commandPlaceholder;
   return scope.kind === 'root' ? labels.palette.rootPlaceholder : labels.palette.placeholder;
 }
 

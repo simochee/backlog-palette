@@ -11,7 +11,7 @@ export const en: Labels = {
     armedNotice: (segment) => `Again to remove ${segment}`,
     rootScope: 'Spaces',
     rootPlaceholder: 'Pick a space to go to',
-    commandPlaceholder: (command) => `${command}: filter the choices`,
+    commandPlaceholder: 'Filter the choices',
   },
   keys: {
     open: 'Open',

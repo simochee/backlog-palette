@@ -1,4 +1,5 @@
 import type { Labels } from '@/components/labels';
+import type { Badge } from '@/components/types';
 import { frecencyByEntity } from '@/lib/rank/frecency';
 import { transitionScores } from '@/lib/rank/transitions';
 import type { SearchError } from '@/lib/search/types';
@@ -6,7 +7,7 @@ import type { CommandSegment, Scope } from '@/lib/stack/types';
 
 import { copyCandidates, copyIssueCommand, copyIssueRow } from './candidates';
 import { dueBadge } from './due';
-import { entityId, type PaletteIndex, type SpaceEntry } from './model';
+import { type CachedEntry, entityId, type PaletteIndex, type SpaceEntry } from './model';
 import {
   build,
   type Built,
@@ -97,6 +98,15 @@ function pagesSection({ index, scope, labels }: Env, scopeLabel: string): BuiltS
 }
 
 /**
+ * 完了した課題に期限の警告は出さない。「担当中の課題」は完了を除くので普段は届かないが、
+ * 再検証（D-14）で完了になった行がそのまま残ることがある。`done` は完了ステータスの役割 tone
+ */
+function dueBadgeFor(entry: CachedEntry, now: number, labels: Labels): Badge | undefined {
+  if (entry.status?.tone === 'done') return undefined;
+  return dueBadge(entry.dueDate, now, labels);
+}
+
+/**
  * 取得に失敗したことを行として出す（I6）。認証切れだけは再接続へ運べるので動作を持ち、
  * それ以外は原因を述べるだけ。押せない行にヒントは出ない（I1）
  */
@@ -132,7 +142,7 @@ function assignedSection({ index, labels }: Env, space: SpaceEntry | undefined):
     meta:
       assigned.rows.length < SECTION_CAP ? labels.sections.count(assigned.rows.length) : undefined,
     rows: assigned.rows.map((entry) =>
-      entityRow('assigned', entry, labels, { due: dueBadge(entry.dueDate, index.now, labels) }),
+      entityRow('assigned', entry, labels, { due: dueBadgeFor(entry, index.now, labels) }),
     ),
   };
 }

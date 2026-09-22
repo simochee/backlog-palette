@@ -13,7 +13,7 @@ export type Labels = {
     armedNotice: (segment: string) => string;
     rootScope: string;
     rootPlaceholder: string;
-    commandPlaceholder: (command: string) => string;
+    commandPlaceholder: string;
   };
   keys: {
     open: string;

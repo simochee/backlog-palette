@@ -39,6 +39,12 @@
   --bp-kbd-border: #d1d5db;
   --bp-kbd-text: #374151;
 
+  /*
+   * marker の 6 tone は Tailwind の既定スケール（slate/sky/green/violet/amber/red の
+   * 100・700・500）をそのまま使う。独自に選び直さないのは、この組が地の色に対して
+   * AA を満たすことが検証済みで、6 つの tone すべてで同じ明度差を保つ手間を省けるため。
+   * 役割の名前（info が青である必要はない）は --bp-marker-* の側が持つ
+   */
   --bp-marker-neutral-bg: #f1f5f9;
   --bp-marker-neutral-fg: #475569;
   --bp-marker-neutral-dot: #94a3b8;
