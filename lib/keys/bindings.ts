@@ -22,10 +22,8 @@ export type KeyState = {
   /** 選択行。仕様どおり DOM 上で選択されている行、無ければ先頭行 */
   selected: RowView | undefined;
   rowCount: number;
-  /** ⌫ で外せる段があるか（根では無い） */
-  canPopStack: boolean;
-  /** 削除待ちの段のラベル。削除待ちでなければ undefined */
-  armedLabel: string | undefined;
+  /** ⌫ で外せる右端の段の名前。外せる段が無ければ undefined（根） */
+  popLabel: string | undefined;
   hasInput: boolean;
   /** 検索結果が出ている（⌘⇧C の対象がある） */
   hasResults: boolean;
@@ -103,14 +101,9 @@ export function deriveBindings(state: KeyState, labels: Labels): KeyBinding[] {
         'ArrowDown',
       ]),
     );
-  if (state.canPopStack)
-    bindings.push(
-      binding(
-        'back',
-        ['Backspace'],
-        state.armedLabel === undefined ? labels.keys.back : labels.keys.backArmed(state.armedLabel),
-      ),
-    );
+  // 削除待ちかどうかで文言を変えない。1 回目か 2 回目かはヘッダーの予告と取り消し線が言う（§8）
+  if (state.popLabel !== undefined)
+    bindings.push(binding('back', ['Backspace'], labels.keys.back(state.popLabel)));
   if (state.hasInput && state.panelAvailable)
     bindings.push(binding('toPanel', ['Mod+ArrowRight'], labels.keys.toPanel));
   if (state.hasResults) bindings.push(binding('copyUrl', ['Mod+Shift+C'], labels.keys.copyUrl));

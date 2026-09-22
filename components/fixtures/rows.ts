@@ -37,20 +37,8 @@ export function issueRow({
   };
 }
 
-export function pageRow(
-  id: string,
-  title: string,
-  labels: Labels,
-  project = projects.web,
-  sub?: string,
-): RowView {
-  return {
-    id: `page:${id}`,
-    kind: 'page',
-    title,
-    sub: sub ?? `${project.name} · ${labels.rows.pageSub}`,
-    hints: ['enter', 'modEnter', 'complete'],
-  };
+export function pageRow(id: string, title: string, sub?: string): RowView {
+  return { id: `page:${id}`, kind: 'page', title, sub, hints: ['enter', 'modEnter', 'complete'] };
 }
 
 export function projectRow(project: (typeof projects)[keyof typeof projects]): RowView {
@@ -130,7 +118,7 @@ export function connectRow(spaceLabel: string | undefined, labels: Labels): RowV
     kind: 'connect',
     title:
       spaceLabel === undefined ? labels.rows.connectThis : labels.rows.connectSpace(spaceLabel),
-    tone: 'danger',
+    tone: 'accent',
     hints: ['enter'],
   };
 }

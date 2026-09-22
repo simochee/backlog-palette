@@ -111,6 +111,7 @@ export async function buildIndex(input: IndexInput): Promise<PaletteIndex> {
     transitions: history,
     queryDict: learned,
     currentPageKind: context.pageKind,
+    currentUrl: `${context.origin}${context.pathname}`,
     currentIssue: currentIssueOf(cache, context),
     learningEnabled: settings.learning,
     now,

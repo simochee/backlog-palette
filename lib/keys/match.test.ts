@@ -19,8 +19,7 @@ const bindings = deriveBindings(
   {
     selected: { id: 'r', kind: 'page', title: 'ボード', hints: ['enter', 'modEnter', 'complete'] },
     rowCount: 3,
-    canPopStack: true,
-    armedLabel: undefined,
+    popLabel: 'Webリニューアル',
     hasInput: true,
     hasResults: false,
     panelAvailable: true,

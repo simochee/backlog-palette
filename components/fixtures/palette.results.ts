@@ -55,20 +55,8 @@ const commonPagesSection = (labels: Labels): SectionView => ({
   id: 'common',
   label: labels.sections.commonPages,
   rows: [
-    pageRow(
-      'personal-settings',
-      labels.rows.personalSettings,
-      labels,
-      projects.web,
-      labels.rows.commonPageSub,
-    ),
-    pageRow(
-      'api-key-settings',
-      labels.rows.apiKeySettings,
-      labels,
-      projects.web,
-      labels.rows.commonPageSub,
-    ),
+    pageRow('personal-settings', labels.rows.personalSettings, labels.rows.commonPageSub),
+    pageRow('api-key-settings', labels.rows.apiKeySettings, labels.rows.commonPageSub),
   ],
 });
 
@@ -127,7 +115,7 @@ export const s7 = (labels: Labels): PaletteView =>
 export const s8 = (labels: Labels): PaletteView =>
   view(labels, {
     path: [...spacePath, { id: 'project', label: projects.web.name, badge: true, armed: true }],
-    armedNotice: labels.palette.armedNotice,
+    armedNotice: labels.palette.armedNotice(projects.web.name),
     sections: [recentSection(labels), pagesSection(labels), assignedSection(labels)],
   });
 

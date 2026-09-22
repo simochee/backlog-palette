@@ -58,19 +58,22 @@ function bindingsOf(
   labels: Labels,
   options: DeriveOptions,
 ): KeyBinding[] {
-  const armed = state.stack.armedForDelete ? state.stack.segments.at(-1) : undefined;
   return deriveBindings(
     {
       selected: selected?.row,
       rowCount: rows.length,
-      canPopStack: state.stack.segments.length > 0,
-      armedLabel: armed?.label,
+      popLabel: state.stack.segments.at(-1)?.label,
       hasInput: state.input.trim() !== '',
       hasResults: (state.session?.rows.length ?? 0) > 0,
       panelAvailable: options.panelAvailable,
     },
     labels,
   );
+}
+
+/** 削除待ちの段。予告とフッターの文言はこの段の名前で語る（§8） */
+function armedSegment(state: PaletteState) {
+  return state.stack.armedForDelete ? state.stack.segments.at(-1) : undefined;
 }
 
 export function derive(
@@ -85,7 +88,10 @@ export function derive(
     buildSections(state, env, scopeLabel(state.stack, labels)),
     labels,
   );
-  const selected = rows.find((r) => r.row.id === state.selectedId) ?? rows[0];
+  const selected =
+    rows.find((r) => r.row.id === state.selectedId) ??
+    rows.find((r) => r.row.hints.length > 0) ??
+    rows[0];
   const bindings = bindingsOf(state, rows, selected, labels, options);
   const inCommand = activeCommand(state.stack) !== undefined;
 
@@ -105,7 +111,10 @@ export function derive(
           scope.kind === 'root' ? labels.palette.rootPlaceholder : labels.palette.placeholder,
         completion: completionOf(state.input, selected),
       },
-      armedNotice: state.stack.armedForDelete ? labels.palette.armedNotice : undefined,
+      armedNotice: (() => {
+        const armed = armedSegment(state);
+        return armed === undefined ? undefined : labels.palette.armedNotice(armed.label);
+      })(),
       escLabel: inCommand ? labels.palette.escBack : labels.palette.escClose,
       sections,
       selectedId: selected?.row.id,

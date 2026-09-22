@@ -52,10 +52,8 @@ function pageCandidates({ index, scope, labels }: Env, section: string): Candida
       : scope.kind === 'project'
         ? index.projects.find((project) => project.id === scope.projectId)?.name
         : spaceOf(index, scope.spaceId)?.label;
-  const sub =
-    scope.kind === 'root'
-      ? labels.rows.commonPageSub
-      : `${ownerLabel ?? ''} · ${labels.rows.pageSub}`;
+  // 見出し（「移動先」「共通のページ」）とプロジェクト名で足りる。「· ページ」は種別アイコンが言う
+  const sub = scope.kind === 'root' ? labels.rows.commonPageSub : ownerLabel;
   return index.pagesFor(scope).map((page) => ({
     built: pageRow(section, page, sub),
     target: { text: page.title, aliases: page.aliases },

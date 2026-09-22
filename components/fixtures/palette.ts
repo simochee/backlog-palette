@@ -124,7 +124,7 @@ export const s2 = (labels: Labels): PaletteView =>
       {
         id: 'pages',
         label: labels.sections.pages,
-        rows: [pageRow('gantt', 'ガントチャート', labels)],
+        rows: [pageRow('gantt', 'ガントチャート')],
       },
       { id: 'search', rows: [searchRow('がんと', projects.web.name, labels)] },
     ],

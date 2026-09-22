@@ -6,7 +6,7 @@ import type { Stack } from '@/lib/stack/types';
 
 import { switchSpaceCommand } from './candidates';
 import { derive, type DerivedPalette } from './derive';
-import { acme, beta, index, nulab, web } from './fixture';
+import { acme, beta, index, login, nulab, payment, web } from './fixture';
 import type { PaletteIndex } from './model';
 import { initialState, type PaletteState } from './state';
 
@@ -51,16 +51,44 @@ describe('空状態（§9）', () => {
     expect(d.view.sections[1]?.meta).toBe(ja.sections.more(1));
   });
 
-  it('担当課題が届く前はセクションが無く、届いたら件数つきで末尾に出る', () => {
-    expect(sectionIds(run({}, { assigned: undefined }))).toEqual(['recent', 'pages']);
+  it('担当課題は届く前から見出しと読み込み中の行が出て、届いたら件数つきで置き換わる', () => {
+    const pending = run({}, { assigned: undefined });
+    expect(sectionIds(pending)).toEqual(['recent', 'pages', 'assigned']);
+    expect(rowsOf(pending, 'assigned')).toHaveLength(1);
+    expect(rowsOf(pending, 'assigned')[0]?.hints).toEqual([]);
+
     const d = run({});
     expect(d.view.sections.at(-1)?.meta).toBe(ja.sections.count(2));
   });
 
-  it('履歴も担当課題も無ければ案内行とページだけになり、案内行は動作を持たない', () => {
+  it('思い出せるものが無ければページの下に案内行が出て、案内行は動作を持たない', () => {
     const d = run({}, { activity: [], assigned: [] });
-    expect(sectionIds(d)).toEqual(['hint', 'pages']);
+    expect(sectionIds(d)).toEqual(['pages', 'hint']);
     expect(rowsOf(d, 'hint')[0]?.hints).toEqual([]);
+  });
+
+  it('案内行を出すかは履歴だけで決まり、担当課題が後から届いても消えない', () => {
+    const pending = run({}, { activity: [], assigned: undefined });
+    const arrived = run({}, { activity: [], assigned: [login] });
+    expect(sectionIds(pending).at(-1)).toBe('hint');
+    expect(sectionIds(arrived).at(-1)).toBe('hint');
+  });
+
+  it('今いるページは「最近開いた」にも「のページ」にも出ない', () => {
+    const d = run({}, { currentUrl: payment.url });
+    expect(titles(d, 'recent')).not.toContain(payment.title);
+    expect(titles(d, 'recent')[0]).toBe('プッシュ通知の受信設定をオンボーディングに組み込む');
+
+    const onBoard = run({}, { currentUrl: '/board/PROJ' });
+    expect(titles(onBoard, 'pages')).not.toContain('ボード');
+  });
+
+  it('既定の選択は動作を持つ最初の行で、案内行や読み込み中の行には止まらない', () => {
+    const d = run({}, { activity: [], assigned: undefined });
+    const selected = d.view.sections
+      .flatMap((s) => s.rows)
+      .find((row) => row.id === d.view.selectedId);
+    expect(selected?.hints.length ?? 0).toBeGreaterThan(0);
   });
 });
 
@@ -190,8 +218,8 @@ describe('コマンド階層と削除待ち', () => {
   it('削除待ちでは右端の段に印が付き、予告とフッターの文言が変わる', () => {
     const d = run({ stack: { ...projectStack, armedForDelete: true } });
     expect(d.view.path.at(-1)?.armed).toBe(true);
-    expect(d.view.armedNotice).toBe(ja.palette.armedNotice);
-    expect(d.view.footer.find((h) => h.id === 'back')?.label).toBe(ja.keys.backArmed(web.name));
+    expect(d.view.armedNotice).toBe(ja.palette.armedNotice(web.name));
+    expect(d.view.footer.find((h) => h.id === 'back')?.label).toBe(ja.keys.back(web.name));
   });
 });
 

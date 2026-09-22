@@ -16,8 +16,7 @@ const row = (partial: Partial<RowView>): RowView => ({
 const base: KeyState = {
   selected: row({}),
   rowCount: 3,
-  canPopStack: true,
-  armedLabel: undefined,
+  popLabel: 'Webリニューアル',
   hasInput: false,
   hasResults: false,
   panelAvailable: true,
@@ -80,12 +79,9 @@ describe('状態から出るキー', () => {
     expect(ids({ rowCount: 1 })).not.toContain('move');
   });
 
-  it('外せる段があるときだけ ⌫ が出て、削除待ちなら外す段の名前を含む', () => {
-    expect(labelOf({}, 'back')).toBe(ja.keys.back);
-    expect(labelOf({ armedLabel: 'Webリニューアル' }, 'back')).toBe(
-      ja.keys.backArmed('Webリニューアル'),
-    );
-    expect(ids({ canPopStack: false })).not.toContain('back');
+  it('外せる段があるときだけ ⌫ が出て、文言は外す段の名前で語る', () => {
+    expect(labelOf({}, 'back')).toBe(ja.keys.back('Webリニューアル'));
+    expect(ids({ popLabel: undefined })).not.toContain('back');
   });
 
   it('⌘→ は入力に語があるときだけ出て、パネルが使えない環境では出さない', () => {
@@ -113,7 +109,10 @@ describe('状態から出るキー', () => {
 
   it('文言は辞書から取る', () => {
     const bindings = deriveBindings({ ...base, hasInput: true, hasResults: true }, ja);
-    const dictionary = new Set(Object.values(ja.keys).filter((v) => typeof v === 'string'));
+    const dictionary = new Set([
+      ...Object.values(ja.keys).filter((v) => typeof v === 'string'),
+      ja.keys.back('Webリニューアル'),
+    ]);
     for (const binding of bindings) expect(dictionary.has(binding.label)).toBe(true);
   });
 });

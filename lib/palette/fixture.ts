@@ -194,6 +194,7 @@ export const index: PaletteIndex = {
   ],
   queryDict: [],
   currentPageKind: 'issue',
+  currentUrl: undefined,
   currentIssue: { key: 'PROJ-142', title: payment.title, url: payment.url },
   learningEnabled: true,
   now,

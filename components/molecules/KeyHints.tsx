@@ -9,7 +9,7 @@ type KeyHintsProps = {
 };
 
 /**
- * 幅に収まる分だけを残す。priority の大きいものから落とし、priority 0（↵）は必ず残す。
+ * 幅に収まる分だけを残す。優先順の右側から落とし、priority 0（↵）は必ず残す（palette.md §6）。
  * 表示中の要素は落ちた後に測れないので、測定用の複製を不可視で常に描いておく。
  */
 export function fitHints(
@@ -24,10 +24,11 @@ export function fitHints(
   for (const hint of byPriority) {
     const width = widths.get(hint.id) ?? 0;
     const next = used + width + (kept.size > 0 ? gap : 0);
-    if (next <= available || hint.priority === 0) {
-      kept.add(hint.id);
-      used = next;
-    }
+    // 入らなくなったら以降を全部落とす。詰められるものを探しに行くと、ラベルの短い下位の
+    // ヒントが上位を追い越して残り、幅と言語で「どのキーが見えるか」が変わる（P5・P6）
+    if (next > available && hint.priority !== 0) break;
+    kept.add(hint.id);
+    used = next;
   }
   return hints.filter((hint) => kept.has(hint.id));
 }

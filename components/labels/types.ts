@@ -10,7 +10,7 @@ export type Labels = {
     listLabel: string;
     escClose: string;
     escBack: string;
-    armedNotice: string;
+    armedNotice: (segment: string) => string;
     rootScope: string;
     rootPlaceholder: string;
   };
@@ -21,8 +21,7 @@ export type Labels = {
     connect: string;
     newTab: string;
     move: string;
-    back: string;
-    backArmed: (segment: string) => string;
+    back: (segment: string) => string;
     complete: string;
     stack: string;
     descend: string;
@@ -39,7 +38,7 @@ export type Labels = {
     pages: string;
     projects: string;
     /** 課題キー入力時に前方一致する課題を並べるセクション */
-    issues: string;
+    issues: (prefix: string) => string;
     commands: string;
     learned: string;
     more: (count: number) => string;
@@ -52,9 +51,8 @@ export type Labels = {
     searchFor: (query: string) => string;
     searchSub: (scope: string) => string;
     searching: string;
+    loading: string;
     openDirect: string;
-    recentSub: string;
-    pageSub: string;
     projectSub: (key: string) => string;
     updatedBy: (person: string) => string;
     commonPageSub: string;

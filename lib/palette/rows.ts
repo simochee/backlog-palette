@@ -45,7 +45,7 @@ export function build(id: string, input: RowInput, action?: RowAction, take?: Ta
   return { row, action, take };
 }
 
-export function pageRow(section: string, page: PageEntry, sub: string): Built {
+export function pageRow(section: string, page: PageEntry, sub?: string): Built {
   return build(
     `${section}:page:${page.id}`,
     { kind: 'page', title: page.title, sub },
@@ -134,7 +134,9 @@ export function connectRow(section: string, space: SpaceEntry | undefined, label
     {
       kind: 'connect',
       title: space === undefined ? labels.rows.connectThis : labels.rows.connectSpace(space.label),
-      tone: 'danger',
+      // 未接続はまだ何も起きていない状態で、障害ではない。危険色は認証切れ・レート超過の
+      // `status` 行に取っておく。初回に開く面（S0）が赤い警告に見えると接続をためらわせる
+      tone: 'accent',
     },
     { type: 'connect', spaceId: space?.id },
   );
@@ -188,4 +190,9 @@ export function directJumpRow(key: string, url: string, labels: Labels): Built {
 
 export function hintRow(id: string, title: string): Built {
   return build(`hint:hint:${id}`, { kind: 'hint', title });
+}
+
+/** 取得中のプレースホルダ。動作を持たないので選択はここで止まらない（I1・§7.2 と同じ形） */
+export function loadingRow(section: string, title: string): Built {
+  return build(`${section}:loading`, { kind: 'hint', title, busy: true });
 }

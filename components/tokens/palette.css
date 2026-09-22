@@ -14,8 +14,8 @@
   --bp-surface-overlay: rgb(15 23 42 / 45%);
   --bp-surface-control: #ffffff;
 
-  --bp-row-selected: #eaf0ff;
-  --bp-row-accent: #f0f6ff;
+  --bp-row-selected: #dfe8ff;
+  --bp-row-accent: #f5f8ff;
   --bp-row-danger: #fff1f0;
 
   --bp-accent: #2f6fed;
@@ -113,8 +113,8 @@
   --bp-surface-overlay: rgb(0 0 0 / 55%);
   --bp-surface-control: #23262f;
 
-  --bp-row-selected: #2a3550;
-  --bp-row-accent: #1f2a44;
+  --bp-row-selected: #32405f;
+  --bp-row-accent: #1d2536;
   --bp-row-danger: #3a1f1f;
 
   --bp-accent: #6d9cff;

@@ -1,3 +1,4 @@
+import { neighbourRow } from '@/components/organisms/CandidateList';
 import type { KeyHintId, RowView } from '@/components/types';
 
 export type KeyLike = {
@@ -32,14 +33,8 @@ function isComposing(event: KeyLike): boolean {
   return event.isComposing || event.key === 'Process';
 }
 
-function neighbour(rows: readonly RowView[], selectedId: string | undefined, delta: 1 | -1) {
-  const index = rows.findIndex((row) => row.id === selectedId);
-  if (index === -1) return rows[0];
-  return rows[index + delta];
-}
-
 function resolveArrow(context: KeyContext, delta: 1 | -1): KeyDecision {
-  const next = neighbour(context.rows, context.selectedId, delta);
+  const next = neighbourRow(context.rows, context.selectedId, delta);
   return next === undefined || next.id === context.selectedId
     ? { type: 'none', preventDefault: true }
     : { type: 'move', to: next.id };

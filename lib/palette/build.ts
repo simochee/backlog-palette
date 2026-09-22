@@ -52,7 +52,7 @@ function keySections(env: Env, key: string, scopeName: string): BuiltSection[] {
   );
   return [
     { id: 'direct', rows: [directJumpRow(key, index.issueUrl(scope.spaceId, key), labels)] },
-    { id: 'issues', label: labels.sections.issues, rows: issues, cap: SECTION_CAP },
+    { id: 'issues', label: labels.sections.issues(key), rows: issues, cap: SECTION_CAP },
     ...searchSections(env, key, scopeName),
   ];
 }

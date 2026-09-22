@@ -187,8 +187,8 @@ export const S8: Story = {
     const canvas = within(canvasElement);
     const segment = canvas.getByText(projects.web.name);
     await expect(getComputedStyle(segment).textDecorationLine).toContain('line-through');
-    await expect(canvas.getByText(ja.palette.armedNotice)).toBeVisible();
-    await expect(hintLabel(canvasElement, 'back')).toContain(ja.keys.backArmed(projects.web.name));
+    await expect(canvas.getByText(ja.palette.armedNotice(projects.web.name))).toBeVisible();
+    await expect(hintLabel(canvasElement, 'back')).toContain(ja.keys.back(projects.web.name));
 
     await assertPaletteInvariants({ canvasElement, view: args, spies: args });
   },

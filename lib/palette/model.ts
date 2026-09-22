@@ -73,6 +73,8 @@ export type PaletteIndex = {
   queryDict: readonly QueryDictEvent[];
   /** 現在ページの種別。遷移パターンの from */
   currentPageKind: string | undefined;
+  /** 今開いているページの URL。空状態はここへ戻る行を出さない（§9） */
+  currentUrl: string | undefined;
   /** 課題ページで開いたとき。コピー系コマンドの対象 */
   currentIssue: CurrentIssue | undefined;
   learningEnabled: boolean;
