@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { arrive, fail, resultRowId, type SearchSession, startSession } from '@/lib/search';
+import {
+  arrive,
+  endedOffline,
+  fail,
+  resultRowId,
+  type SearchSession,
+  startSession,
+} from '@/lib/search';
 import { type SearchState, searchState } from '@/lib/share';
 import { track } from '@/lib/telemetry/track';
 
@@ -8,21 +15,58 @@ import { recordSearch } from './context.ts';
 import type { PanelSearchRunner } from './runner.ts';
 import { canRun, type PanelSearch } from './searchParams.ts';
 
-type Store = { key: string; session: SearchSession | undefined };
+/** attempt は同じ検索を接続の回復で引き直した回数。0 回目だけが利用者の検索（D-59） */
+type Store = { searchKey: string; attempt: number; session: SearchSession | undefined };
 
-const keyOf = (search: PanelSearch) => JSON.stringify(search);
 const noop = () => {};
 
-function initialSession(search: PanelSearch): SearchSession | undefined {
-  return canRun(search) ? startSession(search.query, search.scope) : undefined;
+function freshStore(search: PanelSearch, searchKey: string, attempt: number): Store {
+  return {
+    searchKey,
+    attempt,
+    session: canRun(search) ? startSession(search.query, search.scope) : undefined,
+  };
+}
+
+function useRetryWhenOnline(offline: boolean, retry: () => void) {
+  useEffect(() => {
+    if (!offline) return noop;
+    window.addEventListener('online', retry);
+    return () => {
+      window.removeEventListener('online', retry);
+    };
+  }, [offline, retry]);
+}
+
+/*
+ * 検索が変わったら試行回数ごと作り直す。残すと、同じ検索に戻ったとき利用者の検索が数えられない。
+ * 引き直しも新しいセッションから始める。失敗したセッションに到着を重ねると、先に揃っていた
+ * 種別の行が二重に入る
+ */
+function useSearchStore(search: PanelSearch) {
+  const searchKey = JSON.stringify(search);
+  const [store, setStore] = useState<Store>(() => freshStore(search, searchKey, 0));
+  if (store.searchKey !== searchKey) setStore(freshStore(search, searchKey, 0));
+  const current = store.searchKey === searchKey ? store : freshStore(search, searchKey, 0);
+
+  const retry = useCallback(() => {
+    setStore((previous) =>
+      previous.searchKey === searchKey
+        ? freshStore(search, searchKey, previous.attempt + 1)
+        : previous,
+    );
+  }, [search, searchKey]);
+  useRetryWhenOnline(endedOffline(current.session), retry);
+
+  return { searchKey, attempt: current.attempt, session: current.session, setStore };
 }
 
 /**
  * URL の検索状態が変わるたびに検索を走らせ直す。到着は種別ごとに合流し、選択行より上に
  * 入る行は保留する（I4）。入力の途中では走らせない（Enter で明示的に起動、D-2）。
+ * オフラインで終わった検索は、接続が戻ったら引き直す（palette.md §7.5、D-59）。
  *
- * 走り始めのセッションは render で導く。effect は runner の起動と打ち切りだけを持ち、
- * 状態は到着の callback（非同期）でしか変えない
+ * effect は runner の起動と打ち切りだけを持ち、状態は到着の callback（非同期）でしか変えない
  */
 export function usePanelSearch(
   search: PanelSearch,
@@ -30,9 +74,7 @@ export function usePanelSearch(
   selectedId: string | undefined,
   learningEnabled: boolean,
 ) {
-  const key = keyOf(search);
-  const [store, setStore] = useState<Store>({ key, session: undefined });
-  const session = store.key === key ? store.session : initialSession(search);
+  const { searchKey, attempt, session, setStore } = useSearchStore(search);
   const selected = useRef(selectedId);
 
   useEffect(() => {
@@ -42,19 +84,22 @@ export function usePanelSearch(
   useEffect(() => {
     if (!canRun(search)) return noop;
     const { query, scope, conditions } = search;
-    if (learningEnabled) void recordSearch(query, scope, Date.now());
-    track({ type: 'panelSearchStarted' });
+    if (attempt === 0) {
+      if (learningEnabled) void recordSearch(query, scope, Date.now());
+      track({ type: 'panelSearchStarted' });
+    }
     const cancel = runner.run(
       query,
       scope,
       (kind, outcome) => {
         setStore((previous) => {
-          const base = previous.key === key ? previous.session : initialSession(search);
+          const base = previous.session;
+          if (previous.searchKey !== searchKey || previous.attempt !== attempt) return previous;
           if (base === undefined) return previous;
-          if (!outcome.ok) return { key, session: fail(base, kind, outcome.error) };
+          if (!outcome.ok) return { ...previous, session: fail(base, kind, outcome.error) };
           const index = base.rows.findIndex((row) => resultRowId(row) === selected.current);
           return {
-            key,
+            ...previous,
             session: arrive(base, kind, outcome.rows, index === -1 ? undefined : index),
           };
         });
@@ -63,7 +108,7 @@ export function usePanelSearch(
     );
     // 入力が変わったら走っている検索を捨てる（palette.md §7.4）
     return cancel;
-  }, [search, key, runner, learningEnabled]);
+  }, [search, searchKey, attempt, runner, learningEnabled, setStore]);
 
   const state = useCallback((): SearchState | undefined => {
     if (search.scope === undefined) return undefined;

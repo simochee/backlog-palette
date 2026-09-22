@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   arrive,
+  endedOffline,
   fail,
   isDone,
   isEmpty,
@@ -120,5 +121,20 @@ describe('完了と障害', () => {
     session = arrive(arrive(session, 'issue', [row('a', 1)]), 'document', [], 0);
     expect(isDone(session)).toBe(true);
     expect(ids(session)).toEqual(['a']);
+  });
+});
+
+describe('接続が戻ったら引き直す対象', () => {
+  it('オフラインで終わった種別が 1 つでもあれば対象になる', () => {
+    const session = arrive(startSession('q', scope), 'issue', [row('a', 1)]);
+    expect(endedOffline(fail(session, 'wiki', { kind: 'offline' }))).toBe(true);
+  });
+
+  it('オフライン以外の失敗や、検索していない状態は対象にならない', () => {
+    expect(endedOffline(fail(startSession('q', scope), 'issue', { kind: 'failed' }))).toBe(false);
+    expect(endedOffline(fail(startSession('q', scope), 'issue', { kind: 'unauthorized' }))).toBe(
+      false,
+    );
+    expect(endedOffline()).toBe(false);
   });
 });
