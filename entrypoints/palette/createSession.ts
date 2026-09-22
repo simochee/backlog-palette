@@ -3,9 +3,10 @@ import { createStore } from '@tanstack/store';
 import type { Labels } from '@/components/labels';
 import { toApiFailure } from '@/lib/backlog/failure';
 import { resolveLanguage } from '@/lib/i18n/language';
-import type { AssignedState, PaletteIndex, Readable } from '@/lib/palette';
+import type { AssignedState, PaletteIndex } from '@/lib/palette';
 import type { Stack } from '@/lib/stack/types';
 import { settings } from '@/lib/storage/palette-items';
+import type { Readable } from '@/lib/store';
 
 import { backlog } from './backlog.ts';
 import { buildIndex } from './buildIndex.ts';
