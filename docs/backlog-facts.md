@@ -57,6 +57,7 @@
 | Wiki トップ | `/wiki/{projectKey}` | ○ | bee `/wiki/${projectKey}` |
 | Wiki 個別ページ（名前指定） | `/wiki/{projectKey}/{pageName}` | ○ | backlog4j `getWikiUrl` のコメント例 `https://spacexxx.backlog.jp/wiki/TEST_PROJECT/Home` |
 | Wiki 個別ページ（ID 指定） | `/alias/wiki/{wikiId}` | ○ | bee `wikiUrl()`／power-ups `matches: ["/alias/wiki/*"]` |
+| 上記が名前指定 URL へリダイレクトするか | ✗ 未確認 | ✗ | 実機で `/alias/wiki/{id}` を開き、最終的な `location.pathname` を見る。表示キャッシュに同じ Wiki が 2 行並ぶ頻度が変わる（decisions.md D-52） |
 | ドキュメント トップ | `/document/{projectKey}` | ○ | bee `/document/${projectKey}` |
 | ドキュメント 個別 | `/document/{projectKey}/{documentId}` | ○ | bee `documentUrl()`／power-ups `matches: ["/document/**"]` |
 | ファイル（共有ファイル） | `/file/{projectKey}` | ○ | bee `/file/${projectKey}` |

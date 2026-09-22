@@ -3,6 +3,7 @@ import type { PersistedClient } from '@tanstack/query-persist-client-core';
 import { storage } from '#imports';
 import type { SpaceRateRecord } from '@/lib/backlog/rateLimit';
 import type { ConnectedSpace } from '@/lib/connect/connectSpace';
+import { canonicalizeVisits } from '@/lib/visits/canonicalize';
 
 export type VisitedKind = 'issue' | 'project' | 'wiki' | 'document';
 
@@ -15,7 +16,8 @@ export type DisplayCacheEntry = {
   kind: VisitedKind;
   /** スペースの識別子はホスト名（D-32）。`demo.backlog.jp` */
   spaceHost: string;
-  projectKey: string;
+  /** URL から読めないことがある（別名 Wiki `/alias/wiki/{id}` はプロジェクトを含まない） */
+  projectKey?: string;
   /** 課題キー・Wiki の名前や ID・ドキュメント ID。プロジェクトのページでは無い */
   key?: string;
   title?: string;
@@ -29,12 +31,17 @@ type DisplayCacheEntryV1 = Omit<DisplayCacheEntry, 'status' | 'assignee'>;
 
 /**
  * 新しい訪問が先頭。同じ URL は 1 件にまとめる。
- * v2 は status と assignee を足しただけで、v1 の値はそのまま読める
+ * v2 は status と assignee を足しただけで、v1 の値はそのまま読める。
+ * v3 は URL を正規形に畳む。畳まないと旧 `/view/proj-1` と新 `/view/PROJ-1` が
+ * 別の行として両方残り、同じ課題が「最近開いた」に 2 行並ぶ（D-52）
  */
 export const displayCache = storage.defineItem<DisplayCacheEntry[]>('local:displayCache', {
   fallback: [],
-  version: 2,
-  migrations: { 2: (entries: DisplayCacheEntryV1[]): DisplayCacheEntry[] => entries },
+  version: 3,
+  migrations: {
+    2: (entries: DisplayCacheEntryV1[]): DisplayCacheEntry[] => entries,
+    3: canonicalizeVisits,
+  },
 });
 
 /**

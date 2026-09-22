@@ -55,12 +55,17 @@ function entityOf(pathname: string): PathInfo | undefined {
   return undefined;
 }
 
-function pageOf(pathname: string): PathInfo | undefined {
+function pageOf(pathname: string, search: string): PathInfo | undefined {
   for (const page of pages) {
     for (const pattern of page.paths) {
       const match = pattern.exec(pathname);
       if (match === null) continue;
-      const projectKey = group(match, 'projectKey');
+      // パスに識別子が無い画面（プロジェクト設定）はクエリが識別子。落とすと別の画面と同じになる
+      const fromQuery =
+        page.identityQuery === undefined
+          ? undefined
+          : (new URLSearchParams(search).get(page.identityQuery) ?? undefined);
+      const projectKey = group(match, 'projectKey') ?? fromQuery;
       if (page.id === 'project-home' && projectKey !== undefined)
         return { kind: 'project', projectKey };
       return projectKey === undefined
@@ -71,9 +76,46 @@ function pageOf(pathname: string): PathInfo | undefined {
   return undefined;
 }
 
-/** パス（`location.pathname`）だけを見る。ホストがスペースかどうかは呼び出し側が先に判定する */
-export function parsePath(pathname: string): PathInfo | undefined {
-  return entityOf(pathname) ?? pageOf(pathname);
+/** パス（`location.pathname`）を見る。ホストがスペースかどうかは呼び出し側が先に判定する */
+export function parsePath(pathname: string, search = ''): PathInfo | undefined {
+  return entityOf(pathname) ?? pageOf(pathname, search);
+}
+
+/**
+ * パスの同一性。同じページを指す URL は同じ文字列になる（末尾のスラッシュ・課題キーの
+ * 大文字小文字・別名パス・表示状態のクエリを畳む）。解釈できないパスは undefined。
+ *
+ * 文字列を置換して回るのではなく、`parsePath` で同一性まで落としてから組み直す。
+ * 「何を畳んで何を畳まないか」が PathInfo に何を残すかで決まり、抜けが型で見える
+ */
+export function canonicalPath(pathname: string, search = ''): string | undefined {
+  const info = parsePath(pathname, search);
+  if (info === undefined) return undefined;
+  if (info.kind === 'issue') return `/view/${info.issueKey}`;
+  if (info.kind === 'project') return `/projects/${info.projectKey}`;
+  // Wiki の名前は大文字小文字も末尾のスラッシュも区別する値。デコードして組み直すと
+  // 階層の `/` が `%2F` になって別ページになるので、ブラウザが正規化した原文をそのまま使う
+  if (info.kind === 'wiki') return pathname;
+  if (info.kind === 'wikiAlias') return `/alias/wiki/${info.wikiId}`;
+  if (info.kind === 'document') return `/document/${info.projectKey}/${info.documentId}`;
+  return pages
+    .find((page) => page.id === info.pageId)
+    ?.build({ origin: '', projectKey: info.projectKey });
+}
+
+/**
+ * URL の同一性。href で受けるのは、content script が `location.href` を、
+ * 拡張ページが `tab.url` を持つため。フラグメントは `URL` が pathname から外す
+ */
+export function canonicalUrl(href: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(href);
+  } catch {
+    return undefined;
+  }
+  const path = canonicalPath(url.pathname, url.search);
+  return path === undefined ? undefined : url.origin + path;
 }
 
 /** 現在ページの種別。遷移パターン（D-16）の from に使う */

@@ -1,6 +1,7 @@
 import { statusBadge } from '@/lib/backlog/entries';
 import type { Language } from '@/lib/i18n/language';
 import { navIndex } from '@/lib/nav';
+import { canonicalUrl } from '@/lib/nav/path';
 import {
   type CachedEntry,
   type CurrentIssue,
@@ -26,8 +27,9 @@ function cachedEntryOf(entry: DisplayCacheEntry): CachedEntry | undefined {
     key: entry.kind === 'issue' ? entry.key : undefined,
     title: entry.title ?? entry.key,
     spaceId: entry.spaceHost,
-    projectId: entry.projectKey,
-    projectName: entry.projectKey,
+    ...(entry.projectKey === undefined
+      ? {}
+      : { projectId: entry.projectKey, projectName: entry.projectKey }),
     ...(entry.assignee === undefined ? {} : { assignee: entry.assignee }),
     ...(entry.status === undefined ? {} : { status: statusBadge(entry.status) }),
     url: entry.url,
@@ -78,9 +80,11 @@ function currentIssueOf(
   context: OpenContext,
 ): CurrentIssue | undefined {
   const key = context.issueKey;
-  const url = `${context.origin}${context.pathname}`;
+  // 表示キャッシュの URL は正規形なので、突き合わせる側も正規形にする
+  const url = canonicalUrl(context.href);
+  if (key === undefined || url === undefined) return undefined;
   const visited = cache.find((entry) => entry.url === url);
-  return key === undefined ? undefined : { key, title: visited?.title ?? key, url };
+  return { key, title: visited?.title ?? key, url };
 }
 
 export type IndexInput = {
@@ -111,7 +115,7 @@ export async function buildIndex(input: IndexInput): Promise<PaletteIndex> {
     transitions: history,
     queryDict: learned,
     currentPageKind: context.pageKind,
-    currentUrl: `${context.origin}${context.pathname}`,
+    currentUrl: canonicalUrl(context.href),
     currentIssue: currentIssueOf(cache, context),
     learningEnabled: settings.learning,
     now,
