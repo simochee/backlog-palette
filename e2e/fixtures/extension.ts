@@ -95,7 +95,10 @@ export function delayPaletteTasksQueuedBeforeLoad(page: Page, ms: number): Promi
     if (!location.pathname.endsWith('/palette.html')) return;
     const post = MessagePort.prototype.postMessage;
     MessagePort.prototype.postMessage = function (this: MessagePort, ...args: [unknown]) {
-      if (document.readyState === 'complete') return post.apply(this, args);
+      if (document.readyState === 'complete') {
+        post.apply(this, args);
+        return;
+      }
       window.addEventListener('load', () => {
         setTimeout(() => post.apply(this, args), delay);
       });
