@@ -72,8 +72,8 @@ export function delayPaletteStorageReads(page: Page, ms: number): Promise<Dispos
   return page.addInitScript((delay) => {
     if (!location.pathname.endsWith('/palette.html')) return;
     type Area = { get: (...args: unknown[]) => Promise<unknown> };
-    const area = (globalThis as unknown as { chrome: { storage: { local: Area } } }).chrome
-      .storage.local;
+    const area = (globalThis as unknown as { chrome: { storage: { local: Area } } }).chrome.storage
+      .local;
     const read = area.get.bind(area);
     area.get = async (...args) => {
       await new Promise((done) => {
