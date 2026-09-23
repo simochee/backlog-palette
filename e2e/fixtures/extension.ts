@@ -93,6 +93,8 @@ export function delayPaletteStorageReads(page: Page, ms: number): Promise<Dispos
 export function delayPaletteTasksQueuedBeforeLoad(page: Page, ms: number): Promise<Disposable> {
   return page.addInitScript((delay) => {
     if (!location.pathname.endsWith('/palette.html')) return;
+    // bind すると差し替え後の this（呼び出し元のポート）を渡せない。apply で渡し直す
+    // oxlint-disable-next-line typescript/unbound-method
     const post = MessagePort.prototype.postMessage;
     MessagePort.prototype.postMessage = function (this: MessagePort, ...args: [unknown]) {
       if (document.readyState === 'complete') {
