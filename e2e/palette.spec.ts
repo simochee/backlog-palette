@@ -1,3 +1,5 @@
+import { buildShareUrl, searchState } from '../lib/share/index.ts';
+import { SPACE } from './fixtures/apiData.ts';
 import {
   delayPaletteStorageReads,
   expect,
@@ -5,6 +7,7 @@ import {
   PALETTE_FRAME,
   test,
 } from './fixtures/extension.ts';
+import { SPACE_HOST } from './fixtures/space.ts';
 
 test.describe('⌘K によるパレットの開閉', () => {
   test('⌘K で iframe が表示され、打った文字がパレットの入力欄に入る', async ({ page, space }) => {
@@ -39,6 +42,47 @@ test.describe('⌘K によるパレットの開閉', () => {
 
     await expect(palette.getByRole('option').first()).toBeVisible();
     await expect(input).toHaveValue('ぼーど');
+  });
+
+  test('材料が揃う前に閉じたら、揃った後も閉じたままで、共有 URL の復元も走らない', async ({
+    page,
+  }) => {
+    await delayPaletteStorageReads(page, 1500);
+    const shared = buildShareUrl(
+      `https://${SPACE_HOST}`,
+      searchState('請求書', { kind: 'space', spaceId: SPACE_HOST }),
+    );
+    await page.goto(shared);
+    await expect(page.locator(PALETTE_FRAME)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator(PALETTE_FRAME)).toBeHidden();
+
+    // 閉じている間も描いておくので、行が現れたら材料は揃っている
+    const palette = page.frameLocator(PALETTE_FRAME);
+    await expect(palette.getByRole('option', { includeHidden: true }).first()).toBeAttached({
+      timeout: 20_000,
+    });
+    await expect(page.locator(PALETTE_FRAME)).toBeHidden();
+    await expect(palette.locator('input')).toHaveValue('');
+  });
+
+  test('材料が揃う前に接続が変わっても、開いたパレットのスコープパスは接続後の材料に揃う', async ({
+    page,
+    space,
+    seedConnected,
+  }) => {
+    // 接続の有無を読んだ後の段（表示キャッシュ）で止め、未接続のまま用意を終わらせずにおく
+    await delayPaletteStorageReads(page, 3000, ['displayCache']);
+    await page.goto(space.url('/view/PROJ-123'));
+    const palette = page.frameLocator(PALETTE_FRAME);
+
+    await page.keyboard.press(HOTKEY);
+    await expect(page.locator(PALETTE_FRAME)).toBeVisible();
+    await seedConnected([{ host: SPACE_HOST, name: SPACE.name }]);
+    await expect(palette.getByRole('option')).toHaveCount(0);
+
+    await expect(palette.getByRole('option').first()).toBeVisible({ timeout: 20_000 });
+    await expect(palette.locator('ol li').first()).toContainText(SPACE.name);
   });
 
   test('パレットはビューポートを覆う大きさで表示される', async ({ page, space }) => {

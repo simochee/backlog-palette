@@ -5,6 +5,7 @@ import { isPaletteHotkey } from '@/lib/hotkey/paletteHotkey';
 import type { HostChannel } from '@/lib/messaging/hostChannel';
 import { createPaletteStore, type PaletteStore } from '@/lib/palette';
 import type { Readable } from '@/lib/store';
+import { createLatestSupply } from '@/lib/store/latestSupply';
 import { applyBacklogTheme, parseBacklogTheme } from '@/lib/theme/backlogTheme';
 
 import { type Pending, restartSearch } from './actions.ts';
@@ -28,37 +29,17 @@ export type Surface = { open: boolean; openedAt: number; panelAvailable: boolean
 type Supplied = PaletteSession | null;
 
 /**
- * 用意した材料。用意は非同期で重なる（接続の保存は鍵と記録の 2 回の書き込み）ので、
- * 最後に頼んだものだけを反映し、遅れて終わった古い方で上書きしない
+ * 用意した材料。用意は非同期で重なる（接続の保存は鍵と記録の 2 回の書き込み）。
+ * 一度でも用意が終わっていれば、open には進行中の用意し直しを待たずに直前の材料を渡す。
+ * await を挟むと、open で空にしたスタックのまま開いた直後を描き、スコープパスが遅れて現れる
  */
 function createSessionSupply() {
-  const current = createStore<Supplied>(null);
-  let inflight: Promise<Supplied> | undefined;
-  let settled = false;
-
-  const refresh = async (): Promise<Supplied> => {
-    const next = createSession().then((ready) => ready ?? null);
-    inflight = next;
-    const ready = await next;
-    if (inflight === next) {
-      settled = true;
-      current.setState(() => ready);
-    }
-    return ready;
-  };
-
-  /*
-   * 一度でも用意が終わっていれば、進行中の用意し直しは待たず、直前の材料で同期に渡す。
-   * await を挟むと、open で空にしたスタックのまま開いた直後を描き、スコープパスが
-   * 遅れて現れる。まだ一度も終わっていないときだけ、進行中の用意を待つ
-   */
-  const whenReady = (receive: (session: Supplied) => void) => {
-    if (settled) receive(current.state);
-    else void inflight?.then(receive);
-  };
-
-  void refresh();
-  return { current, refresh, whenReady };
+  const supply = createLatestSupply<Supplied>(
+    () => createSession().then((ready) => ready ?? null),
+    null,
+  );
+  void supply.refresh();
+  return supply;
 }
 
 type Opening = {
@@ -176,6 +157,7 @@ export function startPaletteController(channel: HostChannel): PaletteController 
 
   const hide = () => {
     surface.setState((previous) => ({ ...previous, open: false }));
+    supply.cancel();
     void supply.refresh();
   };
   const close = () => {
@@ -192,7 +174,7 @@ export function startPaletteController(channel: HostChannel): PaletteController 
     // 前回の入力は残さない（palette.md §3）。材料を待たずに消し、その後の打鍵を受ける
     store.dispatch({ type: 'opened' });
     paletteTelemetry.opened();
-    supply.whenReady((session) => applyOpen(session, { channel, store, pending, close }));
+    supply.deliver((session) => applyOpen(session, { channel, store, pending, close }));
   };
 
   listenToHost(channel, { show, hide });
