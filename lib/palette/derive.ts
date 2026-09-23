@@ -143,3 +143,21 @@ export function derive(
     takes,
   };
 }
+
+/**
+ * 材料が届く前のビュー。入力欄だけを描いて打鍵を受け、行もキーのヒントも出さない。
+ * 押して何も起きないキーを見せないため（I2）、効くのは入力と閉じる操作だけになる
+ */
+export function preparingView(state: PaletteState, labels: Labels): PaletteView {
+  return {
+    path: [],
+    /*
+     * スタックはまだ空なので placeholderOf は根の案内を返すが、材料が揃うと必ずスペースが
+     * 積まれる（スペースの URL でなければパレットを持たない、I7）。根の案内を一瞬見せない
+     */
+    input: { value: state.input, placeholder: labels.palette.placeholder },
+    escLabel: labels.palette.escClose,
+    sections: [],
+    footer: [],
+  };
+}

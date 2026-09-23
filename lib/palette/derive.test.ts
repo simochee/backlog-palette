@@ -4,7 +4,7 @@ import { ja } from '@/components/labels/ja';
 import { emptyStack, pushCommand, stackOf } from '@/lib/stack/stack';
 
 import { switchSpaceCommand } from './candidates';
-import { derive, type DerivedPalette } from './derive';
+import { derive, type DerivedPalette, preparingView } from './derive';
 import { index, nulab, web } from './fixture';
 import type { PaletteIndex } from './model';
 import { initialState, type PaletteState } from './state';
@@ -119,5 +119,18 @@ describe('選択とヒント（I1・I2）', () => {
     const d = run({ stack: emptyStack }, { spaces: many });
     expect(d.view.sections.flatMap((s) => s.rows)).toHaveLength(12);
     expect(d.view.sections[0]?.meta).toBe(ja.sections.more(8));
+  });
+});
+
+describe('材料が届く前（§3）', () => {
+  it('打った文字は入力欄に出て、行もキーのヒントも出さない', () => {
+    const view = preparingView({ ...initialState, input: 'ぼーど' }, ja);
+    expect(view.input.value).toBe('ぼーど');
+    expect(view.sections).toEqual([]);
+    expect(view.footer).toEqual([]);
+  });
+
+  it('スタックが空でも根の案内は出さない。材料が揃うと必ずスペースが積まれる', () => {
+    expect(preparingView(initialState, ja).input.placeholder).toBe(ja.palette.placeholder);
   });
 });

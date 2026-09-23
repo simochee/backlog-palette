@@ -1,4 +1,10 @@
-import { expect, HOTKEY, PALETTE_FRAME, test } from './fixtures/extension.ts';
+import {
+  delayPaletteStorageReads,
+  expect,
+  HOTKEY,
+  PALETTE_FRAME,
+  test,
+} from './fixtures/extension.ts';
 
 test.describe('⌘K によるパレットの開閉', () => {
   test('⌘K で iframe が表示され、打った文字がパレットの入力欄に入る', async ({ page, space }) => {
@@ -14,6 +20,25 @@ test.describe('⌘K によるパレットの開閉', () => {
     await page.keyboard.type('ぼーど');
     await expect(input).toHaveValue('ぼーど');
     await expect(page.locator('#page-input')).toHaveValue('');
+  });
+
+  test('材料が揃う前に開いても入力欄は先に出て、打った文字は揃った後も残る', async ({
+    page,
+    space,
+  }) => {
+    await delayPaletteStorageReads(page, 1500);
+    await page.goto(space.url('/view/PROJ-123'));
+    const palette = page.frameLocator(PALETTE_FRAME);
+    const input = palette.locator('input');
+
+    await page.keyboard.press(HOTKEY);
+    await expect(page.locator(PALETTE_FRAME)).toBeVisible();
+    await page.keyboard.type('ぼーど');
+    await expect(input).toHaveValue('ぼーど');
+    await expect(palette.getByRole('option')).toHaveCount(0);
+
+    await expect(palette.getByRole('option').first()).toBeVisible();
+    await expect(input).toHaveValue('ぼーど');
   });
 
   test('パレットはビューポートを覆う大きさで表示される', async ({ page, space }) => {

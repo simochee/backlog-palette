@@ -1,4 +1,12 @@
-import { backspace, disarm, escape, pushCommand, pushProject, pushSpace } from '@/lib/stack/stack';
+import {
+  backspace,
+  disarm,
+  emptyStack,
+  escape,
+  pushCommand,
+  pushProject,
+  pushSpace,
+} from '@/lib/stack/stack';
 import type { Stack } from '@/lib/stack/types';
 
 import {
@@ -62,7 +70,9 @@ function popped(state: PaletteState, stack: Stack): PaletteState {
 export function reduce(state: PaletteState, action: PaletteAction): PaletteState {
   switch (action.type) {
     case 'opened':
-      return { ...withStack(state, action.stack) };
+      return withStack(state, emptyStack);
+    case 'located':
+      return { ...state, stack: action.stack, selectedId: undefined };
     case 'inputChanged':
       return {
         ...state,

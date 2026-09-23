@@ -116,6 +116,15 @@ export const loginPages = (labels: Labels): SectionView => ({
   rows: [{ ...sampleIssues.loginRedirect, id: `cache:${sampleIssues.loginRedirect.id}` }],
 });
 
+/** 材料が届く前。入力欄だけがあり、行もキーのヒントも出さない（palette.md §3） */
+export const preparing = (labels: Labels): PaletteView => ({
+  path: [],
+  input: { value: '', placeholder: labels.palette.placeholder },
+  escLabel: labels.palette.escClose,
+  sections: [],
+  footer: [],
+});
+
 /** S0 未接続で何も出せない */
 export const s0 = (labels: Labels): PaletteView =>
   view(labels, {

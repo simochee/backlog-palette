@@ -30,7 +30,10 @@ export type TakeTarget =
   | { kind: 'complete'; text: string };
 
 export type PaletteAction =
-  | { type: 'opened'; stack: Stack }
+  /** 前回の入力・選択・検索を捨てる。材料を待たず、開いた瞬間に同期で起こす（§3） */
+  | { type: 'opened' }
+  /** 開いたページから決まるスタックを置く。材料が揃う前に打たれた入力は残す */
+  | { type: 'located'; stack: Stack }
   | { type: 'inputChanged'; value: string }
   | { type: 'selected'; id: string }
   | { type: 'took'; target: TakeTarget }

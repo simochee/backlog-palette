@@ -23,9 +23,21 @@ const opened: PaletteState = {
 };
 
 describe('開閉と入力', () => {
-  it('開くと前回の入力と選択は残らず、スタックは現在ページのものになる', () => {
-    const state = reduce(opened, { type: 'opened', stack: stackOf(space) });
+  it('開くと前回の入力と選択とスタックは残らない', () => {
+    const state = reduce(opened, { type: 'opened' });
     expect(state.input).toBe('');
+    expect(state.selectedId).toBeUndefined();
+    expect(state.toast).toBeUndefined();
+    expect(state.stack.segments).toHaveLength(0);
+  });
+
+  it('開いたページのスタックが届くと、それまでに打った入力を残したままスタックが置かれる', () => {
+    const typed = reduce(reduce(opened, { type: 'opened' }), {
+      type: 'inputChanged',
+      value: 'ぼーど',
+    });
+    const state = reduce(typed, { type: 'located', stack: stackOf(space) });
+    expect(state.input).toBe('ぼーど');
     expect(state.selectedId).toBeUndefined();
     expect(state.stack.segments).toHaveLength(1);
   });

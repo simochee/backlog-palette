@@ -1,4 +1,4 @@
-export { derive, type DerivedPalette, type DeriveOptions } from './derive';
+export { derive, type DerivedPalette, type DeriveOptions, preparingView } from './derive';
 export type {
   AssignedState,
   CachedEntry,
