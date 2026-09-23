@@ -8,6 +8,7 @@ import {
   kindsIn,
   options,
   paletteCallbacks,
+  preparing,
   projects,
   resultsGroup,
   s0,
@@ -51,6 +52,24 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+export const Preparing: Story = {
+  name: '材料が届く前 — 入力欄だけがあり行もキーのヒントも無い／打った文字は入力欄に入り、Enter では何も起きない',
+  args: preparing(ja),
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('combobox', { name: ja.palette.inputLabel });
+    await expect(canvas.queryAllByRole('option')).toHaveLength(0);
+
+    await userEvent.keyboard('ぼーど');
+    await expect(input).toHaveValue('ぼーど');
+    await expect(args.onInputChange).toHaveBeenLastCalledWith('ぼーど');
+    await userEvent.keyboard('{Enter}');
+    await expect(args.onAction).not.toHaveBeenCalled();
+
+    await assertPaletteInvariants({ canvasElement, view: args, spies: args });
+  },
+};
 
 export const S0: Story = {
   name: 'S0 未接続で何も出せない — 接続行が 1 つだけあり選択されている',

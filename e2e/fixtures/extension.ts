@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import {
   type BrowserContext,
   chromium,
+  type Disposable,
   type Page,
   test as base,
   type Worker,
@@ -62,6 +63,26 @@ export const OWNED_KEYS = [
 
 /** storage.session に書く item。ブラウザを閉じるまで残るので、worker を共有するテストの間で漏れる */
 const OWNED_SESSION_KEYS = ['panelLastSearch'];
+
+/**
+ * このページに載るパレットの iframe で、storage の読み出しを遅らせる。パレットの材料
+ * （createSession）は storage から作るので、材料が揃う前に開いて打つ状況を作れる
+ */
+export function delayPaletteStorageReads(page: Page, ms: number): Promise<Disposable> {
+  return page.addInitScript((delay) => {
+    if (!location.pathname.endsWith('/palette.html')) return;
+    type Area = { get: (...args: unknown[]) => Promise<unknown> };
+    const area = (globalThis as unknown as { chrome: { storage: { local: Area } } }).chrome.storage
+      .local;
+    const read = area.get.bind(area);
+    area.get = async (...args) => {
+      await new Promise((done) => {
+        setTimeout(done, delay);
+      });
+      return read(...args);
+    };
+  }, ms);
+}
 
 export type ExtensionFixtures = {
   context: BrowserContext;

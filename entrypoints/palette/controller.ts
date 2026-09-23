@@ -24,7 +24,7 @@ const PANEL_ALWAYS_AVAILABLE = import.meta.env.BROWSER !== 'firefox';
 /** openedAt は開いた時刻。サイドバーの開閉の答えがどの open のものかを見分ける */
 export type Surface = { open: boolean; openedAt: number; panelAvailable: boolean };
 
-/** スペースの URL でなければ null。パレットを持たない（I7） */
+/** まだ用意できていないか、スペースの URL でなければ null。どちらも材料は無い（I7） */
 type Supplied = PaletteSession | null;
 
 /**
@@ -49,8 +49,8 @@ function createSessionSupply() {
 
   /*
    * 一度でも用意が終わっていれば、進行中の用意し直しは待たず、直前の材料で同期に渡す。
-   * await を挟むと、その間に打たれた文字が入力欄に入った後で open が届き、状態のリセットで
-   * 消える。まだ一度も終わっていないときだけ、進行中の用意を待つ
+   * await を挟むと、open で空にしたスタックのまま開いた直後を描き、スコープパスが
+   * 遅れて現れる。まだ一度も終わっていないときだけ、進行中の用意を待つ
    */
   const whenReady = (receive: (session: Supplied) => void) => {
     if (settled) receive(current.state);
@@ -69,7 +69,8 @@ type Opening = {
 };
 
 /*
- * 開くたびに状態を開いた形へ戻す。前回の入力・選択・検索は残さない（palette.md §3）。
+ * 材料が揃ったら、開いたページのスタックを置く。入力は open の時点で消してあるので、
+ * ここで消すと材料を待つ間に打たれた文字が落ちる。
  * 共有 URL で開いたときはここで復元する。条件つきはサイドパネルへ渡し、開けない環境
  * （Firefox）では語とスコープだけパレットで復元する（surfaces.md §5.1・§5.5）
  */
@@ -78,7 +79,7 @@ function applyOpen(session: Supplied, { channel, store, pending, close }: Openin
     channel.send({ t: 'close' });
     return;
   }
-  store.dispatch({ type: 'opened', stack: session.stack });
+  store.dispatch({ type: 'located', stack: session.stack });
   const { restore } = session;
   if (restore === undefined) return;
   void (async () => {
@@ -188,6 +189,8 @@ export function startPaletteController(channel: HostChannel): PaletteController 
     surface.setState(() => ({ open: true, openedAt, panelAvailable: PANEL_ALWAYS_AVAILABLE }));
     if (!PANEL_ALWAYS_AVAILABLE) void askPanelAvailable(surface, openedAt);
     input.focus();
+    // 前回の入力は残さない（palette.md §3）。材料を待たずに消し、その後の打鍵を受ける
+    store.dispatch({ type: 'opened' });
     paletteTelemetry.opened();
     supply.whenReady((session) => applyOpen(session, { channel, store, pending, close }));
   };

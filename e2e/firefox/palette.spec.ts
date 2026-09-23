@@ -38,6 +38,31 @@ test.describe('Firefox: パレットの注入と開閉', () => {
   });
 
   /*
+   * Chromium の palette.spec は storage の読み出しを遅らせて材料が揃う前に開くが、
+   * Firefox の preload script（evaluateOnNewDocument）は moz-extension:// のフレームで
+   * 走らず、同じ手が使えない。iframe の読み込みより先に ⌘K を押し、読み込みと同時に
+   * 開かせる。材料の用意はその時点で始まったばかりなので、揃う前の打鍵になる
+   */
+  test('iframe の読み込みより先に ⌘K を押しても、打った文字はパレットの入力欄に残る', async ({
+    tab,
+    space,
+    paletteFrame,
+  }) => {
+    await tab.goto(space.url('/view/PROJ-123'), { waitUntil: 'domcontentloaded' });
+    await tab.waitForSelector(PALETTE_FRAME);
+
+    await tab.keyboard.down(HOTKEY_MODIFIER);
+    await tab.keyboard.press('k');
+    await tab.keyboard.up(HOTKEY_MODIFIER);
+    await tab.waitForSelector(`${PALETTE_FRAME}[style*="display: block"]`, { timeout: 5000 });
+    await tab.keyboard.type('board');
+
+    const frame = await paletteFrame();
+    await frame.waitForSelector('[role="option"]', { timeout: 5000 });
+    expect(await frame.$eval('input', (el) => el.value)).toBe('board');
+  });
+
+  /*
    * Firefox の埋め込み iframe には browser.tabs が無く、background への委譲で
    * タブ URL を読む（backlog-facts.md §5-16）。Chrome の tabs.spec と同じ検査で I7 の経路を固定する
    */
