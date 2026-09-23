@@ -66,22 +66,39 @@ const OWNED_SESSION_KEYS = ['panelLastSearch'];
 
 /**
  * このページに載るパレットの iframe で、storage の読み出しを遅らせる。パレットの材料
- * （createSession）は storage から作るので、材料が揃う前に開いて打つ状況を作れる
+ * （createSession）は storage から作るので、材料が揃う前に開いて打つ状況を作れる。
+ *
+ * keys を渡すと、その item を読むときだけ遅らせる。読み出しの前に待つので、すべてを遅らせると
+ * 待っている間に書いた値も読めてしまう。途中の item だけを遅らせれば、前の段で読んだ値のまま
+ * 用意が止まる
  */
-export function delayPaletteStorageReads(page: Page, ms: number): Promise<Disposable> {
-  return page.addInitScript((delay) => {
-    if (!location.pathname.endsWith('/palette.html')) return;
-    type Area = { get: (...args: unknown[]) => Promise<unknown> };
-    const area = (globalThis as unknown as { chrome: { storage: { local: Area } } }).chrome.storage
-      .local;
-    const read = area.get.bind(area);
-    area.get = async (...args) => {
-      await new Promise((done) => {
-        setTimeout(done, delay);
-      });
-      return read(...args);
-    };
-  }, ms);
+export function delayPaletteStorageReads(
+  page: Page,
+  ms: number,
+  keys?: readonly string[],
+): Promise<Disposable> {
+  return page.addInitScript(
+    ({ delay, only }) => {
+      if (!location.pathname.endsWith('/palette.html')) return;
+      type Area = { get: (...args: unknown[]) => Promise<unknown> };
+      const area = (globalThis as unknown as { chrome: { storage: { local: Area } } }).chrome
+        .storage.local;
+      const read = area.get.bind(area);
+      area.get = async (...args) => {
+        const [query] = args;
+        let requested: string[] = [];
+        if (typeof query === 'string') requested = [query];
+        else if (Array.isArray(query)) requested = query.map(String);
+        else if (query !== null && typeof query === 'object') requested = Object.keys(query);
+        if (only === undefined || requested.some((key) => only.includes(key)))
+          await new Promise((done) => {
+            setTimeout(done, delay);
+          });
+        return read(...args);
+      };
+    },
+    { delay: ms, only: keys },
+  );
 }
 
 /**
