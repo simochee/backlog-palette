@@ -1,5 +1,6 @@
 import {
   delayPaletteStorageReads,
+  delayPaletteTasksQueuedBeforeLoad,
   expect,
   HOTKEY,
   PALETTE_FRAME,
@@ -39,6 +40,20 @@ test.describe('⌘K によるパレットの開閉', () => {
 
     await expect(palette.getByRole('option').first()).toBeVisible();
     await expect(input).toHaveValue('ぼーど');
+  });
+
+  test('iframe の読み込みより最初の描画が遅れても、開いた直後に打った文字は入力欄に残る', async ({
+    page,
+    space,
+  }) => {
+    await delayPaletteTasksQueuedBeforeLoad(page, 1500);
+    await page.goto(space.url('/view/PROJ-123'));
+    const input = page.frameLocator(PALETTE_FRAME).locator('input');
+
+    await page.keyboard.press(HOTKEY);
+    await expect(page.locator(PALETTE_FRAME)).toBeVisible();
+    await page.keyboard.type('board');
+    await expect(input).toHaveValue('board');
   });
 
   test('パレットはビューポートを覆う大きさで表示される', async ({ page, space }) => {

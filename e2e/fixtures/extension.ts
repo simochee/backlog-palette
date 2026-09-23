@@ -84,6 +84,25 @@ export function delayPaletteStorageReads(page: Page, ms: number): Promise<Dispos
   }, ms);
 }
 
+/**
+ * このページに載るパレットの iframe で、読み込み前に積まれた MessageChannel のタスクを、
+ * 読み込みから `ms` 後まで遅らせる。React の scheduler は描画をこのタスクで行う。
+ * そのため、iframe が読み込まれて開いた後に最初の描画が来る状況を作れる。
+ * 実機でも入力イベントはこのタスクを追い越す
+ */
+export function delayPaletteTasksQueuedBeforeLoad(page: Page, ms: number): Promise<Disposable> {
+  return page.addInitScript((delay) => {
+    if (!location.pathname.endsWith('/palette.html')) return;
+    const post = MessagePort.prototype.postMessage;
+    MessagePort.prototype.postMessage = function (this: MessagePort, ...args: [unknown]) {
+      if (document.readyState === 'complete') return post.apply(this, args);
+      window.addEventListener('load', () => {
+        setTimeout(() => post.apply(this, args), delay);
+      });
+    } as MessagePort['postMessage'];
+  }, ms);
+}
+
 export type ExtensionFixtures = {
   context: BrowserContext;
   page: Page;
